@@ -1,0 +1,40 @@
+# Tooling / local indexes
+.codegraph/
+.cache/
+.turbo/
+*.tsbuildinfo
+
+# Dependencies and build output
+node_modules/
+dist/
+release/
+artifacts/
+coverage/
+*.log
+.DS_Store
+test-results/
+playwright-report/
+blob-report/
+
+# Bundled Node/Python trees (fetched by apps/desktop/scripts/fetch-runtimes.mjs)
+apps/desktop/runtimes/**
+!apps/desktop/runtimes/versions.json
+!apps/desktop/runtimes/README.md
+
+# pi session exports / accidental test cwd dumps (exportToJsonl default path)
+session-*.jsonl
+
+# Local environment
+.env
+.env.*
+!.env.example
+*.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local planning docs (not part of the published tree)
+docs/

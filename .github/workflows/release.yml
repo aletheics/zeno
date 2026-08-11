@@ -1,0 +1,152 @@
+# Tag-driven multi-platform installers + GitHub Release.
+# Push v* → build installers + electron-updater feeds → attach to the release.
+#
+# Required release assets (scripts/release-assets.mjs):
+#   Zeno-*-win-x64.exe          + latest.yml  (+ *.blockmap when generated)
+#   Zeno-*-mac-{arm64,x64}.dmg  + Zeno-*-mac-{arm64,x64}.zip + latest-mac.yml
+#   Zeno-*-linux-*.AppImage     + latest-linux.yml  (+ optional .deb / blockmap)
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/../.cache/electron-builder
+      ELECTRON_CACHE: ${{ github.workspace }}/../.cache/electron
+    strategy:
+      # One platform failure should stop the matrix (no orphan half-releases).
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+          - os: macos-15-intel
+            platform: mac
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.15.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Electron binary
+        run: pnpm electron:install
+
+      - name: Package desktop installers
+        # Sign only when both CSC_LINK and CSC_KEY_PASSWORD are set. Incomplete
+        # cert env makes electron-builder try to sign and fail with "not a file".
+        # Otherwise force unsigned packaging (matches pre-0.5.1 CI behavior).
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CSC_LINK:-}" || -z "${CSC_KEY_PASSWORD:-}" ]]; then
+            unset CSC_LINK CSC_KEY_PASSWORD || true
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "Packaging without code signature (CSC secrets incomplete or unset)"
+          else
+            echo "Packaging with code signature (CSC_LINK + CSC_KEY_PASSWORD present)"
+          fi
+          pnpm package
+
+      - name: Collect installers and updater feeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release-assets.mjs collect \
+            apps/desktop/release/app \
+            artifacts \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ runner.arch }}"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pix-${{ matrix.platform }}-${{ runner.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: publish release
+    needs: package
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download all platform archives
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: pix-*
+          merge-multiple: true
+
+      - name: Merge latest-mac.yml (arm64 + x64)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mac_yml=(release-assets/latest-mac-*.yml)
+          if [[ ${#mac_yml[@]} -eq 0 ]]; then
+            echo "Missing arch-split latest-mac-*.yml from mac package jobs" >&2
+            ls -la release-assets >&2 || true
+            exit 1
+          fi
+          node scripts/merge-latest-mac-yml.mjs release-assets release-assets/latest-mac.yml
+          rm -f release-assets/latest-mac-*.yml
+          ls -lh release-assets/latest-mac.yml
+
+      - name: Validate release assets
+        shell: bash
+        run: node scripts/release-assets.mjs validate-publish release-assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

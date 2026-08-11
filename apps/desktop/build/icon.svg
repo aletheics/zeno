@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  White plate + black π.
+  π = three rounded bars with optical polish:
+  - stems tuck into the crossbar (overlap) so joints read as one glyph
+  - stem width ≈ gap for 16–32px legibility
+  - right stem shorter; crossbar slight overhang both sides
+  - whole mark optically centered a touch high
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <rect width="1024" height="1024" rx="229" ry="229" fill="#FFFFFF"/>
+
+  <g fill="#0A0A0A">
+    <!-- crossbar -->
+    <rect x="250" y="298" width="524" height="104" rx="52"/>
+    <!-- left stem: overlaps crossbar by 52 so join is solid, not double-bulb -->
+    <rect x="308" y="350" width="100" height="378" rx="50"/>
+    <!-- right stem: shorter, same width, same tuck -->
+    <rect x="548" y="350" width="100" height="300" rx="50"/>
+  </g>
+</svg>

@@ -1,0 +1,104 @@
+appId: dev.zeno.app
+productName: Zeno
+# package.json name is @zeno/desktop — override so AppImage/deb paths stay valid.
+executableName: Zeno
+asar: true
+# Native dependencies ship N-API/prebuilt binaries and are exercised under the
+# target Electron runtime. Rebuilding node-pty discards those prebuilds and adds
+# a Visual Studio Spectre-library requirement to packaging.
+npmRebuild: false
+files:
+  - dist/**
+  - package.json
+# Runtime window / notification icons (BrowserWindow.icon). Separate from the
+# exe-embedded icon from win.icon — both are required on Windows for taskbar.
+extraResources:
+  - from: build/icon.ico
+    to: icon.ico
+  - from: build/icon.png
+    to: icon.png
+  - from: build/icon.icns
+    to: icon.icns
+  # Managed runtimes (WorkBuddy-style): ship compressed archives only.
+  # First launch extracts into userData/runtimes + npm-prefix + python-venv.
+  # Built by scripts/fetch-runtimes.mjs → runtimes/current/archives/*.tar.gz
+  - from: runtimes/current/archives
+    to: runtimes/archives
+  - from: runtimes/current/manifest.json
+    to: runtimes/manifest.json
+directories:
+  output: release/app
+  buildResources: build
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+# Auto-update via electron-updater + GitHub Releases.
+# CI packages with `--publish never` (yml still generated); softprops attaches assets.
+#
+# Release asset policy (see scripts/release-assets.mjs):
+#   installers — exe / dmg×2 / AppImage / deb
+#   mac zip×2  — auto-update payload (not dmg)
+#   feeds      — latest.yml · latest-mac.yml · latest-linux.yml
+#   blockmaps  — differential downloads when electron-builder emits them
+#
+# app-update.yml is embedded by electron-builder and always by scripts/after-pack.mjs.
+publish:
+  provider: github
+  owner: num-scope
+  repo: zeno
+  releaseType: release
+mac:
+  # Optional Developer ID via CSC_LINK. Auto-update does not require it — mac
+  # installs replace the .app from the release zip (see mac-install-update.ts).
+  # Signing still helps Gatekeeper first-open and notification registration.
+  icon: icon.icns
+  # zip is the auto-update payload; dmg is manual install only.
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  hardenedRuntime: false
+  gatekeeperAssess: false
+dmg:
+  # latest-mac.yml must list .zip, not .dmg.
+  writeUpdateInfo: false
+win:
+  icon: icon.ico
+  # Keep true so rcedit writes icon.ico into Zeno.exe (taskbar + Start Menu).
+  # false skips resource editing and leaves Electron's default atom icon.
+  signAndEditExecutable: true
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  deleteAppDataOnUninstall: false
+  installerIcon: icon.ico
+  uninstallerIcon: icon.ico
+  installerHeaderIcon: icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Zeno
+linux:
+  icon: icon.png
+  executableName: Zeno
+  maintainer: num-scope <noreply@users.noreply.github.com>
+  # AppImage writes latest-linux.yml; deb is manual install convenience.
+  target:
+    - AppImage
+    - deb
+  category: Development
+  synopsis: Desktop shell for the pi coding agent
+  description: Zeno is a desktop shell for the pi coding agent.
+# Unpack native helpers and the JS dependency tree used by embedded pi TUI.
+# node-pty spawn-helper must be a real executable (missing +x → posix_spawnp failed).
+# pi CLI is spawned as a PTY child with *system* Node; system Node cannot read asar.
+# Spawning process.execPath + ELECTRON_RUN_AS_NODE works for asar but macOS treats
+# that as a second app launch (Dock bounce); force-quitting it kills terminal mode.
+asarUnpack:
+  - "**/*.node"
+  - "**/node-pty/prebuilds/**"
+  - "**/node-pty/build/**"
+  - "**/spawn-helper"
+  - "**/@silvia-odwyer/photon-node/**"
+  - "**/node_modules/**"
+afterPack: scripts/after-pack.mjs

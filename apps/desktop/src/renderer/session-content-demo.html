@@ -1,0 +1,41 @@
+<!doctype html>
+<html
+  lang="zh-CN"
+  data-theme="dark"
+  style="color-scheme: dark; background: #191919; height: auto; overflow: auto"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeno · Session content demo</title>
+    <style>
+      /* Override product styles.css: html/body/#root { height:100% } + body { overflow:hidden } */
+      html,
+      body,
+      #root {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      body {
+        margin: 0;
+        background: #191919;
+        color: #e8e8e8;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <p style="font-family: system-ui, sans-serif; padding: 2rem; color: #acacac; margin: 0">
+        Loading session content demo…
+        <br />
+        <span style="font-size: 13px">
+          If this stays blank, do not use <code>file://</code> — run
+          <code>pnpm --filter @zeno/desktop demo:session-content</code>
+        </span>
+      </p>
+    </div>
+    <script type="module" src="/session-content-demo-main.tsx"></script>
+  </body>
+</html>

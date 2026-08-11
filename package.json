@@ -1,0 +1,43 @@
+{
+  "name": "zeno",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "vp check",
+    "check:types": "vp check --no-fmt",
+    "fmt": "vp check --fix",
+    "test": "vp run --no-cache -r test",
+    "build": "vp run -r build",
+    "dev": "pnpm dev:desktop",
+    "dev:desktop": "vp run --no-cache @zeno/desktop#dev",
+    "build:desktop": "vp run --no-cache @zeno/desktop#build",
+    "dev:landing": "vp run --no-cache @zeno/landing#dev",
+    "build:landing": "vp run --no-cache @zeno/landing#build",
+    "preview:landing": "vp run --no-cache @zeno/landing#preview",
+    "demo:session-content": "vp run --no-cache @zeno/desktop#demo:session-content",
+    "electron:install": "vp run --no-cache @zeno/desktop#electron:install",
+    "e2e": "vp run --no-cache @zeno/desktop#e2e",
+    "package": "vp run --no-cache @zeno/desktop#package",
+    "version:set": "node scripts/set-version.mjs",
+    "test:release-assets": "node scripts/release-assets.test.mjs && node scripts/merge-latest-mac-yml.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.15.1",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "pnpm@11.15.1"
+}

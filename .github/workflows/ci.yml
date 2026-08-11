@@ -1,0 +1,48 @@
+# Daily gate on Ubuntu: lint/types/format, tests, build.
+# Multi-platform installers stay in release.yml (tag-driven).
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.15.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint / typecheck / format
+        run: pnpm check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Release asset policy tests
+        run: pnpm test:release-assets
+
+      - name: Build packages
+        run: pnpm build

@@ -1,0 +1,6239 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Tokens lifted from OpenCowork dark theme (main.css :root / .dark).
+ * Structure: shadcn-style semantic colors + Zeno product chrome.
+ * Not copying OpenCowork trademarks — only visual system.
+ */
+
+@custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* Shared radius scale — use these everywhere (rows / controls / panels). */
+  --radius-sm: 0.375rem; /* 6px — list rows, icon buttons */
+  --radius-md: 0.625rem; /* 10px — inputs, bubbles, menu items */
+  --radius-lg: 0.75rem; /* 12px — cards, env panel, dialogs, popovers */
+  --radius-xl: 0.75rem; /* align large surfaces to panel radius */
+  --radius-2xl: 0.75rem;
+}
+
+/* Map CSS variables → Tailwind color utilities (bg-background, text-muted-foreground, …). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+ * shadcn chat text shimmer — use the `shimmer` utility only:
+ *   <span className="shimmer">Thinking…</span>
+ *   MarkerContent: group-data-[shimmer=true]/marker:shimmer
+ *   AttachmentTitle: group-data-[state=uploading|processing]/attachment:shimmer
+ *
+ * Do not hand-roll extra keyframe selectors / !important overrides.
+ * Stops use muted tokens (not currentColor): color is transparent while
+ * animating, so currentColor would paint an invisible gradient.
+ */
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@utility shimmer {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--muted-foreground) 40%, transparent) 0%,
+    var(--muted-foreground) 45%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 55%,
+    color-mix(in srgb, var(--muted-foreground) 40%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer 1.4s linear infinite;
+}
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Canvas */
+  --background: #191919;
+  --theme-background: var(--background);
+  --foreground: oklch(0.985 0.004 260);
+  /*
+   * Unified surfaces (keep these in sync):
+   *  panel  #2d2d2d — input, env panel, menus, dialogs
+   *  muted  #383838 — session/hover highlight, composer protrusion
+   *  soft   #272727 — user message bubble
+   */
+  --surface-panel: #2d2d2d;
+  --surface-muted: #383838;
+  --surface-soft: #272727;
+  --card: var(--surface-panel);
+  --card-foreground: oklch(0.985 0.004 260);
+  --popover: var(--surface-panel);
+  --popover-foreground: oklch(0.985 0.004 260);
+  --primary: oklch(0.72 0.12 255);
+  --primary-foreground: oklch(0.18 0.01 260);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: oklch(0.985 0.004 260);
+  --muted: #222222;
+  --muted-foreground: #acacac;
+  --hover-fill: var(--surface-muted);
+  --hover-fill-foreground: oklch(0.985 0.004 260);
+  --accent: var(--hover-fill);
+  --accent-foreground: var(--hover-fill-foreground);
+  /*
+   * Error text on dark canvas — keep light enough to read (old 0.40 L was muddy).
+   * Solid destructive buttons still use this; contrast stays OK on dark surfaces.
+   */
+  --destructive: oklch(0.72 0.17 25);
+  --destructive-foreground: oklch(0.18 0.02 25);
+  /* Chrome borders / row dividers (cards, composer, env, settings). */
+  --border: #3c3c3c;
+  --border-subtle: color-mix(in srgb, #ffffff 11%, transparent);
+  --divider: color-mix(in srgb, #ffffff 9%, transparent);
+  --input: #3c3c3c;
+  --ring: oklch(0.62 0.09 255);
+  /* Interactive accent: switches (on) + hyperlinks */
+  --link: #379cfc;
+  --switch-on: #379cfc;
+  --sidebar: #151515;
+  --sidebar-foreground: oklch(0.985 0.004 260);
+  --sidebar-primary: oklch(0.72 0.12 255);
+  --sidebar-primary-foreground: oklch(0.18 0.01 260);
+  --sidebar-accent: var(--hover-fill);
+  --sidebar-accent-foreground: var(--hover-fill-foreground);
+  --sidebar-border: #383838;
+  --sidebar-ring: oklch(0.62 0.09 255);
+
+  --canvas: var(--background);
+  --surface: var(--surface-panel);
+  --surface-elevated: var(--surface-panel);
+  --surface-hover: var(--hover-fill);
+  --surface-selected: var(--hover-fill);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --text-subtle: var(--muted-foreground);
+  /* Composer input card + project protrusion (dark). */
+  --bg-composer: #2b2b2b;
+  --composer-border: color-mix(in srgb, #ffffff 11%, #2b2b2b);
+  --composer-protrusion: #1f1f1f;
+  --success: #3ecf8e;
+  --warning: #f0a500;
+  --danger: #e05555;
+  --running: #4c8dff;
+  --code-bg: #0f0f0f;
+  --code-fg: #e8e8e2;
+  --bg-app: var(--canvas);
+  --bg-sidebar: var(--sidebar);
+  --bg-panel: var(--canvas);
+  --bg-elevated: var(--surface-elevated);
+  --bg-code: var(--code-bg);
+  --bg-hover: var(--hover-fill);
+  --bg-active: var(--hover-fill);
+  --border-strong: #484848;
+  --text-on-dark: var(--code-fg);
+  --user-bubble: var(--surface-soft);
+  --user-bubble-fg: oklch(0.985 0.004 260);
+  --sidebar-width: 272px;
+  --thread-max: 760px;
+  --review-width: 480px;
+  --shadow-soft: 0 16px 48px rgb(0 0 0 / 0.45);
+  /* Radius aliases used by components */
+  --radius-control: var(--radius-sm);
+  --radius-field: var(--radius-md);
+  --radius-panel: var(--radius-lg);
+  /*
+   * Typography weights (app-wide):
+   *  400 regular  — body, nav, lists, settings labels, prose
+   *  500 medium   — buttons, badges, selected/unread emphasis
+   *  600 semibold — page titles, brand, markdown headings
+   * Hierarchy prefers size + color over stacking medium everywhere.
+   */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  /* Appearance prefs (overridden by applyAppearancePrefs). */
+  --ui-font-size: 14px;
+  --code-font-size: 12px;
+  /*
+   * Unified group / section label type (sidebar, settings, menus, palette).
+   * Same size as body/UI text — hierarchy uses color/weight, not a smaller type.
+   */
+  --group-label-size: var(--ui-font-size, 14px);
+  --group-label-weight: 500;
+  --group-label-line-height: 1.35;
+  /* Dark theme group names */
+  --group-label-color: #747474;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  /*
+   * Unified surfaces:
+   *  panel  #ffffff — input, env panel, menus, dialogs
+   *  muted  #f6f6f6 — session/hover highlight, composer protrusion
+   *  soft   #f5f5f5 — user message bubble
+   */
+  --surface-panel: #ffffff;
+  --surface-muted: #f6f6f6;
+  --surface-soft: #f5f5f5;
+  --card: var(--surface-panel);
+  --card-foreground: #171717;
+  --popover: var(--surface-panel);
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: var(--surface-muted);
+  --secondary-foreground: #171717;
+  --muted: #f1f2f4;
+  --muted-foreground: #808182;
+  --hover-fill: var(--surface-muted);
+  --hover-fill-foreground: #171717;
+  --accent: var(--hover-fill);
+  --accent-foreground: var(--hover-fill-foreground);
+  --destructive: #dc2626;
+  --border: #d7d9e0;
+  --border-subtle: color-mix(in srgb, #9aa0ab 30%, #ffffff);
+  --divider: color-mix(in srgb, #9aa0ab 24%, #ffffff);
+  --input: #d7d9e0;
+  --ring: #0a84ff;
+  /* Interactive accent: switches (on) + hyperlinks */
+  --link: #379cfc;
+  --switch-on: #379cfc;
+  --sidebar: #f1f2f4;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: var(--hover-fill);
+  --sidebar-accent-foreground: var(--hover-fill-foreground);
+  --sidebar-border: #cdd0d8;
+  --sidebar-ring: #0a84ff;
+  --canvas: var(--background);
+  --surface: var(--surface-panel);
+  --surface-elevated: var(--surface-panel);
+  --surface-hover: var(--hover-fill);
+  --surface-selected: var(--hover-fill);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --text-subtle: var(--muted-foreground);
+  /* Composer input card + project protrusion (light). */
+  --bg-composer: #ffffff;
+  --composer-border: color-mix(in srgb, #9aa0ab 36%, #ffffff);
+  --composer-protrusion: #f5f5f5;
+  --bg-app: var(--canvas);
+  --bg-sidebar: var(--sidebar);
+  --bg-panel: var(--canvas);
+  --bg-elevated: var(--surface-elevated);
+  --bg-hover: var(--hover-fill);
+  --bg-active: var(--hover-fill);
+  --border-strong: #b8bac2;
+  --code-bg: #f1f2f4;
+  --code-fg: #171717;
+  --user-bubble: var(--surface-soft);
+  --user-bubble-fg: #171717;
+  --shadow-soft: 0 12px 32px rgb(0 0 0 / 0.08);
+  --radius-control: var(--radius-sm);
+  --radius-field: var(--radius-md);
+  --radius-panel: var(--radius-lg);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  /*
+   * Unified group / section label type (sidebar, settings, menus, palette).
+   * Same size as body/UI text — hierarchy uses color/weight, not a smaller type.
+   */
+  --group-label-size: var(--ui-font-size, 14px);
+  --group-label-weight: 500;
+  --group-label-line-height: 1.35;
+  /* Light theme group names */
+  --group-label-color: #a7a9a9;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+/*
+ * Single type scale for all “group name” labels across the app.
+ * Size matches regular UI text (--ui-font-size); do not invent smaller group titles.
+ */
+.group-label,
+.settings-section-label,
+.settings-section-label-code,
+.settings-rail-group-label,
+.sidebar-section-label,
+.composer-suggest-group-label,
+.composer-model-group-label,
+.sidebar-block-head,
+[cmdk-group-heading] {
+  font-size: var(--group-label-size) !important;
+  font-weight: var(--group-label-weight) !important;
+  line-height: var(--group-label-line-height) !important;
+  letter-spacing: normal !important;
+  color: var(--group-label-color) !important;
+  text-transform: none !important;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  /* Transparent so macOS window vibrancy can show through the frosted rail. */
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--ui-font-size, 14px);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shell layout — the clear rail exposes the native window material on macOS */
+.app-shell {
+  @apply relative h-full w-full overflow-hidden;
+  color: var(--foreground);
+  /* Opaque content lives in .shell-content, leaving the sidebar region transparent. */
+  background: transparent;
+}
+
+/* Cold-start full-window gate (logo + pi / host progress). */
+.bootstrap-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--theme-background, var(--background));
+  background-attachment: fixed;
+  color: var(--foreground);
+  /* Block all chrome underneath until ready. */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+.bootstrap-overlay-inner {
+  display: flex;
+  max-width: min(28rem, 100%);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  -webkit-app-region: no-drag;
+}
+.bootstrap-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  filter: drop-shadow(0 10px 28px color-mix(in srgb, var(--foreground) 12%, transparent));
+}
+.bootstrap-logo {
+  width: 4.5rem !important;
+  height: 4.5rem !important;
+  border-radius: 1.15rem;
+}
+.bootstrap-brand {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--foreground);
+}
+.bootstrap-status {
+  min-height: 1.35em;
+  max-width: 22rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+.bootstrap-detail {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text-subtle);
+}
+.bootstrap-error {
+  max-width: 24rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--destructive) 92%, var(--foreground));
+}
+
+/*
+ * Opaque content stack inset by rail.
+ * CRITICAL: background-clip: content-box so padding-left (under the frosted rail)
+ * stays transparent — otherwise a solid fill paints under the glass and kills translucency.
+ */
+.shell-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--theme-background, var(--background));
+  background-attachment: fixed;
+  background-size: cover;
+  background-clip: content-box;
+  box-sizing: border-box;
+}
+
+/*
+ * Theme skins paint wallpaper behind shell chrome.
+ * Sidebar modes (per theme, mutually exclusive):
+ * 1) data-theme-skin-sidebar-translucent=true  → native frosted rail (old behavior)
+ * 2) translucent=false + sidebar-glass=true    → materials.sidebarOpacity glass
+ * 3) translucent=false + sidebar-glass=false   → solid --sidebar
+ */
+.skin-wallpaper {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--skin-wallpaper-base, var(--background));
+}
+.skin-wallpaper::before,
+.skin-wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+}
+.skin-wallpaper::before {
+  background-image: var(--skin-wallpaper-image, none);
+  background-position: var(--skin-art-position, center);
+  background-repeat: no-repeat;
+  background-size: var(--skin-art-size, cover);
+  filter: saturate(1.06) contrast(1.015);
+  transform: scale(1.01);
+}
+.skin-wallpaper::after {
+  background:
+    linear-gradient(
+      115deg,
+      rgb(var(--skin-background-rgb) / calc(var(--skin-wallpaper-dim, 0) + 0.08)),
+      transparent 56%
+    ),
+    rgb(var(--skin-background-rgb) / var(--skin-wallpaper-dim, 0));
+}
+html[data-theme-skin-active="true"] .skin-wallpaper {
+  display: block;
+}
+/*
+ * Native translucent: clip the rail without narrowing the wallpaper canvas.
+ * Keeping viewport-sized geometry prevents percentage-based skin art from rescaling.
+ */
+html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="true"] .skin-wallpaper {
+  clip-path: inset(0 0 0 var(--sidebar-current-width, 0px));
+}
+html[data-theme-skin-active="true"] .app-shell {
+  z-index: 1;
+  isolation: isolate;
+}
+html[data-theme-skin-active="true"] .shell-content {
+  background: rgb(var(--skin-background-rgb) / var(--skin-page-opacity)) !important;
+  background: color-mix(
+    in srgb,
+    var(--background) calc(var(--skin-page-opacity) * 100%),
+    transparent
+  ) !important;
+  background-attachment: initial;
+  background-clip: content-box;
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(112%);
+  backdrop-filter: blur(var(--skin-blur)) saturate(112%);
+}
+/*
+ * 1) Native frosted rail (legacy translucent) — ignores sidebarOpacity.
+ */
+html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="true"]
+  [data-testid="sidebar"] {
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--sidebar-border) 22%, transparent) !important;
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 8%, transparent),
+    1px 0 0 color-mix(in srgb, #000 12%, transparent);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="true"][data-theme="light"]
+  [data-testid="sidebar"] {
+  border-color: color-mix(in srgb, var(--sidebar-border) 24%, transparent) !important;
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 52%, transparent),
+    1px 0 0 color-mix(in srgb, #000 4%, transparent);
+}
+/*
+ * 2) Material glass rail — only when native translucent is off.
+ */
+html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="false"][data-theme-skin-sidebar-glass="true"]
+  [data-testid="sidebar"] {
+  background: linear-gradient(
+    150deg,
+    rgb(var(--skin-panel-rgb) / var(--skin-sidebar-panel-opacity)),
+    rgb(var(--skin-background-rgb) / var(--skin-sidebar-opacity))
+  ) !important;
+  background: linear-gradient(
+    150deg,
+    color-mix(
+      in srgb,
+      var(--surface-panel) calc(var(--skin-sidebar-panel-opacity) * 100%),
+      transparent
+    ),
+    color-mix(in srgb, var(--background) calc(var(--skin-sidebar-opacity) * 100%), transparent)
+  ) !important;
+  border-color: var(--skin-sidebar-border) !important;
+  box-shadow:
+    inset -1px 0 rgb(var(--skin-text-rgb) / var(--skin-border-inset-alpha)),
+    8px 0 32px rgb(var(--skin-background-rgb) / 0.22) !important;
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(116%) !important;
+  backdrop-filter: blur(var(--skin-blur)) saturate(116%) !important;
+}
+/*
+ * 3) Solid rail — translucent off and no material glass.
+ */
+html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="false"]:not(
+    [data-theme-skin-sidebar-glass="true"]
+  )
+  [data-testid="sidebar"] {
+  background: var(--sidebar) !important;
+  border-color: var(--sidebar-border) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-theme-skin-active="true"] .thread-header,
+html[data-theme-skin-active="true"] .settings-page-top-cap,
+html[data-theme-skin-active="true"] .page-header {
+  background: rgb(var(--skin-background-rgb) / var(--skin-header-opacity));
+  background: color-mix(
+    in srgb,
+    var(--background) calc(var(--skin-header-opacity) * 100%),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(112%);
+  backdrop-filter: blur(var(--skin-blur)) saturate(112%);
+}
+html[data-theme-skin-active="true"] .thread-pane {
+  position: relative;
+  isolation: isolate;
+}
+html[data-theme-skin-active="true"] .thread-pane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Left-safe themes: denser scrim on the reading side, softer on the subject side. */
+  background: linear-gradient(
+    102deg,
+    rgb(var(--skin-background-rgb) / var(--skin-task-intensity)) 0%,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.86)) 52%,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.42)) 100%
+  );
+}
+html[data-theme-skin-active="true"][data-theme-skin-safe-area="right"] .thread-pane::before {
+  background: linear-gradient(
+    258deg,
+    rgb(var(--skin-background-rgb) / var(--skin-task-intensity)) 0%,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.86)) 52%,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.42)) 100%
+  );
+}
+html[data-theme-skin-active="true"][data-theme-skin-safe-area="center"] .thread-pane::before {
+  background: linear-gradient(
+    180deg,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.94)) 0%,
+    rgb(var(--skin-background-rgb) / calc(var(--skin-task-intensity) * 0.78)) 100%
+  );
+}
+html[data-theme-skin-active="true"] .composer-dock {
+  background: transparent !important;
+  background-image: none !important;
+}
+html[data-theme-skin-active="true"] .composer-card,
+html[data-theme-skin-active="true"] .composer-queue-card,
+html[data-theme-skin-active="true"] .surface-panel {
+  border-color: var(--skin-material-border) !important;
+  background: rgb(var(--skin-panel-rgb) / var(--skin-panel-opacity)) !important;
+  background: color-mix(
+    in srgb,
+    var(--surface-panel) calc(var(--skin-panel-opacity) * 100%),
+    transparent
+  ) !important;
+  box-shadow: var(--skin-shadow) !important;
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(116%);
+  backdrop-filter: blur(var(--skin-blur)) saturate(116%);
+}
+html[data-theme-skin-active="true"] .composer-card {
+  border-color: var(--skin-composer-border) !important;
+  border-radius: var(--skin-radius) !important;
+}
+/*
+ * Project protrusion above the input: keep pre-skin geometry.
+ * Top-only radius, distinct muted fill (--composer-protrusion), no panel chrome.
+ * (Earlier skin rules rounded all corners + reused panel fill/shadow, which broke every theme.)
+ */
+html[data-theme-skin-active="true"] .composer-protrusion {
+  border: none !important;
+  border-radius: var(--skin-radius) var(--skin-radius) 0 0 !important;
+  background: var(--composer-protrusion, var(--hover-fill)) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Pre-skin: card top corners use field radius (panel 12 → field 10). */
+html[data-theme-skin-active="true"] .composer-card-with-protrusion {
+  border-top-left-radius: max(0px, calc(var(--skin-radius) - 2px)) !important;
+  border-top-right-radius: max(0px, calc(var(--skin-radius) - 2px)) !important;
+}
+html[data-theme-skin-active="true"] [data-kind="user"] [data-slot="bubble-content"] {
+  border-color: var(--skin-material-border);
+  background: rgb(var(--skin-panel-rgb) / var(--skin-panel-opacity));
+  background: color-mix(
+    in srgb,
+    var(--user-bubble) calc(var(--skin-panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow: 0 7px 22px rgb(var(--skin-background-rgb) / 0.18);
+  -webkit-backdrop-filter: blur(var(--skin-blur));
+  backdrop-filter: blur(var(--skin-blur));
+}
+html[data-theme-skin-active="true"] .settings-page,
+html[data-theme-skin-active="true"] .settings-page-top-cap,
+html[data-theme-skin-active="true"] .page {
+  background: transparent !important;
+  background-image: none !important;
+}
+html[data-theme-skin-active="true"] .settings-page-shell {
+  margin-top: 1.25rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--skin-material-border);
+  border-radius: calc(var(--skin-radius) + 2px);
+  background: rgb(var(--skin-panel-rgb) / var(--skin-panel-opacity));
+  background: color-mix(
+    in srgb,
+    var(--surface-panel) calc(var(--skin-panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow: var(--skin-shadow);
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(116%);
+  backdrop-filter: blur(var(--skin-blur)) saturate(116%);
+}
+html[data-theme-skin-active="true"] [data-slot="dialog-content"],
+html[data-theme-skin-active="true"] [data-slot="select-content"],
+html[data-theme-skin-active="true"] [data-slot="popover-content"] {
+  border-color: var(--skin-material-border) !important;
+  background: rgb(var(--skin-panel-rgb) / var(--skin-popover-opacity)) !important;
+  background: color-mix(
+    in srgb,
+    var(--surface-panel) calc(var(--skin-popover-opacity) * 100%),
+    transparent
+  ) !important;
+  box-shadow: var(--skin-shadow) !important;
+  -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(118%);
+  backdrop-filter: blur(var(--skin-blur)) saturate(118%);
+}
+html[data-theme-skin-active="true"][data-theme-skin-density="compact"] .timeline,
+html[data-theme-skin-active="true"][data-theme-skin-density="compact"] .settings-page-shell {
+  font-size: calc(var(--ui-font-size, 14px) - 1px);
+}
+html[data-theme-skin-active="true"][data-theme-skin-density="comfortable"] .timeline,
+html[data-theme-skin-active="true"][data-theme-skin-density="comfortable"] .settings-page-shell {
+  font-size: calc(var(--ui-font-size, 14px) + 1px);
+}
+
+@media (max-width: 800px) {
+  html[data-theme-skin-active="true"] .shell-content,
+  html[data-theme-skin-active="true"][data-theme-skin-sidebar-translucent="false"][data-theme-skin-sidebar-glass="true"]
+    [data-testid="sidebar"],
+  html[data-theme-skin-active="true"] .composer-card {
+    -webkit-backdrop-filter: blur(var(--skin-blur)) saturate(108%);
+    backdrop-filter: blur(var(--skin-blur)) saturate(108%);
+  }
+}
+
+/* Titlebar drag regions. macOS reserves a traffic-light gutter in JS;
+   Windows/Linux use a small leading pad so the collapse control sits near the left edge.
+   All platforms use a hidden system title strip + in-app 46px drag row. */
+.sidebar-traffic-row,
+.drag-region {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.sidebar-traffic-row button,
+.drag-region button {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/*
+ * Windows titleBarOverlay (Window Controls Overlay): keep interactive chrome clear of
+ * native min/max/close. When env vars are absent (mac/linux), padding falls back to 1rem.
+ * freeWidth = env(titlebar-area-width); controlsWidth ≈ 100vw - x - freeWidth.
+ * Includes .page-header so packages/resources toolbar actions are not under caption buttons.
+ */
+.thread-header,
+.settings-page-top-cap,
+.page-header {
+  padding-inline-end: max(
+    1rem,
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 0.5rem)
+  );
+}
+
+/* Linux self-drawn caption cluster (see WindowCaptionButtons). */
+html[data-custom-window-controls="true"] .thread-header,
+html[data-custom-window-controls="true"] .settings-page-top-cap,
+html[data-custom-window-controls="true"] .page-header {
+  padding-inline-end: 138px;
+}
+
+/* Linux self-drawn caption buttons (fixed, top-right). */
+.window-caption-buttons {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 2147483001;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  padding-right: 8px;
+  padding-left: 4px;
+  pointer-events: auto;
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+}
+.window-caption-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0;
+}
+.window-caption-btn:hover {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground, var(--foreground));
+}
+.window-caption-btn-close:hover {
+  background: #e81123;
+  color: #ffffff;
+}
+
+/* Collapsed-rail expand control — portaled to body; must stay above shell + no-drag. */
+.sidebar-expand-btn {
+  position: fixed;
+  z-index: 2147483000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  color: var(--muted-foreground);
+  pointer-events: auto;
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.sidebar-expand-btn:hover {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+/*
+ * Base rail chrome (overridden by theme-skin rules when a skin is active).
+ * Modes: native translucent | material glass | solid.
+ */
+.pix-sidebar-translucent {
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--sidebar-border) 22%, transparent) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 8%, transparent),
+    1px 0 0 color-mix(in srgb, #000 12%, transparent);
+}
+[data-theme="light"] .pix-sidebar-translucent {
+  border-color: color-mix(in srgb, var(--sidebar-border) 24%, transparent) !important;
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 52%, transparent),
+    1px 0 0 color-mix(in srgb, #000 4%, transparent);
+}
+.pix-sidebar-glass,
+.pix-sidebar-solid {
+  border-color: var(--sidebar-border);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.pix-sidebar-solid {
+  background: var(--sidebar) !important;
+  box-shadow: none;
+}
+.pix-sidebar-glass {
+  /* Fallback before skin CSS variables apply; live skins paint via html[data-theme-skin-*]. */
+  background: var(--sidebar) !important;
+  box-shadow: none;
+}
+
+.sidebar {
+  @apply flex h-full min-w-0 flex-col border-r;
+  /* default overridden by pix-sidebar-* */
+  border-color: var(--sidebar-border);
+}
+
+.sidebar-chrome {
+  @apply flex h-full min-h-0 flex-col gap-1 p-2.5;
+}
+
+.brand-row {
+  @apply mb-1 flex h-9 items-center justify-between px-1;
+}
+
+.brand {
+  @apply m-0 text-[13px] font-semibold tracking-tight;
+}
+
+.brand-actions {
+  @apply flex items-center gap-0.5;
+}
+
+.sidebar-nav {
+  @apply mb-2 flex flex-col gap-0.5;
+}
+
+.nav-item {
+  @apply flex h-8 w-full items-center gap-2.5 px-2.5 text-left font-normal;
+  border-radius: var(--radius-control);
+  color: var(--sidebar-foreground);
+  font-size: var(--ui-font-size, 14px);
+}
+
+.nav-item:hover {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.nav-item[data-active="true"] {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+/* Unified rail list row — compact h-8, same fill for hover + active selection. */
+.sidebar-list-row {
+  @apply relative flex h-8 w-full min-w-0 items-center px-2.5 font-normal transition-colors;
+  border-radius: var(--radius-control);
+  color: var(--sidebar-foreground);
+  font-size: var(--ui-font-size, 14px);
+}
+
+.sidebar-list-row:hover,
+.sidebar-list-row[data-active="true"] {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.sidebar-section-head {
+  /* relative: section action buttons pin to the same right edge as list RowActions */
+  @apply relative flex h-8 w-full min-w-0 items-center gap-1 px-2.5 transition-colors;
+  border-radius: var(--radius-control);
+}
+
+.sidebar-section-head:hover {
+  background: var(--hover-fill);
+}
+
+.sidebar-section-label {
+  display: flex;
+  height: 2rem;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  padding: 0 0.625rem;
+  /* type from .group-label */
+}
+
+/* 项目 / 对话 section toggles — same type as group labels (not ad-hoc 13px). */
+.sidebar-section-toggle {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  /* Reserve trailing space so the title never sits under absolute actions
+   * (up to 3 × h-7 buttons + gaps — matches 项目/对话 action strips). */
+  padding-right: 5.75rem;
+}
+
+/*
+ * Section action strip — same anchor as list RowActions (`right-1` + vertical center)
+ * so 项目 / 对话 / list-mode buttons share one right edge.
+ */
+.sidebar-section-actions {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.125rem;
+  transform: translateY(-50%);
+}
+
+/*
+ * Expand/collapse chevron:
+ * - collapsed section → always visible (so users see they can expand)
+ * - expanded section → hover/focus only (same as section action buttons)
+ */
+.sidebar-section-chevron {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.sidebar-section-head[data-expanded="false"] .sidebar-section-chevron,
+.sidebar-section-head:hover .sidebar-section-chevron,
+.sidebar-section-head:focus-within .sidebar-section-chevron {
+  opacity: 0.7;
+  pointer-events: auto;
+}
+
+.nav-item-primary {
+  @apply font-normal;
+  color: var(--sidebar-foreground);
+}
+
+.nav-badge {
+  @apply ml-auto text-[11px];
+  color: var(--text-subtle);
+}
+
+/* Sidebar titles: fade at the container edge (no ellipsis).
+   Container width shrinks on row hover (pr-14) so fade stops before action icons. */
+.sidebar-title-fade {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0%,
+    #000 calc(100% - 1.25rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 1.25rem), transparent 100%);
+}
+
+.btn-icon {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded-lg;
+  color: var(--muted-foreground);
+}
+
+.btn-icon:hover {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.btn-quiet {
+  @apply inline-flex h-6 items-center rounded-md px-2 text-[11px];
+  color: var(--text-subtle);
+}
+
+.btn-quiet:hover:not(:disabled) {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.btn-quiet.danger:hover:not(:disabled) {
+  @apply bg-red-500/10 text-red-400;
+}
+
+.sidebar-block {
+  @apply mb-2 flex min-h-0 flex-col gap-0.5;
+}
+
+.sidebar-block-grow {
+  @apply min-h-0 flex-1;
+}
+
+.sidebar-block-head {
+  @apply flex items-center justify-between px-2 pt-2 pb-1;
+  /* type from .group-label — no uppercase / 11px special case */
+}
+
+.project-row {
+  @apply grid w-full grid-cols-[18px_minmax(0,1fr)] items-center gap-2 rounded-md px-2 py-1.5 text-left;
+  color: var(--muted-foreground);
+}
+
+.project-row:hover {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.project-row[data-active="true"] {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+.project-meta {
+  @apply flex min-w-0 flex-col;
+}
+
+.project-meta .title {
+  @apply truncate text-[13px] font-normal;
+}
+
+.project-meta .meta {
+  @apply truncate text-[11px];
+  color: var(--text-subtle);
+}
+
+.workspace-actions {
+  @apply flex flex-wrap gap-1 px-1 pb-1;
+}
+
+.thread-list {
+  @apply flex min-h-0 flex-1 flex-col gap-px overflow-auto px-0.5;
+}
+
+.sidebar-footer {
+  @apply mt-auto flex flex-col gap-1.5 border-t pt-2;
+  border-color: var(--sidebar-border);
+}
+
+.host-pill {
+  @apply max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium;
+  background: color-mix(in srgb, var(--sidebar-accent) 80%, transparent);
+  color: var(--text-subtle);
+}
+
+.host-pill[data-state="ready"],
+.host-pill[data-state="settled"] {
+  @apply bg-emerald-500/10 text-emerald-400;
+}
+
+.host-pill[data-state="running"] {
+  @apply bg-blue-500/10 text-blue-400;
+}
+
+.host-pill[data-state="error"],
+.host-pill[data-state="crashed"] {
+  @apply bg-red-500/10 text-red-400;
+}
+
+/* Content column must fill shell-main; pages without flex-1 only sized to content
+   and left a huge empty strip on the right. */
+.main-column {
+  @apply relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col;
+  /* Transparent: solid fill comes from .shell-content content-box only. */
+  background: transparent;
+}
+
+.thread-header {
+  /* padding-inline-end: Windows titleBarOverlay — see rule above with .settings-page-top-cap */
+  @apply flex h-[46px] shrink-0 items-center gap-1.5 pl-4;
+}
+
+/* Collapsed rail: titlebar row shares the window edge with traffic lights + expand btn.
+   Left inset comes from a no-drag spacer in ThreadHeader (not padding — padding stays drag).
+   Keep right WCO/caption padding from .thread-header — do not reset padding-right. */
+.thread-header-collapsed {
+  @apply pl-0;
+}
+
+.thread-header h2 {
+  color: var(--foreground);
+}
+
+/* Interactive / non-drag children inside a drag region (Electron -webkit-app-region). */
+.no-drag {
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+}
+
+.env-action-btn {
+  @apply inline-flex h-7 shrink-0 items-center justify-center rounded-md border border-[var(--border)] px-2 text-[11px] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--hover-fill)] disabled:opacity-40;
+}
+
+/*
+ * Floating overlay scrollbars (all main surfaces + / @ menus):
+ * - Native bar fully suppressed → never reserves layout width
+ * - Floating .pix-scroll-thumb (no border) auto-hides; hover + drag supported
+ */
+.pix-scroll,
+.timeline-scroll,
+.page-body,
+.settings-page-body,
+.composer-suggest-scroll,
+.command-palette-scroll {
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+/* Composer prompt only shares scrollbar chrome (not min-height:0 — needs a 2-line floor). */
+.composer-prompt-scroll {
+  min-width: 0;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  font-size: var(--ui-font-size, 14px);
+}
+.pix-scroll::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar,
+.page-body::-webkit-scrollbar,
+.settings-page-body::-webkit-scrollbar,
+.composer-suggest-scroll::-webkit-scrollbar,
+.composer-prompt-scroll::-webkit-scrollbar,
+.command-palette-scroll::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent;
+  display: none;
+}
+
+/* Floating thumb on document.body — zero layout cost, no border. */
+.pix-scroll-thumb {
+  position: fixed;
+  z-index: 10050; /* above FloatingMenu (10000) */
+  width: 12px;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: transparent;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  will-change: top, opacity;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.pix-scroll-thumb::before {
+  content: "";
+  position: absolute;
+  inset-block: 2px;
+  right: 2px;
+  width: 6px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 48%, transparent);
+  transition:
+    width 0.12s ease,
+    background-color 0.12s ease;
+}
+.pix-scroll-thumb[data-visible="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pix-scroll-thumb[data-hovered="true"]::before,
+.pix-scroll-thumb[data-dragging="true"]::before {
+  width: 8px;
+  background: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
+}
+.pix-scroll-thumb[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+/*
+ * Thread pane fills the app main column (right of project rail, under title).
+ * Scrollport is the *whole* pane — floating scrollbar track runs full height
+ * of the main column (not only the message stack above the input).
+ */
+.thread-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+/* pi TUI lives under ThreadHeader only — never covers the title / mode toggle row. */
+.thread-pane-terminal {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.thread-pane-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/*
+ * Shared content column (messages + composer).
+ * Same max-width + padding so message edges and input card edges coincide.
+ */
+.thread-content-column {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--thread-max, 760px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem; /* px-6 */
+  padding-right: 1.5rem;
+}
+/* Stack messages + sticky composer; min-height fills the full scroll viewport. */
+.thread-content-column-stack {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+/*
+ * Message list must NEVER flex-shrink below content height.
+ * `min-height: 0` + `flex-shrink: 1` was collapsing the list to the viewport
+ * while the AI reply grew — getBoundingClientRect then under-reported height,
+ * MessageScroller scroll range shrank, and earlier messages looked “eaten”.
+ */
+.thread-messages {
+  flex: 1 0 auto;
+  min-height: min-content;
+  width: 100%;
+}
+.thread-messages.empty {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* Direct MessageScroller items (no wrapping list) share the same non-shrink rule. */
+[data-slot="message-scroller-content"] > [data-slot="message-scroller-item"] {
+  flex: 0 0 auto;
+  min-height: min-content;
+}
+/*
+ * Composer sits after messages. `mt-auto` consumes free space in the min-h-full
+ * column so the dock stays at the visual bottom when the thread is short.
+ * `position: sticky; bottom: 0` keeps it fixed to the scrollport while scrolling.
+ */
+[data-slot="message-scroller-content"] > .composer-dock {
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+}
+
+/*
+ * Fade just above the sticky composer — only when NOT pinned to the bottom.
+ * MessageScroller sets data-scrollable~="end" when more content exists below
+ * (user scrolled up). At the bottom there must be no gradient over the latest reply.
+ */
+.composer-dock-fade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--canvas, var(--background)) 0%, transparent) 0%,
+    color-mix(in srgb, var(--canvas, var(--background)) 70%, transparent) 50%,
+    var(--canvas, var(--background)) 100%
+  );
+}
+[data-slot="message-scroller-viewport"][data-scrollable~="end"] .composer-dock-fade,
+[data-slot="message-scroller"][data-scrollable~="end"] .composer-dock-fade {
+  opacity: 1;
+}
+/* Never fade over an in-place user-message editor (textarea + actions). */
+[data-slot="message-scroller-viewport"]:has([data-editing="true"]) .composer-dock-fade,
+[data-slot="message-scroller"]:has([data-editing="true"]) .composer-dock-fade {
+  opacity: 0 !important;
+}
+.composer-dock {
+  /* Positioning context for jump-to-bottom (absolute, bottom: calc(100% + gap)). */
+  position: sticky;
+  /* Keep solid canvas under the sticky input so scrolling messages don't show through. */
+  background: var(--theme-background, var(--canvas, var(--background)));
+  background-attachment: fixed;
+  background-size: cover;
+  /* Sit closer to the window bottom (was pb-6 via utility on the dock). */
+  padding-bottom: 0.5rem; /* 8px */
+}
+/* Scroll-to-bottom: always just above the composer card, never over the textarea. */
+.composer-dock [data-slot="message-scroller-button"][data-direction="end"] {
+  bottom: calc(100% + 12px);
+}
+
+/* Prompt textarea: min 2 lines (just enough), grow to 12, then unified overlay scroll. */
+.composer-prompt-scroll {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  /*
+   * Default = two text rows + vertical padding (pt-3 + pb-1).
+   * calc so empty state already fits 2 lines; first wrap should not jump height.
+   */
+  min-height: calc(1.5em * 2 + 0.75rem + 0.25rem + 2px);
+  max-height: calc(1.5em * 12 + 0.75rem + 0.25rem + 2px);
+  field-sizing: fixed;
+  line-height: 1.5;
+  overflow-y: hidden; /* JS toggles to auto at max height */
+}
+
+/* Project protrusion above the input card — slightly taller bar, theme fills. */
+.composer-protrusion {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 2rem; /* a bit taller than the previous 0.375rem padding-only bar */
+  align-items: center;
+  gap: 1.25rem;
+  border: none;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--composer-protrusion, var(--hover-fill));
+  padding: 0.375rem 0.65rem;
+  font-size: 13px; /* same as body / group labels */
+  font-weight: 400;
+  color: var(--foreground);
+  box-sizing: border-box;
+}
+/* Project / local / branch chips — hover works on both light & dark protrusion fills
+ * (surface-muted ≈ protrusion in light, so --hover-fill alone is nearly invisible). */
+.composer-protrusion-chip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--radius-control);
+  padding: 0.25rem 0.45rem;
+  color: var(--foreground);
+  transition: background 0.12s ease;
+}
+.composer-protrusion-chip:hover,
+.composer-protrusion-chip:focus-visible,
+.composer-protrusion-chip[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  outline: none;
+}
+.composer-protrusion-chip:focus-visible {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+/* Input card: very light hairline. */
+.composer-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--composer-border);
+  border-radius: var(--radius-panel);
+  background: var(--bg-composer);
+  box-shadow: none;
+  box-sizing: border-box;
+}
+.composer-card-with-protrusion {
+  border-top-left-radius: var(--radius-field);
+  border-top-right-radius: var(--radius-field);
+}
+
+/*
+ * Attachment strip: horizontal scroll when chips overflow (shadcn AttachmentGroup).
+ * Override default scrollbar-none so users can actually scroll the row.
+ */
+.composer-attachments {
+  min-width: 0;
+  max-width: 100%;
+}
+.composer-attachment-group {
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 35%, transparent) transparent;
+}
+.composer-attachment-group::-webkit-scrollbar {
+  height: 6px;
+}
+.composer-attachment-group::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+}
+/* Image media fill the tile (AttachmentMedia variant="image"). */
+[data-slot="attachment-media"][data-variant="image"] img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Queue strip: Cursor/Codex-style per-row list (all items, kind + remove + more). */
+.composer-queue-card {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-panel) 94%, #000 6%);
+  box-shadow: var(--shadow-soft);
+  color: var(--foreground);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+}
+
+.composer-queue-banner {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px 2px;
+}
+
+.composer-queue-banner-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.composer-queue-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 2px;
+}
+
+.composer-queue-toolbar-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+/* 继续 / 清空 — pin to the right edge of the toolbar */
+.composer-queue-toolbar-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.composer-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0 4px;
+}
+
+.composer-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
+.composer-queue-row + .composer-queue-row {
+  /* Soft separation without hard rules (matches reference screenshots). */
+  box-shadow: none;
+}
+
+.composer-queue-item-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.composer-queue-action {
+  margin: 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.composer-queue-action:hover {
+  color: var(--foreground);
+  background: var(--hover-fill);
+}
+
+/* / and @ suggestion panels: flat card, NO outer shadow; only inner bottom fade.
+   Position is pure `position: fixed` (FloatingMenu portal) — never animate transform. */
+.composer-suggest-menu,
+[data-testid="composer-slash-menu"],
+[data-testid="composer-attach-menu"],
+[data-floating-menu][data-elevated="false"] {
+  overflow: hidden !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* Composer prompt: strip shadcn Textarea chrome so it is not a box-inside-box. */
+.composer-card [data-slot="textarea"],
+.composer-card textarea[data-testid="prompt-input"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+/* When past 12 lines, keep max height and enable the unified overlay scroll host. */
+.composer-card textarea.composer-prompt-scroll[data-overflow="true"] {
+  overflow-y: auto !important;
+}
+.composer-card [data-slot="textarea"]:focus,
+.composer-card [data-slot="textarea"]:focus-visible,
+.composer-card textarea[data-testid="prompt-input"]:focus,
+.composer-card textarea[data-testid="prompt-input"]:focus-visible {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+/*
+ * Highlighted composer prompt: transparent caret-bearing textarea over a
+ * mirror layer that paints skills / links / @paths / slash / shell tokens.
+ */
+.composer-prompt-field {
+  position: relative;
+  min-width: 0;
+}
+.composer-prompt-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  padding: 0.75rem 0.875rem 0.25rem;
+  font-size: var(--ui-font-size, 14px);
+  line-height: 1.5;
+  color: var(--foreground);
+  tab-size: 4;
+}
+.composer-card textarea.composer-prompt-input {
+  position: relative;
+  z-index: 1;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--foreground);
+  /* Keep placeholder readable while typed text is transparent. */
+  &::placeholder {
+    color: var(--muted-foreground);
+    -webkit-text-fill-color: var(--muted-foreground);
+    opacity: 1;
+  }
+  &::selection {
+    color: var(--foreground);
+    -webkit-text-fill-color: var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  }
+}
+.composer-hl-text {
+  color: var(--foreground);
+}
+.composer-hl-url {
+  color: var(--link, #379cfc);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--link, #379cfc) 45%, transparent);
+  text-underline-offset: 2px;
+}
+.composer-hl-mention {
+  color: #34c759;
+  font-weight: 500;
+}
+.composer-hl-slash {
+  color: #bf5af2;
+  font-weight: 500;
+}
+.composer-hl-skill {
+  color: #ff9f0a;
+  font-weight: 600;
+}
+.composer-hl-shell {
+  color: #ff453a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.95em;
+}
+[data-theme="dark"] .composer-hl-mention {
+  color: #30d158;
+}
+[data-theme="dark"] .composer-hl-slash {
+  color: #da8fff;
+}
+[data-theme="dark"] .composer-hl-skill {
+  color: #ffd60a;
+}
+[data-theme="dark"] .composer-hl-shell {
+  color: #ff6961;
+}
+
+/* Scroll body + bottom fade (fade only when the list actually overflows). */
+.composer-suggest-body {
+  position: relative;
+  display: flex;
+  max-height: 360px;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.composer-suggest-scroll {
+  flex: 1 1 auto;
+  /* Tight bottom when content is short — no empty gap for a useless fade. */
+  padding-bottom: 0.25rem;
+  /* Overlay thumb paints on body; keep a little inner clearance for the hitbox. */
+  padding-right: 2px;
+}
+.composer-suggest-body[data-overflow="true"] .composer-suggest-scroll {
+  /* Room under last row so content can fade instead of hard-clipping. */
+  padding-bottom: 1.5rem;
+}
+.composer-suggest-fade {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 2.5rem;
+  background: linear-gradient(
+    to top,
+    var(--surface-panel) 0%,
+    color-mix(in srgb, var(--surface-panel) 88%, transparent) 38%,
+    color-mix(in srgb, var(--surface-panel) 35%, transparent) 72%,
+    transparent 100%
+  );
+}
+.composer-suggest-body[data-overflow="true"] .composer-suggest-fade {
+  display: block;
+}
+.composer-suggest-group {
+  /* Sticky labels stick within the scrollport, not the page. */
+  position: relative;
+}
+.composer-suggest-group-label {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0;
+  /* Match option row horizontal inset so titles and items share one left edge. */
+  padding: 0.4rem 0.625rem 0.25rem;
+  /* type from .group-label */
+  background: var(--surface-panel);
+  text-align: left;
+}
+.composer-suggest-group-empty {
+  padding: 0.35rem 0.625rem 0.65rem;
+  font-size: 13px;
+  color: var(--text-subtle);
+  text-align: left;
+}
+.composer-suggest-item {
+  display: flex;
+  width: 100%;
+  height: 2rem; /* h-8 */
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: var(--radius-control);
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--foreground);
+  transition: background 0.1s ease;
+}
+.composer-suggest-item:hover,
+.composer-suggest-item[data-active="true"] {
+  background: var(--hover-fill);
+}
+.composer-suggest-item-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-weight: 500;
+}
+.composer-suggest-item-desc {
+  min-width: 0;
+  max-width: 46%;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-subtle);
+}
+
+/* Composer model picker — same group labels as Settings → Models. */
+.composer-model-group {
+  padding-bottom: 0.15rem;
+}
+.composer-model-group-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.4rem 0.625rem 0.2rem;
+  /* type from .group-label */
+  background: var(--surface-panel);
+  text-align: left;
+}
+
+/* Shared panel surface (env panel, dialogs, menus). */
+.surface-panel {
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: var(--radius-panel);
+  background: var(--surface-panel);
+  color: var(--foreground);
+  box-sizing: border-box;
+}
+
+.timeline {
+  @apply pt-6 pb-40;
+}
+
+.timeline.empty {
+  @apply flex min-h-full flex-col p-0;
+}
+
+/* Assistant Markdown (react-markdown + remark-gfm) */
+.pix-md {
+  @apply min-w-0;
+  font-size: var(--ui-font-size, 14px);
+  font-weight: var(--font-weight-regular, 400);
+}
+.pix-md > :first-child {
+  @apply mt-0;
+}
+.pix-md > :last-child {
+  @apply mb-0;
+}
+.pix-md p {
+  @apply my-2 leading-relaxed wrap-break-word font-normal;
+}
+.pix-md h1,
+.pix-md h2,
+.pix-md h3,
+.pix-md h4 {
+  @apply mt-3 mb-1.5 font-semibold tracking-tight text-[var(--foreground)];
+}
+.pix-md h1 {
+  @apply text-[1.25em];
+}
+.pix-md h2 {
+  @apply text-[1.125em];
+}
+.pix-md h3 {
+  @apply text-[1.05em];
+}
+.pix-md ul,
+.pix-md ol {
+  @apply my-2 pl-5;
+}
+.pix-md ul {
+  @apply list-disc;
+}
+.pix-md ol {
+  @apply list-decimal;
+}
+.pix-md li {
+  @apply my-0.5;
+}
+.pix-md li > p {
+  @apply my-0.5;
+}
+.pix-md a {
+  color: var(--link, #379cfc);
+  @apply underline-offset-2 hover:underline;
+}
+/* File source chips use their own chrome — don't paint as plain blue underlined links. */
+.pix-md a.content-file-link,
+.pix-md a.content-source-cite {
+  color: var(--foreground);
+  text-decoration: none;
+}
+.pix-md a.content-file-link:hover,
+.pix-md a.content-source-cite:hover {
+  color: var(--foreground);
+  text-decoration: none;
+}
+.pix-md code {
+  @apply rounded bg-[var(--muted)] px-1 py-0.5 font-mono text-[0.9em];
+}
+.pix-md pre {
+  @apply my-2 overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--muted)] p-3;
+}
+.pix-md pre code {
+  @apply bg-transparent p-0 leading-relaxed;
+  font-size: var(--code-font-size, 12px);
+}
+.pix-md blockquote {
+  @apply my-2 border-l-2 border-[var(--border)] pl-3 text-[var(--muted-foreground)];
+}
+.pix-md table {
+  @apply my-2 w-full border-collapse text-[13px];
+}
+.pix-md th,
+.pix-md td {
+  @apply border border-[var(--border)] px-2 py-1.5 text-left align-top;
+}
+.pix-md th {
+  @apply bg-[var(--muted)] font-medium;
+}
+.pix-md hr {
+  @apply my-3 border-0 border-t border-[var(--border)];
+}
+.pix-md strong {
+  @apply font-semibold;
+}
+
+/* User bubbles + edit field follow Appearance → UI font size. */
+[data-slot="bubble-content"] {
+  font-size: var(--ui-font-size, 14px);
+}
+
+.timeline-user-edit-input {
+  display: block;
+  width: 100%;
+  min-height: 5.5rem;
+  max-height: min(50vh, 22rem);
+  resize: vertical;
+  border: none;
+  /* Match composer input card radius */
+  border-radius: var(--radius-panel);
+  background: var(--user-bubble);
+  color: var(--user-bubble-fg);
+  padding: 14px 18px;
+  font-size: var(--ui-font-size, 14px);
+  line-height: 1.45;
+  outline: none;
+  box-sizing: border-box;
+  /* No mask / fade on the editor itself */
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.timeline-user-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 2px 0 4px;
+}
+.timeline-user-edit-cancel,
+.timeline-user-edit-send {
+  height: 30px;
+  border-radius: var(--radius-panel);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+.timeline-user-edit-cancel {
+  background: color-mix(in srgb, var(--muted-foreground) 16%, transparent);
+  color: var(--foreground);
+}
+.timeline-user-edit-send {
+  background: #f5f5f5;
+  color: #111;
+}
+[data-theme="light"] .timeline-user-edit-send {
+  background: #171717;
+  color: #fafafa;
+}
+.timeline-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  pointer-events: none;
+}
+.group\/message:hover .timeline-meta-actions,
+.group\/message:focus-within .timeline-meta-actions,
+.group\/msg:hover .timeline-meta-actions,
+.group\/msg:focus-within .timeline-meta-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.timeline-meta-actions-assistant {
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+.timeline-meta-time {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+/* Icon actions: no chrome by default; hover = soft fill + composer radius */
+.timeline-meta-btn {
+  display: inline-flex;
+  height: 28px;
+  width: 28px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-panel);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.timeline-meta-btn:hover {
+  background: var(--hover-fill);
+  color: var(--foreground);
+}
+.timeline-meta-btn:active {
+  transform: scale(0.96);
+}
+.timeline-meta-btn-done {
+  color: #22c55e;
+}
+.timeline-meta-btn-done:hover {
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #16a34a;
+}
+.timeline-process {
+  margin: 2px 0 14px;
+}
+.timeline-process-details {
+  border: none;
+}
+/* Process header: summary only resets native details chrome; line comes from Marker variant=border. */
+.timeline-process-summary {
+  display: block;
+  width: 100%;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+}
+.timeline-process-summary::-webkit-details-marker {
+  display: none;
+}
+.timeline-process-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Collapsed → right; open → down */
+.timeline-process-chevron {
+  transition: transform 0.16s ease;
+}
+.timeline-process-details[open] .timeline-process-chevron,
+.timeline-process-details[data-state="open"] .timeline-process-chevron {
+  transform: rotate(90deg);
+}
+/* Space below the Marker border rule (variant already supplies pb-2 above the line). */
+.timeline-process-body {
+  margin-top: 0.5rem; /* mt-2 — same scale as Marker border pb-2 */
+  padding-top: 0;
+  border-top: none; /* no second custom rule; line is only Marker variant=border */
+}
+/* Compaction system rows — Marker separator (shadcn chat pattern). */
+.timeline-compaction-marker {
+  margin: 10px 0 14px;
+  color: var(--text-subtle);
+}
+.timeline-compaction-marker[data-tone="error"] {
+  color: var(--destructive);
+}
+/*
+ * Codex-style process steps.
+ * Shared left edge: narrative text and tool icons start at the same x
+ * (no extra horizontal padding on rows that shifts icons past the prose).
+ */
+.process-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 0 4px;
+  margin: 0;
+}
+/* Narrative / thinking text inside “已处理” — always readable (not the quiet tool-row gray). */
+.process-step-thinking {
+  margin: 6px 0 8px;
+  padding: 0;
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.92;
+}
+.process-step-thinking-body {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+.process-step-thinking-body,
+.process-step-thinking-body p,
+.process-step-thinking-body li,
+.process-step-thinking-body code {
+  color: inherit;
+}
+.process-step-thinking-body p {
+  margin: 0.35em 0;
+}
+.process-step-thinking-body > :first-child {
+  margin-top: 0;
+}
+.process-step-thinking-body > :last-child {
+  margin-bottom: 0;
+}
+.process-step-trigger {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+/*
+ * Tool rows: same quiet family as “已处理” header.
+ * Flat log density — no row fill, no command chips; hover only lifts text a notch.
+ */
+.process-step-row {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  border-radius: 4px;
+  padding: 2px 2px 2px 0;
+  gap: 6px;
+  color: var(--text-subtle);
+  font-size: 12.5px;
+  line-height: 1.45;
+  transition: color 0.12s ease;
+}
+.process-step-row:hover,
+.process-step-trigger:hover .process-step-row {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.process-step-row.is-running {
+  color: var(--text-subtle);
+}
+/* Error: verb/suffix use full error red (readable); command/path stay quiet. */
+.process-step-row.is-error {
+  color: var(--text-subtle);
+}
+/* Error: verb/suffix use full error red; skip when shimmer is running. */
+.process-step-row.is-error .process-step-verb:not(.shimmer),
+.process-step-row.is-error .process-step-suffix:not(.shimmer) {
+  color: var(--destructive);
+  font-weight: 500;
+}
+.process-step-row.is-error:hover .process-step-verb:not(.shimmer),
+.process-step-row.is-error:hover .process-step-suffix:not(.shimmer),
+.process-step-trigger:hover .process-step-row.is-error .process-step-verb:not(.shimmer),
+.process-step-trigger:hover .process-step-row.is-error .process-step-suffix:not(.shimmer) {
+  color: color-mix(in srgb, var(--destructive) 88%, var(--foreground));
+}
+.process-step-body,
+.process-step-body-nested {
+  color: var(--muted-foreground);
+}
+.process-step-row-nested {
+  position: relative;
+  padding-left: 0;
+  margin-left: 0;
+}
+.process-step-row-nested .process-step-icon-nested {
+  position: absolute;
+  left: calc(-1 * (0.875rem + 6px));
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+}
+.process-step-icon {
+  display: inline-flex;
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+  color: inherit;
+}
+.process-step-row:hover .process-step-icon,
+.process-step-trigger:hover .process-step-icon {
+  opacity: 0.75;
+}
+.process-step-content {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.process-step-verb {
+  font-weight: 400;
+  flex-shrink: 0;
+}
+/* Shimmer owns color:transparent — don't let inherit re-paint solid text. */
+.process-step-verb:not(.shimmer) {
+  color: inherit;
+}
+/* Mono detail = structure only, never louder than the verb by default. */
+.process-step-detail {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.94em;
+  font-weight: 400;
+  opacity: 0.92;
+  transition: opacity 0.12s ease;
+}
+.process-step-detail:not(.shimmer) {
+  color: inherit;
+}
+.process-step-detail-command,
+.process-step-detail-query,
+.process-step-detail-muted {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-weight: 400;
+}
+.process-step-row:hover .process-step-detail,
+.process-step-trigger:hover .process-step-detail {
+  opacity: 1;
+}
+.process-step-row:hover .process-step-detail:not(.shimmer),
+.process-step-trigger:hover .process-step-detail:not(.shimmer) {
+  color: inherit;
+}
+.process-step-path {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.94em;
+  text-decoration: none;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    text-decoration-color 0.12s ease;
+}
+.process-step-path:not(.shimmer) {
+  color: inherit;
+}
+/* Path: underline only on direct hover — not whole-row blue. */
+/* :not(.shimmer) so running-line sweep is not painted solid on hover. */
+.process-step-row:hover .process-step-path:not(.shimmer),
+.process-step-trigger:hover .process-step-path:not(.shimmer) {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+.process-step-path:hover:not(.shimmer) {
+  color: var(--link, #379cfc);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+.process-step-expand {
+  color: inherit;
+  margin-left: auto;
+  opacity: 0.35;
+}
+.process-step-row:hover .process-step-expand,
+.process-step-trigger:hover .process-step-expand {
+  opacity: 0.55;
+}
+
+/* Expand: bordered command/result panels under the row. */
+.process-step-body {
+  margin: 2px 0 8px 0.35rem;
+  padding: 2px 0 2px calc(0.875rem + 2px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Edit tool: oldText/newText → ContentCodeBlock language=diff */
+.process-step-diff {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden; /* confine scroll to the code block, not the timeline */
+}
+.process-step-diff .content-code-block {
+  margin: 0;
+  max-width: 100%;
+}
+.process-step-body-nested {
+  margin: 2px 0 6px;
+  padding-left: 0;
+}
+.process-step-group {
+  margin: 2px 0 4px;
+}
+.process-step-group-body {
+  margin: 1px 0 4px;
+  padding-left: calc(0.875rem + 6px);
+}
+/* Tool type chip (bash / powershell / …) — only on expandable rows. */
+.process-step-type {
+  flex-shrink: 0;
+  margin-left: 4px;
+  padding: 0 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: 3px;
+  color: var(--text-subtle);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  opacity: 0.7;
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.process-step-row:hover .process-step-type,
+.process-step-trigger:hover .process-step-type,
+.process-step-row.is-open .process-step-type {
+  opacity: 0.9;
+}
+.process-step-panel {
+  position: relative;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--muted, #222) 55%, transparent);
+  overflow: hidden;
+}
+.process-step-panel-input {
+  background: color-mix(in srgb, var(--muted, #222) 35%, transparent);
+}
+.process-step-panel-output {
+  background: color-mix(in srgb, var(--muted, #222) 62%, transparent);
+}
+.process-step-panel-pre {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px 10px;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.process-step-panel-input .process-step-panel-pre {
+  color: var(--text-subtle);
+}
+.process-step-panel-copy {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--background, #191919) 88%, transparent);
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.process-step-panel.is-copyable:hover .process-step-panel-copy,
+.process-step-panel.is-copyable:focus-within .process-step-panel-copy {
+  opacity: 1;
+  pointer-events: auto;
+}
+.process-step-panel-copy:hover {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--border) 100%, transparent);
+}
+/* Legacy bare pre (kept for safety if any caller still uses it). */
+.process-step-pre {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 2px 0 4px;
+}
+.process-step-pre:first-child {
+  color: var(--text-subtle);
+}
+.process-step-pre-follow {
+  margin-top: 2px;
+  color: var(--muted-foreground);
+}
+.process-step-body-nested .process-step-pre {
+  margin-left: 0;
+}
+.timeline-live-status {
+  margin: 2px 0 14px;
+  /* Color/size set on Marker className — keep spacing only here. */
+}
+
+/*
+ * Hide until ready without `visibility:hidden` / `display:none`.
+ * Those can leave ghostty-web's canvas at 0×0 or a stale buffer after a
+ * session hop remount — first open looks fine, switch then paints garbage.
+ * Opacity keeps layout metrics so FitAddon + cell grid stay valid.
+ */
+.pi-tui-terminal[data-surface-ready="false"] .pi-tui-terminal-host {
+  opacity: 0;
+  pointer-events: none;
+}
+.pi-tui-terminal[data-surface-ready="true"] .pi-tui-terminal-host {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * Embedded pi TUI surface (issue #25) — ghostty-web (Ghostty VT / WASM) canvas host.
+ *
+ * Layout model (matches chat overlay scroll):
+ * - Host has equal L/R content padding (set inline from TERMINAL_CONTENT_INSET_PX).
+ * - FitAddon is patched to NOT reserve Ghostty's ~15px gA gutter (that gutter would
+ *   skew one side only). Canvas is cell-grid sized; residual cell width is centered
+ *   with margin:auto so left/right content margins stay equal.
+ * - Ghostty's in-canvas scrollbar is suppressed; `.pi-tui-scroll-thumb` floats on the
+ *   app right edge with zero layout width and never eats content margins.
+ */
+.pi-tui-terminal {
+  position: relative;
+  background: #191919;
+}
+.pi-tui-terminal-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  /* Keep outline off when the IME helper textarea steals focus. */
+  outline: none;
+}
+/*
+ * Exact cell-grid pixel sizes from ghostty-web (do not stretch to 100% —
+ * that breaks mouse hit-testing). margin:auto splits residual width equally
+ * inside the padded content box.
+ */
+.pi-tui-terminal-host canvas {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+/* Floating terminal scrollbar — same chrome as .pix-scroll-thumb, pane-right edge. */
+.pi-tui-scroll-thumb {
+  position: fixed;
+  z-index: 10050;
+  width: 12px;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: transparent;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  will-change: top, opacity;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+}
+.pi-tui-scroll-thumb::before {
+  content: "";
+  position: absolute;
+  inset-block: 2px;
+  right: 2px;
+  width: 6px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground, #a0a0a0) 48%, transparent);
+  transition:
+    width 0.12s ease,
+    background-color 0.12s ease;
+}
+.pi-tui-scroll-thumb[data-visible="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pi-tui-scroll-thumb[data-hovered="true"]::before,
+.pi-tui-scroll-thumb[data-dragging="true"]::before {
+  width: 8px;
+  background: color-mix(in srgb, var(--muted-foreground, #a0a0a0) 78%, transparent);
+}
+.pi-tui-scroll-thumb[data-dragging="true"] {
+  cursor: grabbing;
+}
+.timeline-assistant-row {
+  width: 100%;
+  margin-bottom: 26px;
+}
+.timeline-assistant-body {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0;
+}
+.timeline-assistant-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.timeline-assistant-label > span {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, #168f86 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #168f86 11%, transparent);
+  color: #168f86;
+  font-size: 10px;
+  font-weight: 650;
+}
+.timeline-assistant-label strong {
+  font-weight: 550;
+}
+
+.content-thinking-wrap,
+.content-tool-wrap {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.content-thinking,
+.content-tool-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-panel) 78%, transparent);
+}
+.content-thinking-trigger,
+.content-tool-card-trigger {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  user-select: none;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+.content-thinking-trigger {
+  padding: 8px 10px;
+}
+.content-tool-card-trigger {
+  padding: 8px 10px;
+}
+.content-thinking[data-state="open"] > .content-thinking-trigger,
+.content-tool-card[data-state="open"] > .content-tool-card-trigger {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+.content-details-chevron {
+  transition: transform 0.16s ease;
+}
+.content-thinking-body {
+  max-height: 280px;
+  overflow: auto;
+  padding: 9px 12px 11px;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+
+.content-tool-card > summary {
+  padding: 8px 10px;
+}
+.content-tool-status {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, #239764 40%, transparent);
+  border-radius: 999px;
+  color: #239764;
+}
+.content-tool-wrap[data-status="running"] .content-tool-status {
+  border-color: color-mix(in srgb, #168fc7 38%, transparent);
+  color: #168fc7;
+}
+.content-tool-wrap[data-status="error"] .content-tool-card {
+  border-color: color-mix(in srgb, var(--destructive) 30%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 5%, var(--surface-panel));
+}
+.content-tool-wrap[data-status="error"] .content-tool-status {
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  color: var(--destructive);
+}
+.content-tool-summary {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+.content-tool-state {
+  flex: none;
+  font-size: 10px;
+  opacity: 0.68;
+}
+.content-tool-body {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+.content-tool-section {
+  min-width: 0;
+}
+.content-tool-section-title {
+  margin-bottom: 5px;
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.content-tool-section pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background) 78%, var(--muted));
+  padding: 9px 10px;
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.content-system-card {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-left: 2px solid var(--border);
+  padding: 3px 0 3px 10px;
+  color: var(--muted-foreground);
+}
+.content-system-card.is-error {
+  border-left-color: var(--destructive);
+  border-left-width: 3px;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 8%, transparent);
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px 6px 12px;
+}
+.content-system-card.is-error .content-system-title {
+  color: var(--destructive);
+  font-weight: 600;
+}
+.content-system-card.is-error .content-system-body {
+  color: color-mix(in srgb, var(--destructive) 82%, var(--foreground));
+  opacity: 0.95;
+}
+.content-system-title {
+  margin-bottom: 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: inherit;
+}
+.content-system-body {
+  font-size: 12px;
+  color: inherit;
+}
+
+@media (max-width: 620px) {
+  .timeline-attachment-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .content-tool-state {
+    display: none;
+  }
+}
+
+.content-code-block {
+  --content-code-bg: color-mix(in srgb, var(--background) 84%, #0d1117);
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--content-code-bg);
+}
+.content-code-header {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  padding: 0 7px 0 11px;
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.content-code-language {
+  background: transparent;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+}
+.content-code-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-subtle);
+  text-transform: none;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease;
+}
+.content-code-header button:hover {
+  background: var(--hover-fill);
+  color: var(--foreground);
+}
+/*
+ * Code body: scroll both axes (tool diffs live outside .pix-md too).
+ * Use .content-code-block prefix so these beat .pix-md pre / .pix-md code.
+ */
+.content-code-block .content-code-pre {
+  max-height: 560px;
+  overflow: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 14px;
+  white-space: pre;
+  tab-size: 2;
+}
+.content-code-block .content-code-pre > code {
+  display: block;
+  min-width: max-content;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: #d8dee9;
+  font-size: var(--code-font-size, 12px);
+  line-height: 1.62;
+  tab-size: 2;
+  white-space: inherit;
+}
+/* Diff: vertical padding only; force code ≥ viewport so row tints always full-bleed. */
+.content-code-block .content-code-pre.content-code-diff {
+  padding: 8px 0;
+}
+.content-code-block .content-code-pre.content-code-diff > code {
+  /* Beat generic `min-width: max-content` so short lines still span the pre. */
+  display: inline-block;
+  min-width: 100%;
+  width: max-content;
+  vertical-align: top;
+}
+[data-theme="light"] .content-code-block {
+  --content-code-bg: color-mix(in srgb, var(--surface-panel) 88%, #eef1f5);
+  background: var(--content-code-bg);
+}
+[data-theme="light"] .content-code-block .content-code-pre > code {
+  color: #273142;
+}
+.hljs-comment,
+.hljs-quote {
+  color: #7f8c9d;
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: #ff7b72;
+}
+.hljs-string,
+.hljs-title,
+.hljs-name,
+.hljs-type,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: #a5d6a7;
+}
+.hljs-number,
+.hljs-meta,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-params {
+  color: #79c0ff;
+}
+.hljs-variable,
+.hljs-template-variable,
+.hljs-regexp,
+.hljs-deletion {
+  color: #ffa198;
+}
+[data-theme="light"] .hljs-keyword,
+[data-theme="light"] .hljs-selector-tag,
+[data-theme="light"] .hljs-literal,
+[data-theme="light"] .hljs-section,
+[data-theme="light"] .hljs-link {
+  color: #cf222e;
+}
+[data-theme="light"] .hljs-string,
+[data-theme="light"] .hljs-title,
+[data-theme="light"] .hljs-name,
+[data-theme="light"] .hljs-type,
+[data-theme="light"] .hljs-attribute,
+[data-theme="light"] .hljs-symbol,
+[data-theme="light"] .hljs-bullet,
+[data-theme="light"] .hljs-addition {
+  color: #116329;
+}
+[data-theme="light"] .hljs-number,
+[data-theme="light"] .hljs-meta,
+[data-theme="light"] .hljs-built_in,
+[data-theme="light"] .hljs-builtin-name,
+[data-theme="light"] .hljs-params {
+  color: #0550ae;
+}
+
+/*
+ * Diff rows: each row is 100% of the (min 100% / max-content) code block so
+ * add/remove tints always paint edge-to-edge; sticky gutter keeps file line nos.
+ */
+.content-diff-lines {
+  box-sizing: border-box;
+}
+.content-diff-line {
+  display: flex;
+  align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 1.62em;
+  white-space: pre;
+}
+.content-diff-ln {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 calc(var(--diff-ln-ch, 2) * 1ch + 1.5rem);
+  width: calc(var(--diff-ln-ch, 2) * 1ch + 1.5rem);
+  box-sizing: border-box;
+  padding: 0 0.55rem 0 0.65rem;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Opaque underlay so scrolled text does not show through. */
+  background: var(--content-code-bg);
+}
+.content-diff-line[data-diff="add"] .content-diff-ln {
+  background: color-mix(in srgb, #239764 16%, var(--content-code-bg));
+}
+.content-diff-line[data-diff="remove"] .content-diff-ln {
+  background: color-mix(in srgb, #dc4f55 16%, var(--content-code-bg));
+}
+.content-diff-line[data-diff="hunk"] .content-diff-ln {
+  background: color-mix(in srgb, #168fc7 13%, var(--content-code-bg));
+}
+.content-diff-text {
+  flex: 1 1 auto;
+  min-width: min-content;
+  padding-right: 14px;
+  white-space: pre;
+}
+.content-diff-line[data-diff="add"] {
+  background: color-mix(in srgb, #239764 16%, transparent);
+  color: color-mix(in srgb, #7ee2a8 86%, var(--foreground));
+}
+.content-diff-line[data-diff="remove"] {
+  background: color-mix(in srgb, #dc4f55 16%, transparent);
+  color: color-mix(in srgb, #ff9b9f 86%, var(--foreground));
+}
+.content-diff-line[data-diff="hunk"] {
+  background: color-mix(in srgb, #168fc7 13%, transparent);
+  color: color-mix(in srgb, #78c8eb 82%, var(--foreground));
+}
+[data-theme="light"] .content-diff-line[data-diff="add"] {
+  color: #116329;
+}
+[data-theme="light"] .content-diff-line[data-diff="remove"] {
+  color: #a40e26;
+}
+[data-theme="light"] .content-diff-line[data-diff="hunk"] {
+  color: #0550ae;
+}
+
+.content-mermaid-loading,
+.content-mermaid-error {
+  min-height: 120px;
+  padding: 18px;
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+.content-mermaid-loading {
+  display: grid;
+  place-items: center;
+}
+.content-mermaid-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 0;
+  color: var(--destructive);
+}
+.content-mermaid-diagram {
+  overflow: auto;
+  padding: 16px;
+  text-align: center;
+}
+.content-mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.content-image-button {
+  position: relative;
+  display: block;
+  max-width: min(100%, 680px);
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+  padding: 0;
+  cursor: zoom-in;
+}
+.content-image-button.content-image-loading {
+  min-height: 120px;
+  cursor: default;
+  background: color-mix(in srgb, var(--muted) 80%, var(--border));
+}
+.content-image-button img {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+}
+.content-image-expand {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #111 72%, transparent);
+  color: #fff;
+  opacity: 0;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.14s ease;
+}
+.content-image-button:hover .content-image-expand,
+.content-image-button:focus-visible .content-image-expand {
+  opacity: 1;
+}
+.content-video {
+  display: block;
+  width: min(100%, 680px);
+  max-height: 520px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #050607;
+}
+.content-image-preview-surface {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+}
+.content-image-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 42%);
+}
+
+/*
+ * Compact GFM table: shell + action rail outside the border.
+ * Actions sit to the right of the header (vertical), hover/focus only.
+ */
+.content-table-wrap {
+  display: flex;
+  max-width: 100%;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0.65rem 0;
+}
+.content-table-shell {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-panel, var(--background)) 92%, transparent);
+}
+/* Outside the table chrome, top-aligned with thead — vertical stack. */
+.content-table-aside {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  /* Align with thead vertical center-ish (first header cell padding). */
+  padding-top: 0.35rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.content-table-wrap:hover > .content-table-aside,
+.content-table-wrap:focus-within > .content-table-aside {
+  opacity: 1;
+  pointer-events: auto;
+}
+.content-table-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-subtle);
+}
+.content-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.pix-md .content-table-scroll table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92em;
+}
+.pix-md .content-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--muted) 88%, var(--surface-panel, var(--background)));
+  font-weight: 600;
+}
+.pix-md .content-table-scroll th,
+.pix-md .content-table-scroll td {
+  min-width: 0;
+  border-width: 0 1px 1px 0;
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+  padding: 0.55rem 0.75rem;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.pix-md .content-table-scroll th:last-child,
+.pix-md .content-table-scroll td:last-child {
+  border-right: 0;
+}
+.pix-md .content-table-scroll tr:last-child th,
+.pix-md .content-table-scroll tr:last-child td {
+  border-bottom: 0;
+}
+.pix-md .content-table-scroll tbody tr:hover td {
+  background: color-mix(in srgb, var(--hover-fill, var(--muted)) 55%, transparent);
+}
+.pix-md .content-table-scroll code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.content-preview-dialog {
+  inset: 0;
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  align-items: center;
+  justify-content: center;
+  /* No transform — keeps position:fixed close button viewport-relative. */
+  transform: none;
+  border: 0;
+  border-radius: 0;
+  background: rgb(0 0 0 / 42%);
+  /* Top padding clears the fixed close pill (40px + margins). */
+  padding: clamp(56px, 8vh, 96px) clamp(20px, 8vw, 180px);
+  box-shadow: none;
+  backdrop-filter: blur(5px);
+  /* DialogContent base uses grid; force single centered stage. */
+  gap: 0;
+}
+/* Centers the preview card; does not host the close control. */
+.content-preview-dialog-stage {
+  position: relative;
+  display: flex;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+/*
+ * Lightbox close — fixed to the viewport top-right (not the table card).
+ * Empty <button>: full border-box is one hit target; X via ::after only.
+ */
+.content-preview-dialog-close {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: max(14px, env(safe-area-inset-right, 0px));
+  z-index: 30;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: color-mix(in srgb, var(--surface-panel, #2d2d2d) 94%, #000 6%);
+  color: var(--foreground);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.32);
+  cursor: pointer;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Critical in Electron: top chrome is often a window-drag region. */
+  -webkit-app-region: no-drag !important;
+  app-region: no-drag !important;
+  transition: background 0.12s ease;
+}
+/* Decorative X only — must never be a hit target. */
+.content-preview-dialog-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none !important;
+  background:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 1px),
+      currentColor calc(50% - 1px),
+      currentColor calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    linear-gradient(
+      -45deg,
+      transparent calc(50% - 1px),
+      currentColor calc(50% - 1px),
+      currentColor calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+}
+.content-preview-dialog-close:hover {
+  background: color-mix(in srgb, var(--hover-fill, #383838) 100%, transparent);
+}
+.content-preview-dialog-close:active {
+  background: color-mix(in srgb, var(--hover-fill, #383838) 100%, #000 8%);
+}
+.content-preview-dialog-close:focus-visible {
+  outline: 2px solid var(--ring, #379cfc);
+  outline-offset: 2px;
+}
+.content-table-expanded {
+  display: flex;
+  width: min(100%, 1600px);
+  max-height: min(82dvh, 1040px);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-panel, var(--background));
+  box-shadow: 0 28px 90px rgb(0 0 0 / 38%);
+}
+.content-table-expanded-scroll {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.pix-md .content-table-expanded-scroll table {
+  table-layout: auto;
+}
+@media (max-width: 720px) {
+  .content-preview-dialog {
+    padding: 56px 10px 14px;
+  }
+  .content-preview-dialog-close {
+    top: max(10px, env(safe-area-inset-top, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .content-table-expanded {
+    max-height: calc(100dvh - 70px);
+    border-radius: 12px;
+  }
+}
+.pix-md .contains-task-list {
+  padding-left: 0;
+  list-style: none;
+}
+.pix-md .task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+.pix-md .task-list-item > input {
+  margin-top: 0.4em;
+  accent-color: var(--switch-on);
+}
+.pix-md .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 14px 0;
+  padding: 4px 0;
+}
+.pix-md .katex {
+  font-size: 1.04em;
+}
+.content-file-link {
+  border-radius: 4px;
+  background: color-mix(in srgb, #168fc7 9%, transparent);
+  padding: 1px 3px;
+  text-decoration: none;
+}
+.content-file-link:hover {
+  background: color-mix(in srgb, #168fc7 16%, transparent);
+}
+/* File / path source citation chip */
+.content-source-cite {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  gap: 3px;
+  border-radius: 5px;
+  padding: 0 4px 0 3px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.9em;
+  line-height: 1.45;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+.content-source-cite-icon {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  flex-shrink: 0;
+  opacity: 0.7;
+  vertical-align: -0.05em;
+}
+.content-source-cite-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.content-source-line {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+/* GFM footnote superscript refs */
+.pix-md .content-cite-sup {
+  font-size: 0.72em;
+  line-height: 0;
+  margin-inline: 0.1em;
+  vertical-align: super;
+}
+.pix-md a.content-cite-ref {
+  display: inline-flex;
+  min-width: 1.15em;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 12%, transparent);
+  padding: 0.12em 0.38em;
+  color: var(--muted-foreground);
+  font-size: 0.92em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+.pix-md a.content-cite-ref:hover {
+  background: color-mix(in srgb, var(--link, #379cfc) 16%, transparent);
+  color: var(--link, #379cfc);
+}
+.pix-md a.content-cite-backref {
+  margin-left: 0.25em;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  opacity: 0.75;
+}
+.pix-md a.content-cite-backref:hover {
+  color: var(--link, #379cfc);
+  opacity: 1;
+}
+/* Footnotes / sources block at end of message */
+.pix-md .content-footnotes {
+  margin-top: 1rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--divider, var(--border));
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+.pix-md .content-footnotes-marker {
+  margin-bottom: 0.35rem;
+  color: var(--muted-foreground);
+}
+.pix-md .content-footnotes > h2.sr-only,
+.pix-md .content-footnotes > .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.pix-md .content-footnotes > ol {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  list-style: decimal;
+}
+.pix-md .content-footnotes li {
+  margin: 0.35rem 0;
+  color: var(--muted-foreground);
+}
+.pix-md .content-footnotes li > p {
+  margin: 0.15rem 0;
+}
+.pix-md .content-cite-flash {
+  border-radius: 4px;
+  outline: 1px solid color-mix(in srgb, var(--link, #379cfc) 45%, transparent);
+  background: color-mix(in srgb, var(--link, #379cfc) 10%, transparent);
+  transition:
+    background 0.8s ease,
+    outline-color 0.8s ease;
+}
+
+.recent-workspaces {
+  @apply flex max-h-36 flex-col gap-px overflow-auto;
+}
+
+/* Secondary pages — always fill the content column width */
+.page {
+  @apply flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden;
+  background: var(--theme-background, var(--background));
+  background-attachment: fixed;
+  background-size: cover;
+  color: var(--foreground);
+}
+
+/* ── Projects manager (list-layout nav → 项目) ── */
+.projects-page-header {
+  border-bottom: none;
+  padding-top: 1.25rem;
+  padding-bottom: 0.25rem;
+}
+.projects-page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.projects-page-create {
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-panel, var(--card));
+  padding: 0 0.9rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: background 0.12s ease;
+}
+.projects-page-create:hover {
+  background: var(--hover-fill);
+}
+.projects-page-body {
+  overflow: auto;
+}
+.projects-page-inner {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 2.5rem;
+}
+.projects-page-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  margin: 1.25rem 0 1.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  padding: 0 0.9rem;
+  color: var(--muted-foreground);
+}
+.projects-page-search-input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  color: var(--foreground);
+  outline: none;
+}
+.projects-page-search-input::placeholder {
+  color: var(--text-subtle);
+}
+.projects-page-table {
+  display: flex;
+  flex-direction: column;
+}
+.projects-page-table-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0 0.25rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+.projects-page-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.projects-page-sort:hover {
+  color: var(--muted-foreground);
+}
+.projects-page-col-updated {
+  justify-self: start;
+  text-align: left;
+}
+.projects-page-col-actions {
+  width: 100%;
+}
+.projects-page-card {
+  border-bottom: 1px solid var(--border);
+}
+.projects-page-card:last-child {
+  border-bottom: none;
+}
+.projects-page-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 3rem;
+  margin: 0 -0.35rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--radius-control);
+  transition: background 0.12s ease;
+}
+/* Card hover / active highlight (was too weak / missing before). */
+.projects-page-row:hover,
+.projects-page-row.is-active,
+.projects-page-card.is-expanded > .projects-page-row {
+  background: var(--hover-fill);
+}
+.projects-page-row-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  background: transparent;
+  border: 0;
+  padding: 0.45rem 0;
+  text-align: left;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.projects-page-row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.projects-page-row-updated {
+  justify-self: start;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+.projects-page-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  /* Always visible — not hover-only. */
+  opacity: 1;
+}
+.projects-page-icon-btn {
+  display: inline-flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.projects-page-icon-btn:hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--foreground);
+}
+.projects-page-sessions {
+  display: flex;
+  flex-direction: column;
+  padding: 0.15rem 0 0.55rem;
+}
+.projects-page-session-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 2.35rem;
+  margin: 0 -0.35rem;
+  padding: 0.2rem 0.35rem 0.2rem 2rem;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.projects-page-session-row:hover {
+  background: var(--hover-fill);
+}
+.projects-page-session-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.projects-page-session-row:hover .projects-page-session-name {
+  color: var(--foreground);
+}
+.projects-page-session-updated {
+  justify-self: start;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+.projects-page-empty {
+  margin: 2rem 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-subtle);
+}
+.page-header {
+  @apply flex shrink-0 items-center justify-between gap-3 border-b py-3 pl-5;
+  /* pr comes from WCO/caption rule above — do not set a fixed pr that fights overlay inset. */
+  border-color: var(--border);
+  min-height: 46px; /* TITLEBAR_HEIGHT_PX — sit under Windows caption strip */
+}
+.page-header h1 {
+  @apply m-0 text-[15px] leading-none font-semibold tracking-tight;
+}
+.page-header p {
+  @apply m-0 text-xs;
+  color: var(--muted-foreground);
+}
+.page-header-actions {
+  @apply flex shrink-0 items-center gap-1.5;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.page-header-actions button,
+.page-header-actions a {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+/* Scrollport has no horizontal padding so the scrollbar sits on the pane edge. */
+.page-body {
+  @apply flex-1;
+}
+.page-body-inner {
+  @apply px-5 py-4;
+}
+.page-toolbar {
+  @apply mb-3 flex flex-wrap items-center gap-2;
+}
+.item-list {
+  @apply flex flex-col gap-2;
+}
+.item-card {
+  @apply grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border px-3.5 py-3;
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: var(--surface-panel);
+}
+.item-card[data-enabled="false"] {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--muted) 35%, var(--surface-panel));
+  opacity: 0.88;
+}
+.item-card[data-enabled="false"] .title {
+  color: var(--muted-foreground);
+}
+.item-card .title {
+  @apply text-[13px] leading-snug font-semibold break-all;
+}
+.item-card .meta {
+  @apply mt-0.5 text-[11px] leading-snug break-all;
+  color: var(--muted-foreground);
+}
+.item-card .badges {
+  @apply flex flex-wrap items-center justify-end gap-1.5;
+}
+.chip-status {
+  @apply inline-flex h-6 items-center justify-center rounded-full border px-2 text-[11px] leading-none font-semibold whitespace-nowrap;
+}
+.chip-status[data-tone="on"] {
+  border-color: color-mix(in srgb, #22c55e 45%, var(--border));
+  background: color-mix(in srgb, #22c55e 16%, transparent);
+  color: color-mix(in srgb, #16a34a 80%, var(--foreground));
+}
+.chip-status[data-tone="off"] {
+  border-color: color-mix(in srgb, #ef4444 40%, var(--border));
+  background: color-mix(in srgb, #ef4444 14%, transparent);
+  color: color-mix(in srgb, #dc2626 85%, var(--foreground));
+}
+.chip-status[data-tone="update"] {
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--border));
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  color: color-mix(in srgb, #d97706 85%, var(--foreground));
+}
+.empty-panel {
+  @apply flex flex-col items-start gap-1.5 border border-dashed p-5;
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface-panel) 70%, transparent);
+}
+.empty-panel h2 {
+  @apply m-0 text-[13px] font-semibold;
+}
+.empty-panel p {
+  @apply m-0 max-w-xl text-xs leading-relaxed;
+  color: var(--muted-foreground);
+}
+.install-form {
+  @apply mb-3 grid grid-cols-[minmax(0,1fr)_11.5rem_auto] items-end gap-2.5 border p-3;
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: var(--surface-panel);
+}
+.install-label {
+  @apply flex min-w-0 flex-col gap-1.5 text-[11px] leading-none font-medium;
+  color: var(--text-subtle);
+}
+.install-label input,
+.install-label select {
+  @apply h-8 w-full min-w-0 rounded-lg border px-2.5 text-[13px] leading-none font-normal tracking-normal normal-case outline-none;
+  border-color: var(--border);
+  background-color: color-mix(in srgb, var(--background) 88%, transparent);
+  color: var(--foreground);
+}
+/* Scope select: hide native arrow, draw a subtle chevron on the right. */
+.install-label select {
+  @apply cursor-pointer appearance-none pr-8;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px 12px;
+}
+[data-theme="light"] .install-label select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.install-label input:focus-visible,
+.install-label select:focus-visible {
+  border-color: color-mix(in srgb, var(--ring, #0a84ff) 55%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring, #0a84ff) 18%, transparent);
+}
+.install-label input:disabled,
+.install-label select:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+.install-label select:disabled {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='0.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.install-actions {
+  @apply flex h-8 items-stretch;
+}
+.form-error {
+  @apply mb-2 text-xs text-red-400;
+}
+.form-hint {
+  @apply mb-3 text-[11px] leading-snug;
+  color: var(--text-subtle);
+}
+.page-tabs {
+  @apply flex shrink-0 items-center gap-1 border-b px-5 pt-2 pb-0;
+  border-color: var(--border);
+}
+.page-tab {
+  @apply inline-flex h-8 cursor-pointer items-center justify-center rounded-t-md border-0 bg-transparent px-3 text-xs leading-none font-medium transition-colors;
+  color: var(--muted-foreground);
+}
+.page-tab:hover {
+  color: var(--foreground);
+  background: var(--hover-fill);
+}
+.page-tab[data-active="true"] {
+  border-bottom: 2px solid var(--foreground);
+  color: var(--foreground);
+}
+.page-tab[data-active="false"] {
+  border-bottom: 2px solid transparent;
+  opacity: 0.75;
+}
+.chip {
+  @apply inline-flex h-6 items-center justify-center rounded-full border px-2 text-[11px] leading-none font-medium whitespace-nowrap;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+}
+.btn-secondary,
+a.btn-secondary {
+  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg border px-3 text-xs leading-none font-medium whitespace-nowrap no-underline transition-colors;
+  border-color: var(--border);
+  color: var(--foreground);
+  background: transparent;
+  box-sizing: border-box;
+}
+.btn-secondary:hover:not(:disabled),
+a.btn-secondary:hover {
+  background: var(--hover-fill);
+}
+.btn-secondary:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+.btn-secondary:focus-visible,
+a.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring, #0a84ff) 22%, transparent);
+}
+.btn-primary {
+  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg px-3.5 text-xs leading-none font-medium whitespace-nowrap text-white transition-colors;
+  background: #0a84ff;
+  border: none;
+  box-sizing: border-box;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #0077ed;
+}
+.btn-primary:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #0a84ff 30%, transparent);
+}
+.btn-ghost {
+  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg px-2.5 text-xs leading-none font-medium whitespace-nowrap transition-colors;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--hover-fill);
+  color: var(--foreground);
+}
+.btn-ghost:disabled {
+  @apply cursor-not-allowed opacity-40;
+}
+.btn-ghost.danger {
+  color: var(--muted-foreground);
+}
+.btn-ghost.danger:hover:not(:disabled) {
+  @apply bg-red-500/10 text-red-400;
+}
+.btn-sm {
+  @apply h-7 px-2 text-[11px];
+}
+
+/* Review / palette */
+.review-panel {
+  @apply flex h-full w-[min(480px,40vw)] min-w-[280px] shrink-0 flex-col border-l;
+  border-color: var(--border);
+  background: var(--card);
+}
+.review-panel header {
+  @apply flex h-12 items-center justify-between border-b px-3;
+  border-color: var(--border);
+}
+.review-panel header h2 {
+  @apply m-0 text-[13px] font-semibold;
+}
+.review-body {
+  @apply min-h-0 overflow-auto p-3;
+}
+.review-body pre {
+  @apply m-0 overflow-auto rounded-md p-2.5 font-mono text-xs leading-relaxed wrap-break-word whitespace-pre-wrap;
+  background: var(--muted);
+  color: var(--foreground);
+}
+.empty-note {
+  @apply text-[13px];
+  color: var(--muted-foreground);
+}
+/* Session / command-style modal backdrop — centered in the app viewport. */
+.palette-backdrop {
+  @apply fixed inset-0 z-[11000] flex items-center justify-center bg-black/50 p-4;
+}
+.palette-panel {
+  @apply w-[min(520px,92vw)] overflow-hidden shadow-2xl;
+  border-radius: calc(var(--radius-panel) + 2px);
+  background: var(--surface-panel);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+.palette-input {
+  @apply w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none;
+  border-color: var(--border);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted-foreground) 6%, transparent);
+}
+.palette-input:focus {
+  border-color: color-mix(in srgb, var(--foreground) 22%, var(--border));
+}
+.palette-list {
+  @apply m-0 max-h-80 list-none p-1;
+}
+.palette-item {
+  @apply flex w-full items-center justify-between gap-2.5 px-2.5 py-2 text-left text-[13px];
+  border-radius: var(--radius-control);
+  color: var(--foreground);
+}
+.palette-item[data-active="true"],
+.palette-item:hover {
+  background: var(--hover-fill);
+}
+.palette-item kbd {
+  @apply font-mono text-[11px];
+  color: var(--text-subtle);
+}
+
+/*
+ * Error dialog body: long paths / stack traces without spaces must wrap.
+ * Grid min-width:auto is already broken in the component; this is the text policy.
+ */
+.error-dialog-message {
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Models settings: wildcard patterns stay fixed height and scroll inside. */
+.models-scoped-patterns-input,
+textarea.models-scoped-patterns-input[data-slot="textarea"] {
+  field-sizing: fixed;
+  height: 7.5rem;
+  min-height: 7.5rem;
+  max-height: 7.5rem;
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Session tree — flat peer list (no indentation / branch connectors) */
+.session-tree-panel {
+  display: flex;
+  width: min(640px, 94vw);
+  max-height: min(72vh, 640px);
+  flex-direction: column;
+  overflow: hidden;
+}
+.session-tree-header {
+  display: flex;
+  shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 1rem 1.1rem 0.85rem;
+}
+
+/* In-flight navigate / path summary / fork — full-screen mask only (no in-panel chrome) */
+.session-tree-busy-backdrop {
+  /* Same viewport mask as palette-backdrop; block dismiss while busy. */
+  cursor: wait;
+  pointer-events: auto;
+}
+.session-tree-busy {
+  display: flex;
+  max-width: min(20rem, calc(100% - 2rem));
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #f5f5f7;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+.session-tree-busy-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+}
+.session-tree-list {
+  margin: 0;
+  list-style: none;
+  flex: 1 1 auto;
+  min-height: 200px;
+  min-width: 0;
+  /* Modal list: scrollable, no unified floating thumb and no native bar chrome. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  padding: 0.4rem 0.35rem 0.65rem;
+}
+.session-tree-list::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none;
+}
+.session-tree-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-subtle);
+}
+.session-tree-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--foreground);
+  transition: background 0.1s ease;
+}
+.session-tree-item:hover {
+  background: var(--hover-fill);
+}
+/* Path tint only via data attribute for subtle branch cue — no default “user message” fill. */
+.session-tree-item-path {
+  background: transparent;
+}
+.session-tree-item-active,
+.session-tree-item[data-active="true"] {
+  background: color-mix(in srgb, var(--ring, #0a84ff) 10%, transparent);
+}
+
+/* Role chip: icon + short localized text */
+.session-tree-badge {
+  display: inline-flex;
+  max-width: 5.5rem;
+  shrink: 0;
+  align-items: center;
+  gap: 0.28rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem 0.18rem 0.38rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  white-space: nowrap;
+  background: transparent;
+}
+.session-tree-badge-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* User role: no fill background (was blue-tinted). */
+.session-tree-badge-user {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.session-tree-badge-assistant {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.session-tree-badge-tool {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.session-tree-badge-compaction {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.session-tree-badge-branch_summary {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.session-tree-badge-system,
+.session-tree-badge-other {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+/* User-defined entry label (pi node.label) — chip, not raw [brackets] */
+.session-tree-user-label {
+  display: inline-flex;
+  max-width: 8rem;
+  shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid color-mix(in srgb, #f59e0b 28%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, #f59e0b 10%, transparent);
+  padding: 0.14rem 0.45rem 0.14rem 0.35rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: color-mix(in srgb, #d97706 92%, var(--foreground));
+  white-space: nowrap;
+}
+.session-tree-user-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-tree-preview {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--foreground);
+  /* Full text via native title tooltip on the row button. */
+}
+.session-tree-item-path .session-tree-preview {
+  color: color-mix(in srgb, var(--foreground) 88%, var(--ring, #0a84ff));
+}
+.session-tree-current {
+  shrink: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ring, #0a84ff) 16%, transparent);
+  padding: 0.14rem 0.48rem;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--ring, #0a84ff);
+}
+.session-tree-path-chip {
+  shrink: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ring, #0a84ff) 8%, transparent);
+  padding: 0.12rem 0.42rem;
+  font-size: 10px;
+  font-weight: 550;
+  color: color-mix(in srgb, var(--ring, #0a84ff) 75%, var(--muted-foreground));
+}
+
+@media (max-width: 520px) {
+  .session-tree-badge-text {
+    display: none;
+  }
+  .session-tree-badge {
+    max-width: none;
+    padding: 0.28rem;
+  }
+  .session-tree-user-label-text {
+    max-width: 4.5rem;
+  }
+}
+.session-tree-footer {
+  border-top: 1px solid var(--border);
+  padding: 0.55rem 1rem;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+/* Session info — same chrome as session tree (header / scroll / panel width). */
+.session-info-panel {
+  width: min(520px, 94vw);
+  max-height: min(72vh, 560px);
+}
+.session-info-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  min-height: 0;
+  padding: 0.85rem 1.1rem 1.05rem;
+}
+.session-info-field {
+  min-width: 0;
+}
+.session-info-label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--muted-foreground);
+}
+.session-info-value {
+  margin-top: 0.3rem;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--foreground);
+  word-break: break-word;
+}
+.session-info-value-mono {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  color: color-mix(in srgb, var(--foreground) 92%, var(--muted-foreground));
+}
+.session-info-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.session-info-stat {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--muted-foreground) 5%, transparent);
+  padding: 0.55rem 0.7rem;
+}
+.session-info-stat-value {
+  margin-top: 0.25rem;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.session-info-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.15rem;
+}
+
+/* Settings · keyboard shortcut bind control */
+.shortcut-bind {
+  display: inline-flex;
+  min-height: 1.75rem;
+  min-width: 5.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  padding: 0.2rem 0.45rem;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.shortcut-bind:hover {
+  background: var(--hover-fill);
+  border-color: color-mix(in srgb, var(--border) 80%, var(--foreground));
+}
+.shortcut-bind-empty {
+  border-style: dashed;
+  color: var(--text-subtle);
+}
+.shortcut-bind-recording {
+  border-color: var(--ring, #0a84ff);
+  background: color-mix(in srgb, var(--ring, #0a84ff) 12%, var(--background));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring, #0a84ff) 22%, transparent);
+}
+.shortcut-bind-hint {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.shortcut-bind-recording .shortcut-bind-hint {
+  color: var(--foreground);
+}
+.shortcut-bind-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--ring, #0a84ff);
+  animation: shortcut-bind-pulse 1s ease-in-out infinite;
+}
+@keyframes shortcut-bind-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+.shortcut-key {
+  display: inline-flex;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--foreground));
+  background: var(--background);
+  padding: 0 0.35rem;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--foreground);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+.palette-empty {
+  @apply p-2.5 text-xs;
+  color: var(--muted-foreground);
+}
+
+/* ── Codex / ChatGPT settings page ─────────────────────────────────────── */
+.settings-page {
+  @apply flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden;
+  background: var(--theme-background, var(--background));
+  background-attachment: fixed;
+  background-size: cover;
+}
+/* Pure solid band under the window top — no border/divider; content scrolls below it.
+   Add class `drag-region` in JSX so the window can be moved when Settings has no ThreadHeader.
+   Right padding for Windows caption overlay is shared with .thread-header above. */
+.settings-page-top-cap {
+  @apply shrink-0;
+  height: 46px; /* TITLEBAR_HEIGHT_PX — matches traffic-light row */
+  background: var(--theme-background, var(--background));
+  background-attachment: fixed;
+  background-size: cover;
+}
+.settings-page-body {
+  @apply flex-1;
+}
+.settings-page-shell {
+  /* Horizontal inset on content only — not on the scrollport (keeps scrollbar flush). */
+  @apply mx-auto w-full max-w-[820px] px-8 pt-6 pb-16;
+}
+.settings-page-title-row {
+  @apply mb-8 flex items-center justify-between gap-3;
+}
+.settings-page-title {
+  @apply m-0 text-left text-[22px] font-semibold tracking-tight text-[var(--foreground)];
+}
+.settings-page-title-action {
+  @apply shrink-0;
+}
+.settings-page-sections {
+  @apply flex flex-col gap-8;
+}
+/*
+ * Only one section block under this page (page title already names the area):
+ * hide the redundant group heading. :only-of-type ignores non-section siblings
+ * (toolbars, test buttons, search rows).
+ */
+.settings-page-sections:has(> .settings-section-block:only-of-type)
+  > .settings-section-block
+  > .settings-section-label {
+  display: none;
+}
+
+/* Archived sessions page — same toolbar rhythm as models: search flex-1 + trailing controls. */
+.archived-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem; /* match models `gap-2` */
+  margin-bottom: 0.75rem; /* match models `mb-3` */
+  min-width: 0;
+}
+/* Like models page: search fills remaining width; filters stay after it (no 14rem cap). */
+.archived-toolbar > .settings-search {
+  flex: 1 1 0% !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+.archived-toolbar .archived-toolbar-filters {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+.archived-toolbar .archived-toolbar-filters [data-slot="select-trigger"] {
+  flex-shrink: 0;
+  width: auto;
+  max-width: 12rem;
+}
+/*
+ * Unified Settings search pill — ONE style for left rail + every settings page.
+ * Shell only; inner input is always chrome-less (no nested box / ring / radius).
+ */
+.settings-search {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  height: 2.25rem; /* 36px — same on rail and content */
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted-foreground) 8%, transparent);
+  padding: 0 0.75rem;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+.settings-search:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 22%, var(--border));
+  background: color-mix(in srgb, var(--muted-foreground) 11%, transparent);
+}
+.settings-search-icon {
+  display: block;
+  width: 0.875rem; /* 14px */
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  opacity: 1;
+  pointer-events: none;
+}
+.settings-search-input {
+  min-width: 0;
+  width: 100%;
+  flex: 1 1 auto;
+  height: auto !important;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--foreground);
+  outline: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+.settings-search-input::placeholder {
+  color: var(--text-subtle);
+  opacity: 1;
+}
+.settings-search-input::-webkit-search-decoration,
+.settings-search-input::-webkit-search-cancel-button,
+.settings-search-input::-webkit-search-results-button,
+.settings-search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+.archived-filter {
+  @apply h-9 cursor-pointer appearance-none rounded-full border border-[var(--border)] bg-[var(--secondary)] px-3 pr-8 text-[12.5px] text-[var(--foreground)] outline-none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.archived-group {
+  @apply mb-6;
+}
+.archived-group-header {
+  @apply mb-2 flex items-center gap-2 px-0.5;
+}
+.archived-group-name {
+  @apply flex min-w-0 flex-1 items-center gap-2 text-[14px] font-medium text-[var(--foreground)];
+}
+.archived-group-meta {
+  @apply flex shrink-0 items-center gap-1 text-[12px] text-[var(--muted-foreground)];
+}
+.archived-group-menu {
+  @apply relative;
+}
+.archived-group-menu-panel {
+  @apply absolute top-full right-0 z-50 mt-1 min-w-[220px] overflow-hidden border py-1 shadow-2xl;
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: var(--surface-panel);
+}
+.archived-card {
+  @apply overflow-hidden border;
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: var(--surface-panel);
+}
+.archived-item {
+  @apply relative flex items-center gap-3 px-3.5 py-3;
+  border-bottom: none;
+}
+/* Inset divider (same language as settings-row). */
+.archived-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.875rem;
+  right: 0.875rem;
+  bottom: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+.archived-item-copy {
+  @apply min-w-0 flex-1;
+}
+.archived-item-title {
+  @apply truncate text-[13.5px] font-normal text-[var(--foreground)];
+}
+.archived-item-date {
+  @apply mt-0.5 text-[12px] text-[var(--muted-foreground)];
+}
+.archived-item-actions {
+  @apply flex shrink-0 items-center gap-1.5;
+}
+.settings-section-block {
+  @apply flex flex-col gap-2;
+}
+.settings-section-label {
+  margin: 0;
+  padding: 0 0.125rem;
+  /* type size/weight/color from unified group-label rule above */
+}
+/* Provider id labels only (anthropic / openai / …) — monospaced codes. */
+.settings-section-label-code {
+  margin: 0;
+  padding: 0 0.125rem;
+  font-family: var(--font-mono);
+}
+.settings-section-hint {
+  @apply m-0;
+}
+.settings-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  /* Opaque panel surface — all model groups (custom + builtin) share this exact fill. */
+  background: var(--surface-panel);
+}
+/* Theme Studio intentionally previews a complete mini-shell, not a color swatch. */
+.theme-skin-library {
+  overflow: hidden;
+}
+.theme-skin-rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  align-items: stretch;
+  padding: 0.8rem 0.5rem;
+}
+.theme-skin-grid {
+  display: flex;
+  gap: 0.65rem;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 0 0.3rem 0.25rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.theme-skin-grid::-webkit-scrollbar {
+  display: none;
+}
+.theme-skin-scroll-button {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 1.75rem;
+  min-height: 100%;
+  place-items: center;
+  align-self: center;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.08);
+  transition:
+    opacity 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+.theme-skin-scroll-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ring) 55%, var(--border));
+  background: var(--hover-fill);
+}
+.theme-skin-scroll-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.theme-skin-scroll-button:disabled {
+  opacity: 0.24;
+}
+.theme-skin-scroll-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+.theme-skin-card {
+  display: flex;
+  width: 160px;
+  min-width: 160px;
+  flex: 0 0 160px;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface-panel) 86%, transparent);
+  padding: 0.55rem;
+  color: var(--foreground);
+  text-align: left;
+  scroll-snap-align: start;
+  transition: border-color 160ms ease;
+}
+.theme-skin-card:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ring) 58%, var(--border));
+}
+.theme-skin-card[data-active="true"] {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 38%, transparent);
+}
+.theme-skin-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 30%, transparent);
+}
+.theme-skin-card:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+.theme-skin-card-art {
+  position: relative;
+  display: block;
+  height: 82px;
+  overflow: hidden;
+  border-radius: 0.52rem;
+  background-position: center;
+  background-size: cover;
+}
+.theme-skin-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 28%, rgb(0 0 0 / 0.12));
+}
+.theme-skin-card-glass {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 1;
+  display: flex;
+  width: 66%;
+  height: 45%;
+  align-items: end;
+  border: 1px solid rgb(255 255 255 / 0.46);
+  border-radius: 0.45rem;
+  box-shadow: 0 8px 16px rgb(0 0 0 / 0.16);
+  opacity: 0.84;
+}
+.theme-skin-card-accent {
+  display: block;
+  width: 38%;
+  height: 5px;
+  margin: 0.42rem;
+  border-radius: 99px;
+}
+.theme-skin-card-name {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-skin-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 0.75rem;
+}
+.theme-skin-library-message {
+  margin: 0;
+  padding: 0 0.8rem 0.8rem;
+  color: var(--foreground);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.theme-skin-dialog {
+  --background: var(--theme-dialog-background);
+  --foreground: var(--theme-dialog-text);
+  --surface-panel: var(--theme-dialog-background);
+  --surface-muted: var(--theme-dialog-canvas);
+  --surface-soft: color-mix(
+    in srgb,
+    var(--theme-dialog-background) 82%,
+    var(--theme-dialog-canvas)
+  );
+  --muted-foreground: var(--theme-dialog-muted);
+  --primary: var(--theme-dialog-accent);
+  --primary-foreground: var(--theme-dialog-accent-foreground);
+  --ring: var(--theme-dialog-accent);
+  --border: var(--theme-dialog-line);
+  --input: var(--theme-dialog-line);
+  display: flex;
+  width: min(1060px, calc(100vw - 2rem));
+  max-width: 1060px;
+  max-height: min(820px, calc(100vh - 2rem));
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  border-color: var(--theme-dialog-line) !important;
+  background: color-mix(in srgb, var(--theme-dialog-background) 94%, transparent) !important;
+  color: var(--theme-dialog-text);
+  padding: 0;
+  box-shadow:
+    0 28px 90px color-mix(in srgb, var(--theme-dialog-canvas) 46%, rgb(0 0 0 / 0.45)),
+    inset 0 1px rgb(255 255 255 / 0.12) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(120%) !important;
+  backdrop-filter: blur(32px) saturate(120%) !important;
+}
+.theme-skin-dialog[data-dialog-mode="light"] {
+  color-scheme: light;
+}
+.theme-skin-dialog[data-dialog-mode="dark"] {
+  color-scheme: dark;
+}
+.theme-skin-dialog [data-slot="dialog-close"] {
+  color: var(--theme-dialog-text);
+}
+.theme-skin-dialog-header {
+  flex: 0 0 auto;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 1.2rem 1.3rem 1rem;
+}
+.theme-skin-dialog-tabs {
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 0;
+}
+.theme-skin-dialog-tabs-list {
+  width: 100%;
+  height: auto;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--theme-dialog-canvas) 18%, transparent);
+  padding: 0.35rem 1.15rem 0;
+}
+.theme-skin-dialog-tabs-list [data-slot="tabs-trigger"] {
+  min-height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 0.45rem 0.45rem 0 0;
+  color: var(--theme-dialog-muted);
+  font-size: 11px;
+}
+.theme-skin-dialog-tabs-list [data-slot="tabs-trigger"][data-state="active"] {
+  border-color: color-mix(in srgb, var(--theme-dialog-line) 90%, transparent);
+  background: color-mix(in srgb, var(--theme-dialog-background) 86%, transparent);
+  color: var(--theme-dialog-text);
+}
+.theme-skin-dialog-form {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+.theme-skin-dialog-tab-content {
+  min-height: 0;
+  margin: 0;
+}
+.theme-skin-dialog-tab-content[data-state="active"] {
+  display: flex;
+  flex: 1 1 auto;
+}
+.theme-skin-dialog-body {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(440px, 1.1fr);
+  flex: 1 1 auto;
+}
+.theme-skin-dialog-preview-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.8rem;
+  border-right: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--theme-dialog-canvas) 22%, transparent);
+  padding: 1.05rem;
+}
+.theme-skin-dialog-controls {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1.15rem;
+}
+.theme-skin-dialog-asset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.theme-skin-dialog-asset-actions-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+/* Wallpaper fit — right side of the choose-wallpaper action row. */
+.theme-skin-dialog-asset-fit {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.theme-skin-dialog-asset-fit-trigger {
+  min-width: 8.5rem;
+  height: 2rem;
+  font-size: 12px;
+}
+.theme-skin-dialog-footer {
+  flex: 0 0 auto;
+  align-items: center;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 0.85rem 1.15rem;
+  background: color-mix(in srgb, var(--theme-dialog-background) 90%, transparent);
+}
+.theme-skin-dialog-message {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  color: var(--destructive);
+  font-size: 11px;
+  text-align: left;
+}
+/*
+ * Studio interface preview — mini replica of live app-shell:
+ * full-bleed wallpaper canvas + absolute rail + padded shell-content.
+ */
+.theme-skin-studio-preview {
+  position: relative;
+  min-height: 360px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--preview-text) 18%, transparent);
+  border-radius: 12px;
+  isolation: isolate;
+  /* Match app window canvas (under translucent rail when wallpaper is clipped). */
+  background: var(--background, var(--preview-surface));
+}
+.theme-skin-studio-preview[data-preview-mode="dark"] {
+  box-shadow:
+    0 18px 38px rgb(0 0 0 / 0.28),
+    inset 0 1px rgb(255 255 255 / 0.1);
+}
+.theme-skin-studio-preview[data-preview-mode="light"] {
+  border-color: color-mix(in srgb, var(--preview-text) 14%, transparent);
+  box-shadow:
+    0 14px 32px rgb(15 23 42 / 0.1),
+    inset 0 1px rgb(255 255 255 / 0.7);
+}
+/*
+ * Live .skin-wallpaper: fixed full canvas, ::before image + ::after dim/gradient.
+ * Keep viewport-sized geometry so cover/contain/focus% match the real window.
+ */
+.theme-skin-studio-wallpaper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--skin-wallpaper-base, var(--background));
+}
+.theme-skin-studio-wallpaper::before,
+.theme-skin-studio-wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+}
+.theme-skin-studio-wallpaper::before {
+  background-image: var(--skin-wallpaper-image, none);
+  background-position: var(--skin-art-position, center);
+  background-repeat: no-repeat;
+  background-size: var(--skin-art-size, cover);
+  filter: saturate(1.06) contrast(1.015);
+  transform: scale(1.01);
+}
+.theme-skin-studio-wallpaper::after {
+  background:
+    linear-gradient(
+      115deg,
+      rgb(
+        var(--skin-background-rgb, var(--preview-background-rgb)) /
+          calc(var(--skin-wallpaper-dim, 0) + 0.08)
+      ),
+      transparent 56%
+    ),
+    rgb(var(--skin-background-rgb, var(--preview-background-rgb)) / var(--skin-wallpaper-dim, 0));
+}
+.theme-skin-studio-preview[data-preview-has-wallpaper="false"] .theme-skin-studio-wallpaper::before,
+.theme-skin-studio-preview[data-preview-has-wallpaper="false"] .theme-skin-studio-wallpaper::after {
+  display: none;
+}
+/* Native translucent rail: clip wallpaper off the rail (same idea as live clip-path). */
+.theme-skin-studio-preview[data-preview-sidebar-translucent="true"] .theme-skin-studio-wallpaper {
+  clip-path: inset(0 0 0 var(--preview-rail-width, 28%));
+}
+.theme-skin-preview-toolbar {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--theme-dialog-text);
+  font-size: 11px;
+  font-weight: 650;
+}
+.theme-skin-mode-switch {
+  display: inline-flex;
+  border: 1px solid var(--theme-dialog-line);
+  border-radius: 0.58rem;
+  background: color-mix(in srgb, var(--theme-dialog-canvas) 24%, transparent);
+  padding: 2px;
+}
+.theme-skin-mode-switch button {
+  min-height: 1.6rem;
+  border: 0;
+  border-radius: 0.42rem;
+  background: transparent;
+  padding: 0.22rem 0.58rem;
+  color: var(--theme-dialog-muted);
+  font-size: 10px;
+  font-weight: 620;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.theme-skin-mode-switch button[data-active="true"] {
+  background: var(--theme-dialog-accent);
+  color: var(--theme-dialog-accent-foreground);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-dialog-accent) 24%, transparent);
+}
+.theme-skin-preview-app {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  color: var(--preview-text);
+  font-family: var(--font-sans, inherit);
+  background: transparent;
+  isolation: isolate;
+}
+/*
+ * Sidebar: absolute overlay rail (live AppSidebar), not a grid column —
+ * wallpaper canvas stays full-width for cover/contain/focus%.
+ */
+.theme-skin-preview-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  width: var(--preview-rail-width, 28%);
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.06rem;
+  border-right: 1px solid var(--preview-sidebar-material-border);
+  padding: 0.55rem 0.45rem 0.5rem;
+  box-sizing: border-box;
+}
+/* Preview rail: native translucent | material glass | solid (matches live shell). */
+.theme-skin-studio-preview[data-preview-sidebar-translucent="true"] .theme-skin-preview-sidebar {
+  background: transparent;
+  border-right-color: color-mix(in srgb, var(--preview-line) 50%, transparent);
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 12%, transparent),
+    1px 0 0 color-mix(in srgb, #000 10%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.theme-skin-studio-preview[data-preview-mode="light"][data-preview-sidebar-translucent="true"]
+  .theme-skin-preview-sidebar {
+  box-shadow:
+    inset -1px 0 0 color-mix(in srgb, #fff 52%, transparent),
+    1px 0 0 color-mix(in srgb, #000 4%, transparent);
+}
+.theme-skin-studio-preview[data-preview-sidebar-translucent="false"][data-preview-sidebar-glass="true"]
+  .theme-skin-preview-sidebar {
+  background: linear-gradient(
+    150deg,
+    rgb(var(--preview-panel-rgb) / var(--preview-sidebar-panel-opacity)),
+    rgb(var(--preview-background-rgb) / var(--preview-sidebar-opacity))
+  );
+  background: linear-gradient(
+    150deg,
+    color-mix(
+      in srgb,
+      var(--surface-panel) calc(var(--preview-sidebar-panel-opacity) * 100%),
+      transparent
+    ),
+    color-mix(in srgb, var(--background) calc(var(--preview-sidebar-opacity) * 100%), transparent)
+  );
+  -webkit-backdrop-filter: blur(var(--preview-blur)) saturate(116%);
+  backdrop-filter: blur(var(--preview-blur)) saturate(116%);
+  box-shadow:
+    inset -1px 0 rgb(var(--preview-text-rgb) / calc(var(--preview-border-alpha, 0.3) * 0.85)),
+    4px 0 16px rgb(var(--preview-background-rgb) / 0.12);
+}
+.theme-skin-studio-preview[data-preview-sidebar-translucent="false"][data-preview-sidebar-glass="false"]
+  .theme-skin-preview-sidebar {
+  background: var(--sidebar, rgb(var(--preview-sidebar-rgb, var(--preview-panel-rgb))));
+  border-right-color: var(--preview-line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Boolean controls share the slider grid rhythm (label + control on one row). */
+.theme-skin-toggle-row {
+  justify-content: center;
+}
+.theme-skin-toggle-row > span {
+  align-items: center;
+  min-height: 1.35rem;
+}
+.theme-skin-toggle-row [data-slot="switch"],
+.theme-skin-toggle-row button[role="switch"] {
+  flex: 0 0 auto;
+}
+.theme-skin-slider-disabled {
+  opacity: 0.45;
+}
+.theme-skin-slider-disabled input {
+  pointer-events: none;
+}
+.theme-skin-preview-brand {
+  display: flex;
+  min-width: 0;
+  min-height: 1.65rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.28rem;
+  padding: 0 0.28rem;
+}
+.theme-skin-preview-brand-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--preview-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-skin-preview-brand-search {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+  color: var(--preview-muted);
+  opacity: 0.85;
+}
+.theme-skin-preview-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+}
+.theme-skin-preview-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  border-radius: 0.42rem;
+  padding: 0.36rem 0.42rem;
+  color: var(--preview-text);
+  font-size: 0.58rem;
+  font-weight: 500;
+  line-height: 1.15;
+  white-space: nowrap;
+  opacity: 0.88;
+}
+.theme-skin-preview-nav-item[data-primary="true"] {
+  background: color-mix(in srgb, var(--preview-primary) 16%, transparent);
+  color: var(--preview-text);
+  opacity: 1;
+  font-weight: 560;
+}
+.theme-skin-preview-nav-item > svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+.theme-skin-preview-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.08rem;
+  margin-top: 0.5rem;
+  padding: 0 0.08rem;
+}
+.theme-skin-preview-section-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0.06rem 0 0.12rem;
+  padding: 0 0.2rem;
+}
+.theme-skin-preview-section-label {
+  min-width: 0;
+  color: var(--group-label-color, var(--preview-muted));
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.95;
+}
+.theme-skin-preview-section-chevron {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: 0 0 auto;
+  color: var(--preview-muted);
+  opacity: 0.55;
+  transform: rotate(90deg);
+}
+.theme-skin-preview-thread-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  border-radius: 0.4rem;
+  padding: 0.32rem 0.42rem;
+  color: var(--preview-text);
+  font-size: 0.55rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0.78;
+}
+.theme-skin-preview-thread-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-skin-preview-thread-row[data-active="true"] {
+  background: var(--hover-fill, color-mix(in srgb, var(--preview-primary) 12%, transparent));
+  color: var(--preview-text);
+  opacity: 1;
+}
+.theme-skin-preview-sidebar-spacer {
+  flex: 1 1 auto;
+}
+.theme-skin-preview-sidebar-footer {
+  margin-top: 0.45rem;
+  border-top: 1px solid color-mix(in srgb, var(--preview-line) 75%, transparent);
+  padding-top: 0.45rem;
+}
+.theme-skin-field-hint {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.4;
+}
+/*
+ * Live .shell-content: full-bleed under rail, padding-left + background-clip: content-box
+ * so the page wash never paints under the frosted rail.
+ */
+.theme-skin-preview-main {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  isolation: isolate;
+  box-sizing: border-box;
+  padding-left: var(--preview-rail-width, 28%);
+  background: rgb(var(--preview-background-rgb) / var(--preview-page-opacity));
+  background: color-mix(
+    in srgb,
+    var(--background) calc(var(--preview-page-opacity) * 100%),
+    transparent
+  );
+  background-clip: content-box;
+}
+.theme-skin-studio-preview[data-preview-glass="true"] .theme-skin-preview-main {
+  -webkit-backdrop-filter: blur(var(--preview-blur)) saturate(112%);
+  backdrop-filter: blur(var(--preview-blur)) saturate(112%);
+}
+.theme-skin-studio-preview[data-preview-glass="false"] .theme-skin-preview-main {
+  /* Solid page: opaque content region only (rail padding stays clear). */
+  background: var(--background);
+  background-clip: content-box;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* Task readability scrim sits on the content box (live .thread-pane::before). */
+.theme-skin-preview-main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--preview-rail-width, 28%);
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    102deg,
+    rgb(var(--preview-background-rgb) / var(--preview-task-intensity, 0.6)) 0%,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.86)) 52%,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.42)) 100%
+  );
+}
+.theme-skin-studio-preview[data-preview-glass="false"] .theme-skin-preview-main::before {
+  display: none;
+}
+.theme-skin-studio-preview[data-preview-safe-area="right"] .theme-skin-preview-main::before {
+  background: linear-gradient(
+    258deg,
+    rgb(var(--preview-background-rgb) / var(--preview-task-intensity, 0.6)) 0%,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.86)) 52%,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.42)) 100%
+  );
+}
+.theme-skin-studio-preview[data-preview-safe-area="center"] .theme-skin-preview-main::before {
+  background: linear-gradient(
+    180deg,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.94)) 0%,
+    rgb(var(--preview-background-rgb) / calc(var(--preview-task-intensity, 0.6) * 0.78)) 100%
+  );
+}
+.theme-skin-preview-main > * {
+  position: relative;
+  z-index: 1;
+}
+.theme-skin-preview-header {
+  display: flex;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid color-mix(in srgb, var(--preview-line) 70%, transparent);
+  padding: 0.42rem 0.62rem;
+}
+.theme-skin-studio-preview[data-preview-glass="true"] .theme-skin-preview-header {
+  background: rgb(var(--preview-background-rgb) / var(--preview-header-opacity));
+  background: color-mix(
+    in srgb,
+    var(--background) calc(var(--preview-header-opacity) * 100%),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(var(--preview-blur)) saturate(112%);
+  backdrop-filter: blur(var(--preview-blur)) saturate(112%);
+}
+.theme-skin-studio-preview[data-preview-glass="false"] .theme-skin-preview-header {
+  background: transparent;
+}
+.theme-skin-preview-header-title,
+.theme-skin-preview-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.36rem;
+}
+.theme-skin-preview-header-title strong {
+  overflow: hidden;
+  max-width: 7rem;
+  font-size: 0.62rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-skin-preview-header svg {
+  width: 0.78rem;
+  height: 0.78rem;
+  flex: 0 0 auto;
+  color: var(--preview-muted);
+}
+.theme-skin-preview-empty-hero {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0.85rem 1rem 0.5rem;
+  text-align: center;
+}
+.theme-skin-preview-empty-logo {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.55rem;
+  filter: drop-shadow(0 5px 10px rgb(0 0 0 / 0.16));
+}
+.theme-skin-studio-preview[data-preview-mode="light"] .theme-skin-preview-empty-logo {
+  filter: drop-shadow(0 4px 10px rgb(15 23 42 / 0.08));
+}
+.theme-skin-preview-empty-hero h1 {
+  max-width: 12rem;
+  margin: 0;
+  color: var(--preview-text);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+.theme-skin-preview-empty-hero p {
+  max-width: 11rem;
+  margin: 0.35rem 0 0;
+  color: var(--preview-muted);
+  font-size: 0.5rem;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+.theme-skin-preview-composer-dock {
+  position: relative;
+  flex: 0 0 auto;
+  /* Match live composer-dock horizontal inset feel */
+  padding: 0 0.7rem 0.55rem;
+  background: transparent;
+}
+/*
+ * Project protrusion: match live .composer-protrusion —
+ * full-width muted bar, top-only radius, no panel chrome/shadow.
+ */
+.theme-skin-preview-project-bar {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 1.35rem;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  border: none;
+  border-radius: var(--preview-radius) var(--preview-radius) 0 0;
+  background: var(--composer-protrusion, var(--preview-panel-alt));
+  padding: 0.28rem 0.55rem;
+  color: var(--preview-text);
+  font-size: 0.5rem;
+  font-weight: 500;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-sizing: border-box;
+}
+.theme-skin-preview-project-bar > svg {
+  width: 0.66rem;
+  height: 0.66rem;
+  flex: 0 0 auto;
+  color: var(--preview-muted);
+  opacity: 0.85;
+}
+.theme-skin-preview-composer {
+  min-height: 4.38rem;
+  border: 1px solid var(--composer-border, var(--preview-line));
+  border-radius: max(0px, calc(var(--preview-radius) - 2px));
+  background: var(--bg-composer, var(--preview-surface));
+  padding: 0.52rem 0.48rem 0.36rem;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+/* Glass skins: translucent panel + material shadow on the input card only. */
+.theme-skin-studio-preview[data-preview-glass="true"] .theme-skin-preview-composer {
+  border-color: var(--composer-border);
+  border-radius: var(--preview-radius);
+  background: rgb(var(--preview-panel-rgb) / var(--preview-panel-opacity));
+  background: color-mix(
+    in srgb,
+    var(--surface-panel) calc(var(--preview-panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow: var(--preview-panel-shadow, none);
+  -webkit-backdrop-filter: blur(var(--preview-blur)) saturate(116%);
+  backdrop-filter: blur(var(--preview-blur)) saturate(116%);
+}
+.theme-skin-studio-preview[data-preview-glass="true"]
+  .theme-skin-preview-composer.composer-card-with-protrusion {
+  border-top-left-radius: max(0px, calc(var(--preview-radius) - 2px));
+  border-top-right-radius: max(0px, calc(var(--preview-radius) - 2px));
+}
+.theme-skin-studio-preview[data-preview-mode="light"][data-preview-glass="false"]
+  .theme-skin-preview-composer {
+  border-color: color-mix(in srgb, var(--preview-line) 88%, #ffffff);
+}
+.theme-skin-preview-prompt {
+  min-height: 1.6rem;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--preview-muted) 88%, transparent);
+  font-size: 0.56rem;
+  line-height: 1.35;
+  text-align: left;
+}
+.theme-skin-preview-composer-controls,
+.theme-skin-preview-composer-left,
+.theme-skin-preview-composer-right {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.theme-skin-preview-composer-controls {
+  justify-content: space-between;
+  gap: 0.28rem;
+  color: var(--preview-muted);
+  font-size: 0.46rem;
+}
+.theme-skin-preview-composer-left,
+.theme-skin-preview-composer-right {
+  gap: 0.25rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.theme-skin-preview-composer-left > svg,
+.theme-skin-preview-composer-right > svg {
+  width: 0.74rem;
+  height: 0.74rem;
+  flex: 0 0 auto;
+}
+.theme-skin-preview-composer-right > span:not(.theme-skin-preview-send) {
+  overflow: hidden;
+  max-width: 4rem;
+  text-overflow: ellipsis;
+}
+.theme-skin-preview-send {
+  display: grid;
+  width: 1.18rem;
+  height: 1.18rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--preview-text);
+  color: var(--preview-surface);
+}
+.theme-skin-preview-send > svg {
+  width: 0.66rem;
+  height: 0.66rem;
+}
+.theme-skin-studio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0.8rem;
+}
+.theme-skin-field-wide {
+  grid-column: span 2;
+}
+.theme-skin-color-field {
+  min-width: 0;
+  justify-content: space-between;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 0.55rem;
+  padding: 0.48rem 0.55rem;
+}
+.theme-skin-color-field input[type="color"] {
+  width: 2.1rem;
+  height: 1.65rem;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  padding: 0;
+}
+.theme-skin-slider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.9rem;
+  margin-top: 1rem;
+}
+.theme-skin-slider {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.32rem;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.theme-skin-slider > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.theme-skin-slider output {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.theme-skin-slider input[type="range"],
+.settings-page input[type="range"] {
+  width: 100%;
+  height: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  accent-color: var(--ring);
+}
+.theme-skin-slider input[type="range"]::-webkit-slider-runnable-track,
+.settings-page input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 24%, transparent);
+}
+.theme-skin-slider input[type="range"]::-webkit-slider-thumb,
+.settings-page input[type="range"]::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border: 2px solid var(--surface-panel);
+  border-radius: 999px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--ring);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 42%, transparent);
+}
+.theme-skin-slider input[type="range"]:focus-visible::-webkit-slider-thumb,
+.settings-page input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 24%, transparent);
+}
+.theme-skin-slider input[type="range"]:disabled,
+.settings-page input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+.theme-skin-slider-disabled input[type="range"]:disabled {
+  opacity: 1;
+}
+.theme-skin-control-section {
+  margin-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding-top: 0.9rem;
+}
+.theme-skin-control-section-title {
+  display: flex;
+  min-height: 1.8rem;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 680;
+}
+.theme-skin-control-section-title > svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--ring);
+}
+.theme-skin-control-section-title > button {
+  margin-left: auto;
+}
+.theme-skin-css-page {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 1.15rem;
+}
+.theme-skin-css-toolbar {
+  display: flex;
+  margin-left: auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+.theme-skin-css-variable-select {
+  min-width: min(18rem, 58vw);
+  max-width: 22rem;
+  background: color-mix(in srgb, var(--theme-dialog-canvas) 28%, transparent);
+}
+.theme-skin-css-variable-menu {
+  z-index: 12050;
+  width: min(24rem, calc(100vw - 2rem));
+}
+.theme-skin-css-variable-item {
+  min-height: 2.5rem;
+  align-items: flex-start;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+.theme-skin-css-variable-item-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+  text-align: left;
+  white-space: normal;
+}
+.theme-skin-css-variable-item-main code {
+  color: var(--foreground);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 620;
+}
+.theme-skin-css-variable-item-main > span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.theme-skin-css-editor {
+  width: 100%;
+  min-height: 300px;
+  flex: 1 1 auto;
+  resize: vertical;
+  border: 1px solid var(--input);
+  border-radius: 0.65rem;
+  outline: none;
+  background: color-mix(in srgb, var(--theme-dialog-canvas) 36%, transparent);
+  padding: 0.7rem;
+  color: var(--foreground);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  line-height: 1.55;
+  tab-size: 2;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.theme-skin-css-editor:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent);
+}
+.theme-skin-css-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.38rem;
+  color: var(--muted-foreground);
+  font-size: 9px;
+}
+.theme-skin-css-status[data-invalid="true"] span {
+  color: var(--destructive);
+}
+.theme-skin-css-status output {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 860px) {
+  .theme-skin-dialog {
+    max-height: calc(100vh - 1rem);
+  }
+  .theme-skin-dialog-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .theme-skin-dialog-preview-column {
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  }
+  .theme-skin-dialog-controls {
+    overflow: visible;
+  }
+  .theme-skin-studio-preview {
+    min-height: 290px;
+  }
+  .theme-skin-slider-grid {
+    grid-template-columns: 1fr;
+  }
+  .theme-skin-dialog-footer {
+    align-items: stretch;
+  }
+  .theme-skin-dialog-message {
+    text-align: center;
+  }
+}
+@media (max-width: 520px) {
+  .theme-skin-rail {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
+    padding-inline: 0.35rem;
+  }
+  .theme-skin-card {
+    width: 148px;
+    min-width: 148px;
+    flex-basis: 148px;
+  }
+}
+/* Model list rows never paint a full-row tint (would make single-row custom groups look different). */
+.settings-card > [data-testid^="models-list"] > .settings-row,
+.settings-card > .settings-row {
+  background: transparent;
+}
+.models-category-groups {
+  @apply flex flex-col gap-4;
+}
+.models-provider-section {
+  @apply flex flex-col gap-2;
+}
+.models-provider-card-trigger {
+  @apply flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left outline-none transition-colors;
+  color: var(--foreground);
+}
+.models-provider-card-trigger:hover {
+  background: var(--hover-fill);
+}
+.models-provider-card-trigger:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ring) 65%, transparent);
+}
+.models-provider-card-summary {
+  @apply flex min-w-0 items-center gap-2;
+}
+.models-provider-card-title {
+  @apply min-w-0 flex-1 truncate text-[14px] font-medium text-[var(--foreground)];
+}
+.models-provider-card-count {
+  @apply text-[12px] text-[var(--muted-foreground)];
+}
+.models-provider-card-chevron {
+  @apply shrink-0 text-[var(--text-subtle)] transition-transform;
+}
+.models-provider-card-chevron[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+.models-provider-card-content {
+  border-top: 1px solid var(--border);
+}
+/*
+ * Row rules are inset (left/right) — same idea as the sidebar divider above
+ * 「系统设置」(does not run edge-to-edge of the container).
+ */
+.settings-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: none;
+  padding: 0.85rem 1rem;
+}
+.settings-row:not(.settings-row-last):not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+/* Title-only rows: no reserved description space, vertically centered. */
+.settings-row-compact {
+  align-items: center;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+.settings-row-last,
+.settings-row:last-child {
+  border-bottom: 0;
+}
+.settings-row-last::after,
+.settings-row:last-child::after {
+  display: none;
+}
+/* Flush to the row content box (parent padding already insets from the card). */
+.settings-row-flush::after {
+  left: 0;
+  right: 0;
+}
+/* Nested rule inside a padded row (e.g. worktree sub-options). */
+.settings-divider {
+  position: relative;
+  border-top: none !important;
+  padding-top: 0.75rem;
+  margin-top: 0;
+}
+.settings-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+.settings-row-title {
+  @apply leading-snug font-normal text-[var(--foreground)];
+  /* Same size as group labels / regular UI text (override FieldLabel text-sm). */
+  font-size: var(--ui-font-size, 14px);
+}
+.settings-row-desc {
+  @apply mt-1 leading-relaxed font-normal text-[var(--muted-foreground)];
+  font-size: calc(var(--ui-font-size, 14px) * 0.86);
+}
+.settings-row-control {
+  @apply flex items-center;
+}
+.settings-row-control-multiline {
+  @apply pt-0.5;
+}
+/* Agent settings: right-align controls; keep natural control widths. */
+[data-testid="settings-pi"] .settings-row-control {
+  min-width: 9.5rem;
+  justify-content: flex-end;
+}
+/* Pi SDK page: allow long mono paths in descriptions; align action pills. */
+[data-testid="settings-pi-sdk"] .settings-row-desc {
+  @apply min-w-0;
+}
+[data-testid="settings-pi-sdk"] .settings-row-control {
+  min-width: 5.5rem;
+  justify-content: flex-end;
+}
+.settings-key-row {
+  @apply flex w-full min-w-0 items-center gap-2;
+}
+.settings-field {
+  @apply flex flex-col gap-1.5 px-4 py-3 text-[12px] text-muted-foreground;
+}
+/* Add-custom-model dialog — single continuous form, no fake section boxes. */
+.models-custom-dialog {
+  border-radius: calc(var(--radius-panel) + 2px);
+}
+.models-custom-dialog-header {
+  @apply shrink-0 px-6 pt-5 pb-1;
+}
+.models-custom-dialog-title {
+  @apply m-0 text-[17px] font-semibold tracking-tight text-[var(--foreground)];
+}
+.models-custom-dialog-body {
+  @apply min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-2;
+}
+.models-custom-form-grid {
+  @apply grid grid-cols-2 gap-x-3 gap-y-3.5;
+}
+.models-custom-field {
+  @apply flex min-w-0 flex-col gap-1.5;
+}
+.models-custom-field > span {
+  @apply text-[12px] leading-none text-[var(--foreground)];
+}
+.models-custom-field-span {
+  @apply col-span-2;
+}
+.models-custom-toolbar {
+  @apply col-span-2 mt-0.5 flex flex-wrap items-center gap-2;
+}
+.models-custom-chip {
+  @apply inline-flex h-7 cursor-pointer items-center rounded-md px-2.5 text-[12px] transition-colors select-none;
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+.models-custom-chip:hover {
+  color: var(--foreground);
+  background: var(--hover-fill);
+}
+.models-custom-chip[data-active="true"] {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.models-custom-chip input {
+  @apply sr-only;
+}
+.models-custom-check {
+  @apply inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[12px] text-[var(--foreground)] select-none;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+.models-custom-check:hover {
+  background: var(--hover-fill);
+}
+.models-custom-check[data-on="true"] {
+  background: color-mix(in srgb, #0a84ff 14%, transparent);
+  color: #0a84ff;
+}
+.models-custom-check input {
+  @apply size-3.5 accent-[#0a84ff];
+}
+.models-custom-advanced {
+  @apply col-span-2 mt-1;
+}
+.models-custom-advanced > summary {
+  @apply flex w-fit cursor-pointer list-none items-center gap-1 py-1 text-[12.5px] text-[var(--text-subtle)] select-none;
+}
+.models-custom-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+.models-custom-advanced > summary::before {
+  content: "›";
+  @apply inline-block w-3 text-[14px] leading-none transition-transform;
+}
+.models-custom-advanced[open] > summary::before {
+  transform: rotate(90deg);
+}
+.models-custom-advanced > summary:hover {
+  color: var(--foreground);
+}
+.models-custom-advanced-body {
+  @apply mt-2.5 grid grid-cols-2 gap-x-3 gap-y-3.5;
+}
+.models-custom-dialog-footer {
+  @apply flex shrink-0 items-center justify-end gap-2 px-6 pt-3 pb-5;
+}
+.provider-oauth-dialog {
+  border-radius: calc(var(--radius-panel) + 3px);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.provider-oauth-header {
+  @apply flex items-start justify-between gap-4 border-b px-5 py-4;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+}
+.provider-oauth-heading {
+  @apply flex min-w-0 items-start gap-3;
+}
+.provider-oauth-icon {
+  @apply mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[10px];
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.provider-oauth-title {
+  @apply m-0 text-[16px] font-semibold tracking-tight text-[var(--foreground)];
+}
+.provider-oauth-heading p {
+  @apply mt-1 mb-0 text-[12px] leading-relaxed text-[var(--muted-foreground)];
+}
+.provider-oauth-close {
+  @apply flex size-7 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] transition-colors;
+}
+.provider-oauth-close:hover {
+  color: var(--foreground);
+  background: var(--hover-fill);
+}
+.provider-oauth-body {
+  @apply flex flex-col gap-3 px-5 py-4;
+}
+.provider-oauth-step {
+  @apply flex items-center justify-between gap-4 rounded-xl border px-3.5 py-3;
+  border-color: color-mix(in srgb, var(--border) 76%, transparent);
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
+}
+.provider-oauth-step-copy {
+  @apply flex min-w-0 flex-col gap-0.5;
+}
+.provider-oauth-step-copy strong,
+.provider-oauth-prompt > strong,
+.provider-oauth-prompt > label {
+  @apply text-[13px] font-medium text-[var(--foreground)];
+}
+.provider-oauth-step-copy span {
+  @apply text-[11.5px] leading-relaxed text-[var(--muted-foreground)];
+}
+.provider-oauth-device {
+  @apply flex flex-col items-center gap-2 rounded-xl border px-4 py-4 text-center;
+  border-color: color-mix(in srgb, var(--ring) 26%, var(--border));
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--ring) 10%, transparent),
+      transparent 72%
+    ),
+    color-mix(in srgb, var(--muted) 42%, transparent);
+}
+.provider-oauth-device > span {
+  @apply text-[11px] font-medium tracking-[0.08em] text-[var(--muted-foreground)] uppercase;
+}
+.provider-oauth-code {
+  @apply flex items-center gap-2 rounded-lg px-3 py-1 font-mono text-[24px] font-semibold tracking-[0.14em] text-[var(--foreground)] transition-colors;
+}
+.provider-oauth-code:hover {
+  background: var(--hover-fill);
+}
+.provider-oauth-link {
+  @apply flex max-w-full items-center gap-1 truncate text-[11.5px] text-[var(--muted-foreground)] hover:text-[var(--foreground)];
+}
+.provider-oauth-message {
+  @apply m-0 rounded-lg px-3 py-2 text-[12px] leading-relaxed text-[var(--muted-foreground)];
+  background: color-mix(in srgb, var(--muted) 54%, transparent);
+}
+.provider-oauth-message-error {
+  color: var(--destructive-foreground, #dc2626);
+  background: color-mix(in srgb, #dc2626 9%, transparent);
+}
+.provider-oauth-links {
+  @apply flex flex-wrap items-center gap-2;
+}
+.provider-oauth-links button {
+  @apply inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-[11.5px] text-[var(--muted-foreground)] transition-colors;
+  background: color-mix(in srgb, var(--muted) 46%, transparent);
+}
+.provider-oauth-links button:hover {
+  color: var(--foreground);
+  background: var(--hover-fill);
+}
+.provider-oauth-result {
+  @apply flex items-center gap-3 rounded-xl border px-3.5 py-3;
+  border-color: color-mix(in srgb, var(--border) 76%, transparent);
+}
+.provider-oauth-result-icon {
+  @apply flex size-9 shrink-0 items-center justify-center rounded-full text-[var(--muted-foreground)];
+  background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+}
+.provider-oauth-result-success {
+  color: #16a34a;
+  background: color-mix(in srgb, #16a34a 11%, transparent);
+}
+.provider-oauth-result strong {
+  @apply text-[13px] font-medium text-[var(--foreground)];
+}
+.provider-oauth-result p {
+  @apply mt-0.5 mb-0 text-[11.5px] text-[var(--muted-foreground)];
+}
+.provider-oauth-prompt {
+  @apply flex flex-col gap-2;
+}
+.provider-oauth-options {
+  @apply flex flex-col gap-1.5;
+}
+.provider-oauth-options > button {
+  @apply grid min-h-11 grid-cols-[1fr_auto] items-center gap-x-3 rounded-xl border px-3.5 py-2 text-left transition-colors;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--muted) 32%, transparent);
+}
+.provider-oauth-options > button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ring) 34%, var(--border));
+  background: var(--hover-fill);
+}
+.provider-oauth-options > button:disabled {
+  @apply cursor-wait opacity-50;
+}
+.provider-oauth-options span {
+  @apply text-[13px] font-medium text-[var(--foreground)];
+}
+.provider-oauth-options small {
+  @apply col-start-1 text-[11.5px] leading-relaxed text-[var(--muted-foreground)];
+}
+.provider-oauth-options svg {
+  @apply row-span-2 col-start-2 row-start-1 text-[var(--text-subtle)];
+}
+.provider-oauth-input-row {
+  @apply flex items-center gap-2;
+}
+.provider-oauth-input-row > :first-child {
+  @apply min-w-0 flex-1;
+}
+.provider-oauth-waiting {
+  @apply flex items-center justify-center gap-2 py-2 text-[12px] text-[var(--muted-foreground)];
+}
+.provider-oauth-footer {
+  @apply flex justify-end border-t px-5 py-3.5;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+}
+.provider-config-footer {
+  justify-content: space-between;
+}
+.provider-config-footer-left,
+.provider-config-footer-right {
+  @apply flex items-center gap-2;
+}
+.settings-form-error {
+  @apply m-0 text-[12px] text-red-400;
+}
+.settings-form-note {
+  @apply m-0 text-[12px] text-[var(--muted-foreground)];
+}
+/* Auth provider row: configured vs missing badges */
+.settings-status-chip {
+  @apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium;
+}
+.settings-status-chip[data-configured="true"] {
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  color: color-mix(in srgb, var(--success) 78%, var(--foreground));
+}
+.settings-status-chip[data-configured="false"] {
+  background: color-mix(in srgb, var(--muted-foreground) 12%, transparent);
+  color: var(--muted-foreground);
+}
+.usage-provider-list {
+  @apply flex flex-col gap-4;
+}
+.usage-provider-card {
+  @apply overflow-hidden border;
+  border-radius: calc(var(--radius-panel) + 2px);
+  border-color: color-mix(in srgb, var(--border) 84%, transparent);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--ring) 7%, transparent),
+      transparent 38%
+    ),
+    var(--surface-panel);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+[data-theme="dark"] .usage-provider-card {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+}
+.usage-provider-header {
+  @apply flex items-start justify-between gap-4 border-b px-4 py-3.5;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+}
+.usage-provider-identity {
+  @apply min-w-0;
+}
+.usage-provider-name-row {
+  @apply flex min-w-0 flex-wrap items-center gap-2;
+}
+.usage-provider-name-row h3 {
+  @apply m-0 truncate text-[14px] font-semibold tracking-[-0.01em] text-[var(--foreground)];
+}
+.usage-plan-pill,
+.usage-status-pill {
+  @apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium;
+}
+.usage-plan-pill {
+  background: color-mix(in srgb, var(--ring) 12%, transparent);
+  color: color-mix(in srgb, var(--ring) 84%, var(--foreground));
+}
+.usage-status-pill[data-status="ok"] {
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  color: color-mix(in srgb, var(--success) 78%, var(--foreground));
+}
+.usage-status-pill[data-status="needs-auth"] {
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: color-mix(in srgb, var(--warning) 82%, var(--foreground));
+}
+.usage-status-pill[data-status="error"] {
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+  color: color-mix(in srgb, var(--danger) 78%, var(--foreground));
+}
+.usage-provider-meta {
+  @apply mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono text-[10.5px] text-[var(--text-subtle)];
+}
+.usage-meter-list {
+  @apply grid grid-cols-2 gap-x-6 gap-y-5 px-4 py-4;
+}
+.usage-meter {
+  --usage-color: var(--success);
+  @apply min-w-0;
+}
+.usage-meter[data-tone="warning"] {
+  --usage-color: var(--warning);
+}
+.usage-meter[data-tone="danger"] {
+  --usage-color: var(--danger);
+}
+.usage-meter-heading {
+  @apply mb-2 flex items-baseline justify-between gap-3 text-[12px];
+}
+.usage-meter-heading > span {
+  @apply min-w-0 truncate font-medium text-[var(--foreground)];
+}
+.usage-meter-heading strong {
+  color: var(--usage-color);
+  @apply shrink-0 text-[11.5px] font-semibold tabular-nums;
+}
+.usage-meter-track {
+  @apply h-1.5 w-full overflow-hidden rounded-full;
+  background: color-mix(in srgb, var(--muted-foreground) 13%, transparent);
+}
+.usage-meter-track > span {
+  @apply block h-full rounded-full;
+  min-width: 2px;
+  background: var(--usage-color);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--usage-color) 24%, transparent);
+  transition: width 280ms ease-out;
+}
+.usage-meter-footnote {
+  @apply mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[10.5px] text-[var(--text-subtle)];
+}
+.usage-line-grid {
+  @apply m-0 grid grid-cols-2 gap-px border-t;
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.usage-line-grid > div {
+  @apply min-w-0 px-4 py-3;
+  background: color-mix(in srgb, var(--surface-panel) 96%, var(--muted));
+}
+.usage-line-grid dt {
+  @apply text-[10.5px] text-[var(--text-subtle)];
+}
+.usage-line-grid dd {
+  @apply m-0 mt-0.5 truncate text-[12.5px] font-medium text-[var(--foreground)];
+}
+.usage-line-grid small {
+  @apply mt-0.5 block text-[10.5px] text-[var(--muted-foreground)];
+}
+.usage-provider-detail {
+  @apply m-0 border-t px-4 py-3 text-[12px] leading-relaxed text-[var(--muted-foreground)];
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+}
+.usage-empty {
+  @apply border px-5 py-8 text-center;
+  border-style: dashed;
+  border-radius: var(--radius-panel);
+  border-color: color-mix(in srgb, var(--border) 86%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 65%, transparent);
+}
+.usage-empty-title {
+  @apply text-[13.5px] font-medium text-[var(--foreground)];
+}
+.usage-empty p {
+  @apply mx-auto mt-1.5 mb-0 max-w-[460px] text-[12px] leading-relaxed text-[var(--muted-foreground)];
+}
+.usage-loading {
+  @apply flex flex-col gap-3;
+}
+.usage-loading span {
+  @apply block h-[148px] animate-pulse border;
+  border-radius: calc(var(--radius-panel) + 2px);
+  border-color: color-mix(in srgb, var(--border) 66%, transparent);
+  background: color-mix(in srgb, var(--muted-foreground) 7%, transparent);
+}
+@media (max-width: 680px) {
+  .usage-meter-list,
+  .usage-line-grid {
+    @apply grid-cols-1;
+  }
+  .usage-provider-header {
+    @apply gap-2;
+  }
+}
+.settings-snapshot {
+  @apply m-0 max-h-64 overflow-auto rounded-lg p-3 font-mono text-[11px] leading-relaxed;
+  background: var(--muted);
+  color: var(--foreground);
+}
+.settings-model-badge {
+  @apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium;
+}
+.settings-model-badge-default {
+  background: color-mix(in srgb, #0a84ff 16%, transparent);
+  color: #0a84ff;
+}
+.settings-model-badge-session {
+  background: color-mix(in srgb, #34c759 16%, transparent);
+  color: #248a3d;
+}
+[data-theme="dark"] .settings-model-badge-session {
+  color: #30d158;
+}
+
+/* Project / thread context menu — top-layer portal (fixed + z-index) */
+.project-context-menu {
+  background: var(--surface-panel);
+  color: var(--foreground);
+  border-color: var(--border) !important;
+  border-radius: var(--radius-panel);
+  box-shadow:
+    0 16px 48px rgb(0 0 0 / 0.22),
+    0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+[data-theme="dark"] .project-context-menu {
+  box-shadow:
+    0 16px 48px rgb(0 0 0 / 0.55),
+    0 0 0 1px color-mix(in srgb, var(--sidebar-border) 60%, transparent);
+}
+
+/* Settings rail (left) — Codex hierarchy */
+.settings-rail-back {
+  @apply flex h-8 w-full min-w-0 items-center gap-2.5 px-2.5 text-left font-normal text-[var(--sidebar-foreground)] transition-colors;
+  border-radius: var(--radius-control);
+  /* Same type scale as .settings-rail-item (not a hard-coded 13px). */
+  font-size: var(--ui-font-size, 14px);
+}
+.settings-rail-back:hover {
+  background: var(--hover-fill);
+}
+.settings-rail-group-label {
+  margin: 0;
+  padding: 0.75rem 0.625rem 0.25rem;
+  /* type from .group-label — same size as rail items / regular UI text */
+}
+.settings-rail-item {
+  @apply flex h-[32px] w-full min-w-0 items-center gap-2.5 px-2.5 text-left font-normal transition-colors;
+  border-radius: var(--radius-control);
+  color: var(--sidebar-foreground);
+  font-size: var(--ui-font-size, 14px);
+}
+.settings-rail-item:hover {
+  background: var(--hover-fill);
+  color: var(--sidebar-foreground);
+}
+.settings-rail-item[data-active="true"] {
+  background: var(--hover-fill);
+  color: var(--hover-fill-foreground);
+}
+
+@media (max-width: 900px) {
+  .install-form {
+    @apply grid-cols-1;
+  }
+
+  .install-actions {
+    @apply w-full;
+  }
+
+  .install-actions .btn-primary {
+    @apply w-full;
+  }
+
+  .page-header {
+    @apply flex-wrap items-center;
+  }
+
+  .page-header-actions {
+    @apply w-full flex-wrap justify-end;
+  }
+
+  .app-shell.sidebar-open .sidebar {
+    @apply absolute inset-y-0 left-0 z-30 w-[min(272px,88vw)] shadow-2xl;
+  }
+}

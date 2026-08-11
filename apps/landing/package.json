@@ -1,0 +1,32 @@
+{
+  "name": "@zeno/landing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Zeno product landing page",
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev --config vite.config.ts",
+    "build": "vp build --config vite.config.ts",
+    "preview": "vp preview --config vite.config.ts",
+    "test": "vp test --run --config vite.config.ts --passWithNoTests"
+  },
+  "dependencies": {
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwind-merge": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
