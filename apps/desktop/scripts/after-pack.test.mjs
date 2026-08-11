@@ -24,7 +24,7 @@ function assert(condition, message) {
   );
   assert(yml.includes("provider: github"), "provider line");
   assert(yml.includes("owner: num-scope"), "owner line");
-  assert(yml.includes("repo: pix"), "repo line");
+  assert(yml.includes("repo: zeno"), "repo line");
   assert(yml.includes("releaseType: release"), "releaseType line");
   assert(yml.includes('updaterCacheDirName: "@pixdesktop-updater"'), "quoted cache dir");
 }
