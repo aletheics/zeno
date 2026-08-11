@@ -10,6 +10,7 @@
   "scripts": {
     "build": "vp build --config vite.renderer.config.ts && vp build --config vite.preload.config.ts && vp build --config vite.main.config.ts && vp build --config vite.agent.config.ts",
     "dev": "pnpm run build && node scripts/launch.mjs",
+    "watch": "node scripts/watch.mjs",
     "e2e": "pnpm run build && playwright test",
     "e2e:ui": "pnpm run build && playwright test --ui",
     "demo:session-content": "vp build --config vite.renderer.config.ts && vp preview --config vite.renderer.config.ts --host 127.0.0.1 --port 4177 --open /session-content-demo.html",

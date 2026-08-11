@@ -10,6 +10,8 @@
     "test": "vp run --no-cache -r test",
     "build": "vp run -r build",
     "dev": "pnpm dev:desktop",
+    "watch": "pnpm watch:desktop",
+    "watch:desktop": "vp run --no-cache @zeno/desktop#watch",
     "dev:desktop": "vp run --no-cache @zeno/desktop#dev",
     "build:desktop": "vp run --no-cache @zeno/desktop#build",
     "dev:landing": "vp run --no-cache @zeno/landing#dev",

@@ -4465,7 +4465,13 @@ async function createWindow(): Promise<void> {
     mainWindow.show();
   });
   supervisor = new HostSupervisor(mainWindow);
-  await mainWindow.loadFile(join(currentDirectory, "..", "renderer", "index.html"));
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    await mainWindow.loadURL(devServerUrl);
+    if (!app.isPackaged) mainWindow.webContents.openDevTools();
+  } else {
+    await mainWindow.loadFile(join(currentDirectory, "..", "renderer", "index.html"));
+  }
   // Fallback if ready-to-show already fired before listener (rare on some platforms).
   if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
     if (savedWindow.isMaximized) mainWindow.maximize();
