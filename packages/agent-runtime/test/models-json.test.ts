@@ -83,7 +83,7 @@ describe("models.json helpers", () => {
     expect(raw.providers.ollama?.apiKey).toBeUndefined();
     expect(JSON.stringify(raw)).not.toContain("should-not-be-written");
     expect(raw.providers.ollama?.authHeader).toBe(true);
-    expect(raw.providers.ollama?.headers?.["User-Agent"]).toMatch(/^PixDesktop\//);
+    expect(raw.providers.ollama?.headers?.["User-Agent"]).toMatch(/^ZenoDesktop\//);
     expect(raw.providers.ollama?.headers?.["User-Agent"]).toBe(DEFAULT_CUSTOM_PROVIDER_USER_AGENT);
     const model = raw.providers.ollama?.models.find((m) => m.id === "llama3.1:8b");
     expect(model?.name).toBe("Llama 3.1 8B");
@@ -234,7 +234,7 @@ describe("models.json helpers", () => {
       providers: { proxy?: { headers?: Record<string, string> } };
     };
     expect(raw.providers.proxy?.headers?.["User-Agent"]).toBe("MyProxyClient/1.0");
-    expect(defaultCustomProviderUserAgent("1.2.3")).toBe("PixDesktop/1.2.3");
+    expect(defaultCustomProviderUserAgent("1.2.3")).toBe("ZenoDesktop/1.2.3");
   });
 
   it("renames a model via previousProvider/previousModelId", async () => {
