@@ -449,7 +449,7 @@ function ContextUsageIndicator(props: {
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className="inline-flex size-8 shrink-0 cursor-help items-center justify-center rounded-full text-muted-foreground"
+            className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground"
             data-testid="usage-chip"
             data-context-percent={value}
             role="meter"
@@ -1433,7 +1433,7 @@ export function Composer(props: ComposerProps) {
               type="button"
               data-testid="composer-access"
               className={cn(
-                "inline-flex h-8 max-w-[11rem] items-center gap-1 rounded-full px-2",
+                "inline-flex h-8 max-w-[11rem] cursor-pointer items-center gap-1 rounded-full px-2",
                 "text-[12px] hover:bg-[var(--hover-fill)]",
                 props.accessMode === "full"
                   ? "text-[#ff5c1a] hover:bg-[#ff5c1a]/12 hover:text-[#ff4d00]"
@@ -1476,7 +1476,7 @@ export function Composer(props: ComposerProps) {
                   : modelLabel
               }
               className={cn(
-                "inline-flex h-8 min-w-0 max-w-[14rem] items-center gap-2 rounded-full px-2",
+                "inline-flex h-8 min-w-0 max-w-[14rem] cursor-pointer items-center gap-2 rounded-full px-2",
                 "text-[12px] text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
                 !props.modelOptions.length && !props.modelValue && "opacity-50",
               )}

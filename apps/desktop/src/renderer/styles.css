@@ -1351,6 +1351,7 @@ html[data-custom-window-controls="true"] .page-header {
   border-radius: var(--radius-control);
   padding: 0.25rem 0.45rem;
   color: var(--foreground);
+  cursor: pointer;
   transition: background 0.12s ease;
 }
 .composer-protrusion-chip:hover,
