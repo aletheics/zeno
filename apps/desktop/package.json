@@ -22,10 +22,10 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "catalog:",
-    "@zeno/agent-runtime": "workspace:*",
-    "@zeno/contracts": "workspace:*",
     "@shadcn/react": "catalog:",
     "@silvia-odwyer/photon-node": "catalog:",
+    "@zeno/agent-runtime": "workspace:*",
+    "@zeno/contracts": "workspace:*",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "cmdk": "catalog:",
@@ -49,12 +49,12 @@
     "zustand": "catalog:"
   },
   "devDependencies": {
-    "@zeno/test-utils": "workspace:*",
     "@playwright/test": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@zeno/test-utils": "workspace:*",
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "playwright": "catalog:",

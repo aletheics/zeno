@@ -88,17 +88,17 @@ Output: `apps/desktop/release/app/` (unsigned in CI — no code-signing certs ye
 
 Each tagged release publishes only what installers and **electron-updater** need:
 
-| Asset                                       | Role                                        |
-| ------------------------------------------- | ------------------------------------------- |
-| `Zeno-*-win-x64.exe`                         | Windows install (NSIS)                      |
-| `latest.yml`                                | Windows update feed                         |
+| Asset                                         | Role                                        |
+| --------------------------------------------- | ------------------------------------------- |
+| `Zeno-*-win-x64.exe`                          | Windows install (NSIS)                      |
+| `latest.yml`                                  | Windows update feed                         |
 | `Zeno-*-mac-arm64.dmg` / `Zeno-*-mac-x64.dmg` | macOS manual install                        |
 | `Zeno-*-mac-arm64.zip` / `Zeno-*-mac-x64.zip` | macOS **auto-update** payload               |
-| `latest-mac.yml`                            | macOS update feed (lists both zips)         |
-| `Zeno-*-linux-*.AppImage`                    | Linux run / update                          |
-| `Zeno-*-linux-*.deb`                         | Linux manual install (optional convenience) |
-| `latest-linux.yml`                          | Linux update feed                           |
-| `*.blockmap`                                | Differential download maps (when generated) |
+| `latest-mac.yml`                              | macOS update feed (lists both zips)         |
+| `Zeno-*-linux-*.AppImage`                     | Linux run / update                          |
+| `Zeno-*-linux-*.deb`                          | Linux manual install (optional convenience) |
+| `latest-linux.yml`                            | Linux update feed                           |
+| `*.blockmap`                                  | Differential download maps (when generated) |
 
 CI **fails** if any required feed or mac zip is missing (`scripts/release-assets.mjs`). Blockmaps are kept when present so updates can download only changed ranges.
 

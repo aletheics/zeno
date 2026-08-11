@@ -141,7 +141,9 @@ export function SessionContentDemoApp() {
             启动：
             <code className="text-foreground">pnpm demo:session-content</code>
             （仓库根）或{" "}
-            <code className="text-foreground">pnpm --filter @zeno/desktop demo:session-content</code>
+            <code className="text-foreground">
+              pnpm --filter @zeno/desktop demo:session-content
+            </code>
             <br />
             地址：
             <code className="text-foreground">http://127.0.0.1:4177/session-content-demo.html</code>
