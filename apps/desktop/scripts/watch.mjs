@@ -187,7 +187,7 @@ for (const file of distOutputs) {
   try {
     watchFile(file, { interval: 600 }, (curr, prev) => {
       if (curr.mtimeMs !== prev.mtimeMs) {
-        scheduleRestart();
+        void scheduleRestart();
       }
     });
     console.log(`[watch] Watching ${file}`);
@@ -197,7 +197,7 @@ for (const file of distOutputs) {
 }
 
 // ── 5. Launch Electron ──
-launchElectron();
+void launchElectron();
 
 // ── 6. Cleanup ──
 let cleaning = false;
@@ -207,7 +207,11 @@ async function cleanup() {
   console.log("\n[watch] Shutting down ...");
   if (restartTimer) clearTimeout(restartTimer);
   for (const file of distOutputs) {
-    try { unwatchFile(file); } catch { /* ignore */ }
+    try {
+      unwatchFile(file);
+    } catch {
+      /* ignore */
+    }
   }
   await killElectron();
   for (const proc of [rendererDev, ...buildProcs]) {
