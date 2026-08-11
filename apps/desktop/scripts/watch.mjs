@@ -80,7 +80,7 @@ execSync(
 console.log(`[watch] Starting Vite dev server on ${devServerUrl} ...`);
 const rendererDev = run(
   vpBin,
-  ["--config", "vite.renderer.config.ts", "--port", String(devServerPort)],
+  ["dev", "--config", "vite.renderer.config.ts", "--port", String(devServerPort)],
   {
     env: { ...process.env },
   },
