@@ -3571,8 +3571,8 @@ function ModelsSectionContent(
   const [apiKey, setApiKey] = useState("");
   const [authHeader, setAuthHeader] = useState(false);
   const [authHeaderTouched, setAuthHeaderTouched] = useState(false);
-  /** HTTP User-Agent for proxy providers; default PixDesktop/{appVersion}. */
-  const [userAgent, setUserAgent] = useState("PixDesktop/0.0.0");
+  /** HTTP User-Agent for proxy providers; default ZenoDesktop/{appVersion}. */
+  const [userAgent, setUserAgent] = useState("ZenoDesktop/0.0.0");
   const [appVersion, setAppVersion] = useState("0.0.0");
   const [catalogModelKey, setCatalogModelKey] = useState(MANUAL_MODEL_CATALOG_VALUE);
   const [modelSuggestionsOpen, setModelSuggestionsOpen] = useState(false);
@@ -3646,7 +3646,7 @@ function ModelsSectionContent(
 
   function defaultUserAgent(version = appVersion): string {
     const v = version.replace(/^v/i, "").trim() || "0.0.0";
-    return `PixDesktop/${v}`;
+    return `ZenoDesktop/${v}`;
   }
 
   function resetCustomForm() {
@@ -3783,7 +3783,7 @@ function ModelsSectionContent(
         const v = (runtime.appVersion || "0.0.0").replace(/^v/i, "").trim() || "0.0.0";
         setAppVersion(v);
         setUserAgent((current) =>
-          !current || current === "PixDesktop/0.0.0" ? `PixDesktop/${v}` : current,
+          !current || current === "ZenoDesktop/0.0.0" ? `ZenoDesktop/${v}` : current,
         );
       })
       .catch(() => {
