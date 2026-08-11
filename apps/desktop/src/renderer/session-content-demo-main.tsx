@@ -1,6 +1,6 @@
 /**
  * Browser entry for the real session-content demo.
- * Outside Electron there is no preload `window.pix` — install a stub first so
+ * Outside Electron there is no preload `window.zeno` — install a stub first so
  * TimelineRow attachment previews / file opens do not throw on mount.
  */
 import { StrictMode, Component, type ErrorInfo, type ReactNode } from "react";
@@ -15,7 +15,7 @@ const DEMO_IMAGE_DATA_URL =
 function installBrowserPixStub(): void {
   if (typeof window === "undefined") return;
   // Only skip if a real Electron preload already installed workspace APIs.
-  const existing = window.pix as { workspace?: { readAttachmentPreview?: unknown } } | undefined;
+  const existing = window.zeno as { workspace?: { readAttachmentPreview?: unknown } } | undefined;
   if (existing?.workspace && typeof existing.workspace.readAttachmentPreview === "function") {
     return;
   }
@@ -36,7 +36,7 @@ function installBrowserPixStub(): void {
     },
   };
 
-  window.pix = { workspace } as unknown as Window["pix"];
+  window.zeno = { workspace } as unknown as Window["zeno"];
 }
 
 class DemoErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {

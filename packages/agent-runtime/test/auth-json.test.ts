@@ -6,7 +6,7 @@ import { authJsonPath, deleteProviderCredential, persistProviderApiKey } from ".
 
 describe("auth.json persistence", () => {
   it("writes durable api_key credentials and can delete them", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "pix-auth-json-"));
+    const dir = await mkdtemp(join(tmpdir(), "zeno-auth-json-"));
     try {
       await persistProviderApiKey(dir, "XTJ", "sk-test-key");
       const raw = await readFile(authJsonPath(dir), "utf8");

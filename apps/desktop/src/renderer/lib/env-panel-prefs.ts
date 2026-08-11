@@ -13,7 +13,7 @@ export type EnvPanelSectionId =
 
 export type EnvPanelVisibility = Record<EnvPanelSectionId, boolean>;
 
-const KEY = "pix.envPanel.visibility";
+const KEY = "zeno.envPanel.visibility";
 
 export const ENV_PANEL_SECTION_IDS: EnvPanelSectionId[] = [
   "changes",

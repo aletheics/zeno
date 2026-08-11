@@ -22,8 +22,8 @@ import { augmentEnvPath } from "./shell-path.ts";
 const execFileAsync = promisify(execFile);
 
 export const PI_SDK_PACKAGE = "@earendil-works/pi-coding-agent";
-export const PIX_PI_SDK_SOURCE_ENV = "PIX_PI_SDK_SOURCE";
-export const PIX_PI_SDK_ROOT_ENV = "PIX_PI_SDK_ROOT";
+export const ZENO_PI_SDK_SOURCE_ENV = "ZENO_PI_SDK_SOURCE";
+export const ZENO_PI_SDK_ROOT_ENV = "ZENO_PI_SDK_ROOT";
 
 export type PiSdkPrefs = {
   source: PiSdkSource;
@@ -544,14 +544,14 @@ export function piSdkSpawnEnv(
   const useGlobal = preference.source === "global" && global.available && global.packageRoot;
   if (useGlobal && global.packageRoot) {
     return {
-      [PIX_PI_SDK_SOURCE_ENV]: "global",
-      [PIX_PI_SDK_ROOT_ENV]: global.packageRoot,
+      [ZENO_PI_SDK_SOURCE_ENV]: "global",
+      [ZENO_PI_SDK_ROOT_ENV]: global.packageRoot,
     };
   }
   const out: Record<string, string> = {
-    [PIX_PI_SDK_SOURCE_ENV]: "builtin",
+    [ZENO_PI_SDK_SOURCE_ENV]: "builtin",
   };
-  if (builtin.packageRoot) out[PIX_PI_SDK_ROOT_ENV] = builtin.packageRoot;
+  if (builtin.packageRoot) out[ZENO_PI_SDK_ROOT_ENV] = builtin.packageRoot;
   return out;
 }
 

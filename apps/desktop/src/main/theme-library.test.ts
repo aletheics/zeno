@@ -36,7 +36,7 @@ afterEach(() => {
 
 describe("ThemeLibrary", () => {
   it("starts with and persists the unskinned default selection", () => {
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const library = new ThemeLibrary(root);
 
     expect(library.list()).toMatchObject({ activeId: "default", skins: [] });
@@ -47,7 +47,7 @@ describe("ThemeLibrary", () => {
   });
 
   it("keeps the active skin when importing a portable package", () => {
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const packageDir = join(root, "portable");
     mkdirSync(packageDir);
     writeFileSync(
@@ -80,7 +80,7 @@ describe("ThemeLibrary", () => {
       normalizeThemeSkinConfig({
         schemaVersion: 1,
         name: "Unsafe token",
-        light: { tokens: { "--not-a-pix-token": "#fff" } },
+        light: { tokens: { "--not-a-zeno-token": "#fff" } },
       }),
     ).toThrow("Unsupported theme token");
 
@@ -126,7 +126,7 @@ describe("ThemeLibrary", () => {
   });
 
   it("exports managed wallpaper assets and falls back to the unskinned default", () => {
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const sourceImage = join(root, "source.png");
     const exportRoot = join(root, "exports");
     writeFileSync(sourceImage, "mock-image");
@@ -150,7 +150,7 @@ describe("ThemeLibrary", () => {
     expect(exportedConfig.image).toBe("background.png");
     expect(existsSync(join(output, "background.png"))).toBe(true);
     expect(JSON.parse(readFileSync(join(output, "manifest.json"), "utf8"))).toMatchObject({
-      type: "pix-theme-skin",
+      type: "zeno-theme-skin",
       files: ["theme.json", "background.png"],
     });
 
@@ -160,7 +160,7 @@ describe("ThemeLibrary", () => {
   });
 
   it("edits a built-in theme in place under the same id", () => {
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const library = new ThemeLibrary(root);
 
     const snapshot = library.save({
@@ -201,7 +201,7 @@ describe("ThemeLibrary", () => {
   });
 
   it("still creates uuid skins when no id is provided", () => {
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const library = new ThemeLibrary(root);
     const snapshot = library.save({
       config: { schemaVersion: 1, name: "Custom glass" },
@@ -213,7 +213,7 @@ describe("ThemeLibrary", () => {
 
   it("migrates removed built-in presets to the unskinned default", () => {
     for (const activeId of ["classic-light", "classic-dark", "lagoon"]) {
-      const root = temporaryRoot("pix-theme-library-");
+      const root = temporaryRoot("zeno-theme-library-");
       const libraryRoot = join(root, "theme-library");
       mkdirSync(libraryRoot);
       writeFileSync(
@@ -227,7 +227,7 @@ describe("ThemeLibrary", () => {
 
   it("rejects symbolic-link wallpaper sources", () => {
     if (process.platform === "win32") return;
-    const root = temporaryRoot("pix-theme-library-");
+    const root = temporaryRoot("zeno-theme-library-");
     const sourceImage = join(root, "source.png");
     const linkedImage = join(root, "linked.png");
     writeFileSync(sourceImage, "mock-image");

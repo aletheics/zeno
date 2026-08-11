@@ -21,18 +21,18 @@ function saveBool(key: string, value: boolean): void {
 
 /** Confirm before deleting a conversation/session (default on). */
 export function loadConfirmDelete(): boolean {
-  return loadBool("pix.behavior.confirmDelete", true);
+  return loadBool("zeno.behavior.confirmDelete", true);
 }
 
 export function saveConfirmDelete(value: boolean): void {
-  saveBool("pix.behavior.confirmDelete", value);
+  saveBool("zeno.behavior.confirmDelete", value);
 }
 
 /** Confirm before archiving a conversation/session/project (default on). */
 export function loadConfirmArchive(): boolean {
-  return loadBool("pix.behavior.confirmArchive", true);
+  return loadBool("zeno.behavior.confirmArchive", true);
 }
 
 export function saveConfirmArchive(value: boolean): void {
-  saveBool("pix.behavior.confirmArchive", value);
+  saveBool("zeno.behavior.confirmArchive", value);
 }

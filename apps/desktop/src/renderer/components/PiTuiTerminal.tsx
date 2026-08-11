@@ -355,12 +355,12 @@ function forcePtyRepaint(cols: number, rows: number, requestRedraw = false): voi
   const r = Math.max(5, Math.floor(rows));
   const altC = c > 20 ? c - 1 : c + 1;
   const altR = r > 5 ? r - 1 : r + 1;
-  void window.pix.terminal.resize(altC, altR).catch(() => undefined);
+  void window.zeno.terminal.resize(altC, altR).catch(() => undefined);
   window.setTimeout(() => {
-    void window.pix.terminal.resize(c, r).catch(() => undefined);
+    void window.zeno.terminal.resize(c, r).catch(() => undefined);
     // Some TUI builds ignore a resize while an edit frame is idle. Ctrl+L redraws
     // without submitting or modifying the current input buffer.
-    if (requestRedraw) void window.pix.terminal.write("\x0c").catch(() => undefined);
+    if (requestRedraw) void window.zeno.terminal.write("\x0c").catch(() => undefined);
   }, 16);
 }
 
@@ -476,7 +476,7 @@ export function PiTuiTerminal(props: {
         fit?.fit();
         // FitAddon may change cols/rows; re-apply so canvas matches the new grid.
         applyTerminalLineHeight(target, opts.lineHeight);
-        void window.pix.terminal.resize(target.cols, target.rows).catch(() => undefined);
+        void window.zeno.terminal.resize(target.cols, target.rows).catch(() => undefined);
       } catch {
         // ignore
       }
@@ -586,7 +586,7 @@ export function PiTuiTerminal(props: {
         if (cancelled || !term) return;
         try {
           fit?.fit();
-          void window.pix.terminal.resize(term.cols, term.rows).catch(() => undefined);
+          void window.zeno.terminal.resize(term.cols, term.rows).catch(() => undefined);
           normalizeInitialPromptCursor(term);
           syncTerminalInputCaret(term);
           focusTerminalInput(term);
@@ -599,7 +599,7 @@ export function PiTuiTerminal(props: {
           if (term) {
             try {
               fit?.fit();
-              void window.pix.terminal.resize(term.cols, term.rows).catch(() => undefined);
+              void window.zeno.terminal.resize(term.cols, term.rows).catch(() => undefined);
               focusTerminalInput(term);
               publishPaintStats(term);
             } catch {
@@ -685,7 +685,7 @@ export function PiTuiTerminal(props: {
         }
       }
 
-      unsubData = window.pix.terminal.onData((event) => {
+      unsubData = window.zeno.terminal.onData((event) => {
         if (cancelled) return;
         // Ignore queued bytes belonging to a PTY that was disposed during a hop.
         if (event.sessionFile && normSession(event.sessionFile) !== expectedKey) return;
@@ -697,17 +697,17 @@ export function PiTuiTerminal(props: {
         }
         writeTerminalOutput(event.data);
       });
-      unsubExit = window.pix.terminal.onExit((event) => {
+      unsubExit = window.zeno.terminal.onExit((event) => {
         if (event.sessionFile && normSession(event.sessionFile) !== expectedKey) return;
         onExitRef.current?.(event);
       });
       onDataDisp = next.onData((data) => {
-        void window.pix.terminal.write(data).catch(() => undefined);
+        void window.zeno.terminal.write(data).catch(() => undefined);
         // Local keystrokes move the TUI caret before the next PTY frame arrives.
         syncTerminalInputCaret(next);
       });
       onResizeDisp = next.onResize(({ cols, rows }) => {
-        void window.pix.terminal.resize(cols, rows).catch(() => undefined);
+        void window.zeno.terminal.resize(cols, rows).catch(() => undefined);
         syncTerminalInputCaret(next);
         suppressGhosttyCanvasScrollbar(next);
         showOverlayThumb();
@@ -852,7 +852,7 @@ export function PiTuiTerminal(props: {
       // Do NOT dispose first — open() resumes same session or promotes a parked one.
       let opened: { sessionFile?: string; resumed?: boolean };
       try {
-        opened = await window.pix.terminal.open({
+        opened = await window.zeno.terminal.open({
           sessionFile,
           cwd,
           cols,
@@ -865,9 +865,9 @@ export function PiTuiTerminal(props: {
       if (cancelled) {
         // Stale mount: only kill if we still own this session (don't wipe a newer hop).
         try {
-          const st = await window.pix.terminal.status();
+          const st = await window.zeno.terminal.status();
           if (st.sessionFile && normSession(st.sessionFile) === expectedKey) {
-            await window.pix.terminal.suspend();
+            await window.zeno.terminal.suspend();
           }
         } catch {
           // ignore

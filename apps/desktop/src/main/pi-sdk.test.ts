@@ -51,7 +51,7 @@ describe("normalizePiSdk", () => {
 
 describe("packageRootFromEntry", () => {
   it("walks up to package root", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-pi-sdk-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pi-sdk-"));
     tempDirs.push(root);
     writeFakePackage(root, "1.2.3");
     expect(packageRootFromEntry(join(root, "dist", "cli.js"))).toBe(realpathSync(root));
@@ -60,7 +60,7 @@ describe("packageRootFromEntry", () => {
 
 describe("resolveBuiltinSdk", () => {
   it("finds package under search roots", () => {
-    const app = mkdtempSync(join(tmpdir(), "pix-pi-app-"));
+    const app = mkdtempSync(join(tmpdir(), "zeno-pi-app-"));
     tempDirs.push(app);
     const pkg = join(app, "node_modules", "@earendil-works", "pi-coding-agent");
     writeFakePackage(pkg, "9.9.9");
@@ -74,7 +74,7 @@ describe("resolveBuiltinSdk", () => {
 
 describe("listPiConfigFiles", () => {
   it("reports existence and auth not openable", () => {
-    const agentDir = mkdtempSync(join(tmpdir(), "pix-agent-"));
+    const agentDir = mkdtempSync(join(tmpdir(), "zeno-agent-"));
     tempDirs.push(agentDir);
     writeFileSync(join(agentDir, "settings.json"), "{}\n");
     writeFileSync(join(agentDir, "auth.json"), '{"x":1}\n');
@@ -129,8 +129,8 @@ describe("buildPiSdkStatus / spawn env", () => {
     expect(status.activity.parkedBusyCount).toBe(1);
 
     const env = piSdkSpawnEnv({ source: "global" }, builtin, global);
-    expect(env.PIX_PI_SDK_SOURCE).toBe("global");
-    expect(env.PIX_PI_SDK_ROOT).toBe(global.packageRoot);
+    expect(env.ZENO_PI_SDK_SOURCE).toBe("global");
+    expect(env.ZENO_PI_SDK_ROOT).toBe(global.packageRoot);
   });
 
   it("falls back to builtin spawn env when global missing", () => {
@@ -146,8 +146,8 @@ describe("buildPiSdkStatus / spawn env", () => {
       error: "missing",
     };
     const env = piSdkSpawnEnv({ source: "global" }, builtin, global);
-    expect(env.PIX_PI_SDK_SOURCE).toBe("builtin");
-    expect(env.PIX_PI_SDK_ROOT).toBe("/builtin");
+    expect(env.ZENO_PI_SDK_SOURCE).toBe("builtin");
+    expect(env.ZENO_PI_SDK_ROOT).toBe("/builtin");
   });
 
   it("formats busy error prefix for UI branching", () => {

@@ -311,7 +311,7 @@ function ProxySection(
   // re-fetch prefs and wipe unsaved local edits (e.g. custom mode + first Discover).
   useEffect(() => {
     let cancelled = false;
-    void window.pix.proxy
+    void window.zeno.proxy
       .get()
       .then((value) => {
         if (cancelled) return;
@@ -336,7 +336,7 @@ function ProxySection(
     if (busy || loading) return;
     setBusy(true);
     try {
-      const value = await window.pix.proxy.set(prefs);
+      const value = await window.zeno.proxy.set(prefs);
       setPrefs(value);
       setSaved(value);
       useShellStore.getState().setStatus(tr("proxy.saved"));
@@ -367,7 +367,7 @@ function ProxySection(
     if (loading || busy || discovering) return;
     setDiscovering(key);
     try {
-      const found = await window.pix.proxy.discoverLocal();
+      const found = await window.zeno.proxy.discoverLocal();
       // Pure helper keeps mode stable (custom must not flip to system on first Discover).
       let nextCandidates: DesktopLocalProxyCandidate[] = [];
       setPrefs((current) => {
@@ -1061,7 +1061,7 @@ function NotificationsSection(
         return;
       }
       // Test always posts even when focused (diagnostics).
-      const ok = await window.pix.notifications.show({
+      const ok = await window.zeno.notifications.show({
         title: tr("notify.testTitle"),
         body: tr("notify.testBody"),
         silent: !prefs.sound,
@@ -1169,7 +1169,7 @@ function NotificationsSection(
         <SettingsPillButton
           label={tr("notify.openSystem")}
           testId="settings-notify-open-system"
-          onClick={() => void window.pix.notifications.openSystemSettings()}
+          onClick={() => void window.zeno.notifications.openSystemSettings()}
         />
       </div>
     </SettingsPageShell>
@@ -1185,7 +1185,7 @@ function EnvironmentSection(
   function toggle(id: EnvPanelSectionId, on: boolean) {
     const next = setEnvPanelSectionVisible(id, on);
     setVisibility(next);
-    window.dispatchEvent(new Event("pix-env-panel-prefs"));
+    window.dispatchEvent(new Event("zeno-env-panel-prefs"));
   }
 
   const rows: Array<{ id: EnvPanelSectionId; titleKey: MessageKey; descKey: MessageKey }> = [
@@ -1274,7 +1274,7 @@ function WorktreeSection(
     let cancelled = false;
     setLoading(true);
     // Prefs are global — do not pass cwd so the form does not rebind when the project changes.
-    void window.pix.workspace
+    void window.zeno.workspace
       .getWorktreePrefs()
       .then((p) => {
         if (cancelled) return;
@@ -1301,7 +1301,7 @@ function WorktreeSection(
     setListLoading(true);
     try {
       // All Zeno-managed linked worktrees across projects (not only the open cwd).
-      const items = await window.pix.workspace.listManagedWorktrees();
+      const items = await window.zeno.workspace.listManagedWorktrees();
       setLinkedWorktrees(items.filter((w) => !w.main && !w.bare));
     } catch {
       setLinkedWorktrees([]);
@@ -1318,7 +1318,7 @@ function WorktreeSection(
     if (busy || loading || !dirty) return;
     setBusy(true);
     try {
-      const p = await window.pix.workspace.setWorktreePrefs({
+      const p = await window.zeno.workspace.setWorktreePrefs({
         rootConfigured: prefs.rootConfigured,
         autoDelete: prefs.autoDelete,
         autoDeleteLimit: prefs.autoDeleteLimit,
@@ -1350,11 +1350,11 @@ function WorktreeSection(
     if (deletingPath) return;
     setDeletingPath(worktreePath);
     try {
-      await window.pix.workspace.removeGitWorktree(worktreePath);
+      await window.zeno.workspace.removeGitWorktree(worktreePath);
       await refreshLinkedWorktrees();
       // Notify shell to drop the path from the project rail (recent / current).
       window.dispatchEvent(
-        new CustomEvent("pix-worktree-removed", { detail: { path: worktreePath } }),
+        new CustomEvent("zeno-worktree-removed", { detail: { path: worktreePath } }),
       );
     } catch (error) {
       useShellStore
@@ -1407,7 +1407,7 @@ function WorktreeSection(
                 testId="worktree-root-pick"
                 disabled={disabled}
                 onClick={() => {
-                  void window.pix.workspace.pickFolder().then((folder) => {
+                  void window.zeno.workspace.pickFolder().then((folder) => {
                     if (!folder) return;
                     setPrefs((current) => ({ ...current, rootConfigured: folder }));
                   });
@@ -1587,7 +1587,7 @@ function GitSection(
 ) {
   const { tr } = props;
   const [prefs, setPrefs] = useState<GitDraft>({
-    branchPrefix: "pix/",
+    branchPrefix: "zeno/",
     pullMode: "merge",
     forcePush: false,
     draftPr: false,
@@ -1596,7 +1596,7 @@ function GitSection(
     modelKey: "",
   });
   const [saved, setSaved] = useState<GitDraft>({
-    branchPrefix: "pix/",
+    branchPrefix: "zeno/",
     pullMode: "merge",
     forcePush: false,
     draftPr: false,
@@ -1616,7 +1616,7 @@ function GitSection(
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void window.pix.workspace
+    void window.zeno.workspace
       .getGitPrefs()
       .then((p) => {
         if (cancelled) return;
@@ -1634,12 +1634,12 @@ function GitSection(
       try {
         let list: ModelSummary[] = [];
         try {
-          list = await window.pix.models.list();
+          list = await window.zeno.models.list();
         } catch {
           // Host may be cold — start once, then list. Do not put ensureHost in deps.
           await ensureHostRef.current();
           if (cancelled) return;
-          list = await window.pix.models.list();
+          list = await window.zeno.models.list();
         }
         if (!cancelled) setModels(list);
       } catch {
@@ -1664,7 +1664,7 @@ function GitSection(
         modelProvider = slash >= 0 ? prefs.modelKey.slice(0, slash) : prefs.modelKey;
         modelId = slash >= 0 ? prefs.modelKey.slice(slash + 1) : "";
       }
-      const p = await window.pix.workspace.setGitPrefs({
+      const p = await window.zeno.workspace.setGitPrefs({
         branchPrefix: prefs.branchPrefix,
         pullMode: prefs.pullMode,
         forcePush: prefs.forcePush,
@@ -2209,7 +2209,7 @@ function UsageLimitsSection(
     setLoadFailed(false);
     try {
       await props.onEnsureHost();
-      const snapshots = await window.pix.providers.usage();
+      const snapshots = await window.zeno.providers.usage();
       if (requestId === requestIdRef.current) setUsage(snapshots);
     } catch {
       if (requestId === requestIdRef.current) {
@@ -2527,7 +2527,7 @@ function AppearanceSection(
   useEffect(() => {
     let cancelled = false;
     const request = ++appScaleRequestRef.current;
-    void window.pix.appearance
+    void window.zeno.appearance
       .getAppScale()
       .then((scale) => {
         if (!cancelled && request === appScaleRequestRef.current) setAppScale(scale);
@@ -2569,7 +2569,7 @@ function AppearanceSection(
     if (!Number.isFinite(scale)) return;
     const request = ++appScaleRequestRef.current;
     setAppScale(scale);
-    void window.pix.appearance
+    void window.zeno.appearance
       .setAppScale(scale)
       .then((savedScale) => {
         if (request === appScaleRequestRef.current) setAppScale(savedScale);
@@ -2898,7 +2898,7 @@ function ProviderAuthScope(
     setLoading(true);
     try {
       await props.onEnsureHost();
-      const list = await window.pix.providers.list();
+      const list = await window.zeno.providers.list();
       setProviders(list);
       for (const row of list) {
         if ("key" in row || "apiKey" in row || "token" in row) {
@@ -2918,7 +2918,7 @@ function ProviderAuthScope(
   }, []);
 
   useEffect(() => {
-    return window.pix.providers.onOAuthEvent((event) => {
+    return window.zeno.providers.onOAuthEvent((event) => {
       if (event.operationId !== oauthOperationId.current) return;
       setOAuthBusy(false);
       setOAuthDialog((current) => (current ? applyOAuthEvent(current, event) : current));
@@ -2931,12 +2931,12 @@ function ProviderAuthScope(
             : undefined;
       if (url && !openedOAuthUrls.current.has(url)) {
         openedOAuthUrls.current.add(url);
-        void window.pix.workspace.openExternal(url).catch((error: unknown) => {
+        void window.zeno.workspace.openExternal(url).catch((error: unknown) => {
           showAppError(error instanceof Error ? error.message : "Failed to open OAuth URL");
         });
       }
       if (event.update.stage === "complete") {
-        void window.pix.providers
+        void window.zeno.providers
           .list()
           .then(setProviders)
           .catch((error: unknown) => {
@@ -2954,7 +2954,7 @@ function ProviderAuthScope(
     }
     setLoading(true);
     try {
-      const list = await window.pix.providers.setApiKey(configProvider.provider, apiKey.trim());
+      const list = await window.zeno.providers.setApiKey(configProvider.provider, apiKey.trim());
       setProviders(list);
       setConfigProvider(list.find((item) => item.provider === configProvider.provider));
       setApiKey("");
@@ -2984,7 +2984,7 @@ function ProviderAuthScope(
   async function clearAuth(provider: string) {
     setLoading(true);
     try {
-      const list = await window.pix.providers.clearAuth(provider);
+      const list = await window.zeno.providers.clearAuth(provider);
       setProviders(list);
       setConfigProvider(list.find((item) => item.provider === provider));
     } catch (error) {
@@ -3007,7 +3007,7 @@ function ProviderAuthScope(
       displayName: provider.displayName,
     });
     try {
-      await window.pix.providers.startOAuth(provider.provider, operationId);
+      await window.zeno.providers.startOAuth(provider.provider, operationId);
     } catch (error) {
       setOAuthBusy(false);
       setOAuthDialog((current) =>
@@ -3026,7 +3026,7 @@ function ProviderAuthScope(
     if (!oauthDialog) return;
     setOAuthBusy(true);
     try {
-      await window.pix.providers.respondOAuth(
+      await window.zeno.providers.respondOAuth(
         oauthDialog.operationId,
         prompt.promptId,
         value,
@@ -3045,7 +3045,7 @@ function ProviderAuthScope(
     setOAuthBusy(false);
     setOAuthValue("");
     if (dialog && !dialog.terminal) {
-      void window.pix.providers.cancelOAuth(dialog.operationId).catch(() => undefined);
+      void window.zeno.providers.cancelOAuth(dialog.operationId).catch(() => undefined);
     }
   }
 
@@ -3214,7 +3214,7 @@ function ProviderAuthScope(
                         variant="secondary"
                         size="sm"
                         onClick={() =>
-                          void window.pix.workspace.openExternal(oauthDialog.authUrl?.url ?? "")
+                          void window.zeno.workspace.openExternal(oauthDialog.authUrl?.url ?? "")
                         }
                       >
                         <ExternalLink size={13} />
@@ -3243,7 +3243,7 @@ function ProviderAuthScope(
                         variant="link"
                         className="provider-oauth-link h-auto p-0"
                         onClick={() =>
-                          void window.pix.workspace.openExternal(
+                          void window.zeno.workspace.openExternal(
                             oauthDialog.deviceCode?.verificationUri ?? "",
                           )
                         }
@@ -3287,7 +3287,7 @@ function ProviderAuthScope(
                           type="button"
                           variant="link"
                           className="h-auto p-0"
-                          onClick={() => void window.pix.workspace.openExternal(link.url)}
+                          onClick={() => void window.zeno.workspace.openExternal(link.url)}
                         >
                           {link.label || link.url}
                           <ExternalLink size={12} />
@@ -3730,8 +3730,8 @@ function ModelsSectionContent(
       await props.onEnsureHost();
       // Prefer catalog reload so models.json / extension providers re-resolve (#16/#17).
       const [list, settings] = await Promise.all([
-        window.pix.models.refreshCatalog().catch(() => window.pix.models.list()),
-        window.pix.settings.get(),
+        window.zeno.models.refreshCatalog().catch(() => window.zeno.models.list()),
+        window.zeno.settings.get(),
       ]);
       setModels(list);
       const patterns = settings.enabledModels ?? [];
@@ -3755,7 +3755,7 @@ function ModelsSectionContent(
     try {
       await props.onEnsureHost();
       const patterns = buildEnabledModelsPatterns(selected, globText);
-      await window.pix.settings.patch({ enabledModels: patterns });
+      await window.zeno.settings.patch({ enabledModels: patterns });
       setScopedSelected(selected);
       setScopedGlobText(globText);
       useShellStore.getState().setStatus(tr("models.scopedSaved"));
@@ -3777,7 +3777,7 @@ function ModelsSectionContent(
 
   useEffect(() => {
     void refresh();
-    void window.pix.app
+    void window.zeno.app
       .getRuntime()
       .then((runtime) => {
         const v = (runtime.appVersion || "0.0.0").replace(/^v/i, "").trim() || "0.0.0";
@@ -3822,7 +3822,7 @@ function ModelsSectionContent(
     setDialogBusy(true);
     try {
       await props.onEnsureHost();
-      const config = await window.pix.models.getConfig();
+      const config = await window.zeno.models.getConfig();
       const provider = config.providers.find((row) => row.provider === model.provider);
       if (!provider) {
         showError(new Error("Model not found in models.json"), "Custom model missing");
@@ -3866,12 +3866,12 @@ function ModelsSectionContent(
   async function useInSession(model: ModelSummary) {
     setLoading(true);
     try {
-      let snapshot = await window.pix.models.set(model.provider, model.id);
+      let snapshot = await window.zeno.models.set(model.provider, model.id);
       if (
         (snapshot.availableServiceTiers?.length ?? 0) > 0 &&
         snapshot.serviceTier !== props.serviceTier
       ) {
-        snapshot = await window.pix.serviceTier.set(props.serviceTier);
+        snapshot = await window.zeno.serviceTier.set(props.serviceTier);
       }
       props.onSnapshot(snapshot);
       await refresh();
@@ -3885,7 +3885,7 @@ function ModelsSectionContent(
   async function setAsDefault(model: ModelSummary) {
     setLoading(true);
     try {
-      await window.pix.settings.patch({
+      await window.zeno.settings.patch({
         defaultProvider: model.provider,
         defaultModel: model.id,
       });
@@ -3911,7 +3911,7 @@ function ModelsSectionContent(
     setDialogBusy(true);
     try {
       await props.onEnsureHost();
-      const payload: Parameters<typeof window.pix.models.upsertCustomProvider>[0] = {
+      const payload: Parameters<typeof window.zeno.models.upsertCustomProvider>[0] = {
         provider: nextProviderId,
         baseUrl: baseUrl.trim(),
         api,
@@ -3940,7 +3940,7 @@ function ModelsSectionContent(
         payload.previousProvider = editingOrigin.provider;
         payload.previousModelId = editingOrigin.modelId;
       }
-      await window.pix.models.upsertCustomProvider(payload);
+      await window.zeno.models.upsertCustomProvider(payload);
       resetCustomForm();
       setDialogOpen(false);
       await Promise.all([refresh(), props.auth.refresh()]);
@@ -3957,7 +3957,7 @@ function ModelsSectionContent(
     setLoading(true);
     try {
       await props.onEnsureHost();
-      await window.pix.models.removeCustomModel(model.provider, model.id);
+      await window.zeno.models.removeCustomModel(model.provider, model.id);
       await Promise.all([refresh(), props.auth.refresh()]);
     } catch (err) {
       showError(err, tr("models.customDeleteFailed"));
@@ -4334,7 +4334,7 @@ function ModelsSectionContent(
                   data-testid="models-custom-form"
                   onSubmit={(e) => void saveCustomProvider(e)}
                 >
-                  <div className="models-custom-dialog-body pix-scroll">
+                  <div className="models-custom-dialog-body zeno-scroll">
                     <div className="models-custom-form-grid">
                       <label className="models-custom-field">
                         <span>{tr("models.customProvider")}</span>
@@ -4775,7 +4775,7 @@ function PiSettingsSection(
     setLoading(true);
     try {
       await props.onEnsureHost();
-      const next = await window.pix.settings.get();
+      const next = await window.zeno.settings.get();
       const draft = piViewToDraft(next);
       setView(next);
       setPrefs(draft);
@@ -4796,7 +4796,7 @@ function PiSettingsSection(
     const seq = ++saveSeqRef.current;
     try {
       const patch: PiSettingsPatch = { ...draft };
-      const result = await window.pix.settings.patch(patch);
+      const result = await window.zeno.settings.patch(patch);
       if (seq !== saveSeqRef.current) return;
       const next = piViewToDraft(result.settings);
       setView(result.settings);
@@ -4809,7 +4809,7 @@ function PiSettingsSection(
       showAppError(err instanceof Error ? err.message : tr("piSettings.saveFailed"));
       // Reload server truth so UI does not stay on a failed local draft.
       try {
-        const next = await window.pix.settings.get();
+        const next = await window.zeno.settings.get();
         if (seq !== saveSeqRef.current) return;
         const draft = piViewToDraft(next);
         setView(next);

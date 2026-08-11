@@ -48,7 +48,7 @@ afterEach(async () => {
 
 describe("C01 fresh pi home", () => {
   it("creates an in-memory core runtime without injecting Zeno configuration or resources", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-zero-injection-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-zero-injection-"));
     temporaryDirectories.push(root);
 
     const home = join(root, "home");
@@ -90,10 +90,10 @@ describe("C01 fresh pi home", () => {
     );
     expect(JSON.parse(await readFile(join(agentDir, "auth.json"), "utf8"))).toEqual({});
     expect((await readFile(join(agentDir, "auth.json"), "utf8")).toLowerCase()).not.toContain(
-      "pix",
+      "zeno",
     );
     expect(
       (await readFile(join(agentDir, "models-store.json"), "utf8")).toLowerCase(),
-    ).not.toContain("pix");
+    ).not.toContain("zeno");
   });
 });

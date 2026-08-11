@@ -415,7 +415,7 @@ function uniqueExportDirectory(parent: string, name: string): string {
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "pix-skin";
+      .replace(/^-+|-+$/g, "") || "zeno-skin";
   for (let index = 1; index < 10_000; index += 1) {
     const suffix = index === 1 ? "" : `-${index}`;
     const candidate = join(parent, `${stem}${suffix}`);
@@ -561,7 +561,7 @@ export class ThemeLibrary {
     const entries = readdirSync(root, { withFileTypes: true });
     const configEntry =
       entries.find((entry) => entry.isFile() && entry.name === "theme.json") ??
-      entries.find((entry) => entry.isFile() && entry.name.endsWith(".pix-theme.json"));
+      entries.find((entry) => entry.isFile() && entry.name.endsWith(".zeno-theme.json"));
     if (!configEntry) throw new Error("Theme package needs a theme.json file");
     const configPath = join(root, configEntry.name);
     const configStat = lstatSync(configPath);
@@ -622,7 +622,7 @@ export class ThemeLibrary {
         `${JSON.stringify(
           {
             packageVersion: 1,
-            type: "pix-theme-skin",
+            type: "zeno-theme-skin",
             files: ["theme.json", ...(backgroundPath ? [basename(backgroundPath)] : [])],
             exportedAt: now(),
           },
@@ -740,7 +740,7 @@ export class ThemeLibrary {
           ...(skin.backgroundBuiltinId ? { backgroundBuiltinId: skin.backgroundBuiltinId } : {}),
           ...(this.backgroundPath(skin.id)
             ? {
-                backgroundUrl: `pix-theme://${skin.id}/background?v=${encodeURIComponent(skin.updatedAt)}`,
+                backgroundUrl: `zeno-theme://${skin.id}/background?v=${encodeURIComponent(skin.updatedAt)}`,
               }
             : {}),
         })),

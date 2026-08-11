@@ -23,8 +23,8 @@ function makeVendorWithArchives(): {
   userData: string;
   nodeBin: string;
 } {
-  const root = mkdtempSync(join(tmpdir(), "pix-vendor-"));
-  const userData = mkdtempSync(join(tmpdir(), "pix-userdata-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-vendor-"));
+  const userData = mkdtempSync(join(tmpdir(), "zeno-userdata-"));
   const nodeDir = join(root, "node", "bin");
   const pyDir = join(root, "python", "bin");
   mkdirSync(nodeDir, { recursive: true });
@@ -73,7 +73,7 @@ describe("resolveVendorRuntimeLayout", () => {
 describe("extractRuntimeArchives", () => {
   it("extracts node and python into dest root", () => {
     const { vendorRoot } = makeVendorWithArchives();
-    const dest = mkdtempSync(join(tmpdir(), "pix-extract-"));
+    const dest = mkdtempSync(join(tmpdir(), "zeno-extract-"));
     try {
       extractRuntimeArchives(
         {
@@ -130,8 +130,8 @@ describe("ensureProvisionedRuntimes", () => {
   });
 
   it("uses expanded vendor in-place when no archives (dev)", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-dev-vendor-"));
-    const userData = mkdtempSync(join(tmpdir(), "pix-dev-ud-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-dev-vendor-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-dev-ud-"));
     try {
       mkdirSync(join(root, "node", "bin"), { recursive: true });
       writeFileSync(join(root, "node", "bin", "node"), "#!/bin/sh\n", { mode: 0o755 });
@@ -156,7 +156,7 @@ describe("ensureProvisionedRuntimes", () => {
 
 describe("isolation env", () => {
   it("sets NPM_CONFIG_PREFIX and PATH dirs for venv/npm-prefix", () => {
-    const userData = mkdtempSync(join(tmpdir(), "pix-iso-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-iso-"));
     try {
       const root = join(userData, "runtimes");
       mkdirSync(join(root, "node", "bin"), { recursive: true });

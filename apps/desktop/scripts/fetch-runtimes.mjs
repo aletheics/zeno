@@ -32,7 +32,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DESKTOP_ROOT = resolve(__dirname, "..");
 const RUNTIMES_ROOT = join(DESKTOP_ROOT, "runtimes");
 const VERSIONS_PATH = join(RUNTIMES_ROOT, "versions.json");
-const CACHE_ROOT = join(homedir(), ".cache", "pix-runtimes");
+const CACHE_ROOT = join(homedir(), ".cache", "zeno-runtimes");
 
 /**
  * @typedef {{ node: string, python: string, pythonReleaseTag: string }} RuntimeVersions
@@ -611,7 +611,7 @@ async function fetchOne(target, versions, force) {
   const nodeMeta = nodeDistMeta(target, versions);
   const nodeArchive = join(CACHE_ROOT, nodeMeta.archiveName);
   await download(nodeMeta.url, nodeArchive);
-  const nodeExtract = join(tmpdir(), `pix-node-${target.key}-${Date.now()}`);
+  const nodeExtract = join(tmpdir(), `zeno-node-${target.key}-${Date.now()}`);
   try {
     extractArchive(nodeArchive, nodeExtract, nodeMeta.kind);
     const unwrapped = nodeMeta.stripTop ? unwrapSingleTopDir(nodeExtract) : nodeExtract;
@@ -626,7 +626,7 @@ async function fetchOne(target, versions, force) {
   const pyMeta = pythonDistMeta(target, versions);
   const pyArchive = join(CACHE_ROOT, pyMeta.archiveName);
   await download(pyMeta.url, pyArchive);
-  const pyExtract = join(tmpdir(), `pix-py-${target.key}-${Date.now()}`);
+  const pyExtract = join(tmpdir(), `zeno-py-${target.key}-${Date.now()}`);
   try {
     extractArchive(pyArchive, pyExtract, pyMeta.kind);
     materializePython(pyExtract, pythonDest);

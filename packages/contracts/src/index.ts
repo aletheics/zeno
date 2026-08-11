@@ -1577,7 +1577,7 @@ export type BundledRuntimeStatus = {
   };
 };
 
-export interface PixDesktopApi {
+export interface ZenoDesktopApi {
   app: {
     /** OS platform + packaging flags for chrome layout / dev tools. */
     getRuntime(): Promise<{

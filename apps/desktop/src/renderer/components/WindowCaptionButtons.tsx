@@ -16,13 +16,13 @@ export function WindowCaptionButtons() {
     let unsub: (() => void) | undefined;
     void (async () => {
       try {
-        const runtime = await window.pix.app.getRuntime();
+        const runtime = await window.zeno.app.getRuntime();
         if (cancelled || !runtime.customWindowControls) return;
         setVisible(true);
         document.documentElement.dataset.customWindowControls = "true";
-        const isMax = await window.pix.window.isMaximized();
+        const isMax = await window.zeno.window.isMaximized();
         if (!cancelled) setMaximized(isMax);
-        unsub = window.pix.window.onStateChange((state) => {
+        unsub = window.zeno.window.onStateChange((state) => {
           setMaximized(state.isMaximized);
         });
       } catch {
@@ -56,7 +56,7 @@ export function WindowCaptionButtons() {
         title="Minimize"
         aria-label="Minimize"
         data-testid="window-minimize"
-        onClick={() => void window.pix.window.minimize()}
+        onClick={() => void window.zeno.window.minimize()}
       >
         <Minus className="size-3.5" strokeWidth={1.75} />
       </button>
@@ -67,7 +67,7 @@ export function WindowCaptionButtons() {
         title={maximized ? "Restore" : "Maximize"}
         aria-label={maximized ? "Restore" : "Maximize"}
         data-testid="window-maximize"
-        onClick={() => void window.pix.window.toggleMaximize()}
+        onClick={() => void window.zeno.window.toggleMaximize()}
       >
         {maximized ? (
           <Copy className="size-3.5 scale-x-[-1]" strokeWidth={1.75} />
@@ -82,7 +82,7 @@ export function WindowCaptionButtons() {
         title="Close"
         aria-label="Close"
         data-testid="window-close"
-        onClick={() => void window.pix.window.close()}
+        onClick={() => void window.zeno.window.close()}
       >
         <X className="size-3.5" strokeWidth={1.75} />
       </button>

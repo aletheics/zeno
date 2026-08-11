@@ -131,7 +131,7 @@ export function AppSidebar(props: AppSidebarProps) {
 
   useEffect(() => {
     let cancelled = false;
-    void window.pix.app
+    void window.zeno.app
       .getRuntime()
       .then((runtime) => {
         if (cancelled) return;
@@ -190,10 +190,10 @@ export function AppSidebar(props: AppSidebarProps) {
             : cn(
                 "border-r",
                 props.translucent
-                  ? "pix-sidebar-translucent"
+                  ? "zeno-sidebar-translucent"
                   : props.glass
-                    ? "pix-sidebar-glass"
-                    : "pix-sidebar-solid",
+                    ? "zeno-sidebar-glass"
+                    : "zeno-sidebar-solid",
               ),
         )}
         style={{ width: railWidth }}
@@ -332,8 +332,8 @@ function ProductRail(
   const [groupMode, setGroupMode] = useState<GroupMode>(loadGroupMode);
   useEffect(() => {
     const sync = () => setGroupMode(loadGroupMode());
-    window.addEventListener("pix-sidebar-group-mode", sync);
-    return () => window.removeEventListener("pix-sidebar-group-mode", sync);
+    window.addEventListener("zeno-sidebar-group-mode", sync);
+    return () => window.removeEventListener("zeno-sidebar-group-mode", sync);
   }, []);
 
   return (
@@ -727,7 +727,7 @@ function SettingsRail(props: {
       </div>
 
       {/* Grouped nav */}
-      <div className="pix-scroll min-h-0 min-w-0 flex-1 px-0.5 pb-3">
+      <div className="zeno-scroll min-h-0 min-w-0 flex-1 px-0.5 pb-3">
         {filtered.length === 0 ? (
           <p className="px-2.5 py-2 text-[length:var(--ui-font-size,14px)] text-[var(--text-subtle)]">
             {tr("settings.noMatch")}
@@ -864,10 +864,10 @@ function SidebarUpdateButton(props: {
 
   useEffect(() => {
     let cancelled = false;
-    void window.pix.app.getUpdateStatus().then((next) => {
+    void window.zeno.app.getUpdateStatus().then((next) => {
       if (!cancelled) setStatus(next);
     });
-    const unsubscribe = window.pix.app.onUpdateStatus((next) => {
+    const unsubscribe = window.zeno.app.onUpdateStatus((next) => {
       if (!cancelled) setStatus(next);
     });
     return () => {
@@ -879,7 +879,7 @@ function SidebarUpdateButton(props: {
   async function onClick() {
     if (locked) return;
     if (phase === "github") {
-      void window.pix.workspace.openExternal(GITHUB_REPO_URL).catch(() => undefined);
+      void window.zeno.workspace.openExternal(GITHUB_REPO_URL).catch(() => undefined);
       return;
     }
     if (phase === "available" || phase === "error") {
@@ -887,8 +887,8 @@ function SidebarUpdateButton(props: {
       try {
         const next =
           phase === "error" && !status.availableVersion
-            ? await window.pix.app.checkForUpdates()
-            : await window.pix.app.downloadUpdate();
+            ? await window.zeno.app.checkForUpdates()
+            : await window.zeno.app.downloadUpdate();
         setStatus(next);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -903,7 +903,7 @@ function SidebarUpdateButton(props: {
       // Optimistic UI: main process also broadcasts `installing`.
       setStatus((prev) => ({ ...prev, state: "installing", percent: 100 }));
       try {
-        await window.pix.app.quitAndInstall();
+        await window.zeno.app.quitAndInstall();
         // App should quit/relaunch; keep locked if it does not.
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

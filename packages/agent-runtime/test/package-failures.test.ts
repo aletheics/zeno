@@ -16,7 +16,7 @@ async function createPromptPackage(root: string, text: string): Promise<void> {
     writeFile(
       join(root, "package.json"),
       JSON.stringify({
-        name: `pix-pkg-${text}`,
+        name: `zeno-pkg-${text}`,
         version: "1.0.0",
         pi: { prompts: ["prompts/*.md"] },
       }),
@@ -53,13 +53,13 @@ afterEach(async () => {
 
 describe("P06 package failure and recovery", () => {
   it("does not persist failed installs and keeps configured resources recoverable", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-install-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-install-"));
     temporaryDirectories.push(root);
     const agentDir = join(root, "home", ".pi", "agent");
     const cwd = join(root, "project");
     const good = join(root, "good-package");
     const missing = join(root, "missing-package");
-    const missingConfigured = "npm:pix-pkg-missing@1.0.0";
+    const missingConfigured = "npm:zeno-pkg-missing@1.0.0";
     await Promise.all([
       mkdir(agentDir, { recursive: true }),
       mkdir(join(cwd, ".pi"), { recursive: true }),
@@ -108,7 +108,7 @@ describe("P06 package failure and recovery", () => {
   });
 
   it("records persistence errors and reloads the last authoritative settings", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-persist-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-persist-"));
     temporaryDirectories.push(root);
     const cwd = join(root, "project");
     const agentDir = join(root, "agent");

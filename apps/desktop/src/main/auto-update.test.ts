@@ -139,7 +139,7 @@ describe("createAutoUpdateController", () => {
     const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
-    const dir = mkdtempSync(join(tmpdir(), "pix-mac-update-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "zeno-mac-update-test-"));
     const zipPath = join(dir, "Zeno-0.5.2-mac-arm64.zip");
     writeFileSync(zipPath, "zip");
 

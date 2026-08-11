@@ -26,7 +26,7 @@ describe("packages and resources listing", () => {
     expect(packageKindFromSource("C:\\vendor\\pkg")).toBe("local");
     expect(packageKindFromSource("..\\vendor\\pkg")).toBe("local");
 
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-list-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-list-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -45,7 +45,7 @@ describe("packages and resources listing", () => {
       writeFile(
         join(localPackage, "package.json"),
         JSON.stringify({
-          name: "pix-list-fixture",
+          name: "zeno-list-fixture",
           version: "1.0.0",
           keywords: ["pi-package"],
           pi: { extensions: ["extensions/*.ts"], prompts: ["prompts/*.md"] },
@@ -99,7 +99,7 @@ describe("packages and resources listing", () => {
   });
 
   it("installs and removes a local package through the runtime adapter", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-mutate-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-mutate-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -116,7 +116,7 @@ describe("packages and resources listing", () => {
       writeFile(
         join(localPackage, "package.json"),
         JSON.stringify({
-          name: "pix-mutable-fixture",
+          name: "zeno-mutable-fixture",
           version: "1.0.0",
           keywords: ["pi-package"],
           pi: { extensions: ["extensions/*.ts"], prompts: ["prompts/*.md"] },
@@ -159,7 +159,7 @@ describe("packages and resources listing", () => {
   });
 
   it("loads temporary extensions and persistently disables filtered packages", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-toggle-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-toggle-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -184,7 +184,7 @@ describe("packages and resources listing", () => {
       writeFile(
         join(packageRoot, "package.json"),
         JSON.stringify({
-          name: "pix-filtered-toggle-fixture",
+          name: "zeno-filtered-toggle-fixture",
           version: "1.0.0",
           pi: { extensions: ["extensions/*.ts"], prompts: ["prompts/*.md"] },
         }),

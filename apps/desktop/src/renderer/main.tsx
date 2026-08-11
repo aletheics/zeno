@@ -187,7 +187,7 @@ function maybeNotify(kind: "complete" | "error" | "crash", body?: string): void 
         ? t(locale, "notify.errorTitle")
         : t(locale, "notify.crashTitle");
   // Focus check runs in main via requireUnfocused (document.hasFocus is unreliable in Electron).
-  void window.pix.notifications
+  void window.zeno.notifications
     .show({
       title,
       body: body?.trim() || title,
@@ -218,7 +218,7 @@ async function respondToExtensionUi(event: Extract<HostEvent, { type: "extension
     ...event,
     method: event.method,
   });
-  await window.pix.extensionUi.respond({
+  await window.zeno.extensionUi.respond({
     runtimeId: event.runtimeId,
     requestId: event.requestId,
     ok,
@@ -462,7 +462,7 @@ function App() {
     if (next === "full") {
       const snap = useShellStore.getState().snapshot;
       if (snap && !snap.projectTrusted) {
-        void window.pix.trust.set(true).then(
+        void window.zeno.trust.set(true).then(
           (nextSnap) => {
             acceptSnapshot(nextSnap);
             setStatus("Project trusted");
@@ -493,9 +493,9 @@ function App() {
   const [serviceTier, setServiceTier] = useState<ServiceTierId>(() => {
     try {
       // Prefer new key; fall back to legacy speed labels.
-      const next = localStorage.getItem("pix.composer.serviceTier");
+      const next = localStorage.getItem("zeno.composer.serviceTier");
       if (next === "flex" || next === "default" || next === "priority") return next;
-      return migrateLegacySpeedToServiceTier(localStorage.getItem("pix.composer.speed"));
+      return migrateLegacySpeedToServiceTier(localStorage.getItem("zeno.composer.speed"));
     } catch {
       // ignore
     }
@@ -686,7 +686,7 @@ function App() {
 
   async function refreshThreads() {
     try {
-      const listed = await window.pix.session.list();
+      const listed = await window.zeno.session.list();
       const cwd = useShellStore.getState().snapshot?.cwd;
       const matched = cwd ? threadsForWorkspaceBucket(listed.threads, cwd) : listed.threads;
       setThreads(mergeSidebarThreads(useShellStore.getState().threads, matched));
@@ -775,7 +775,7 @@ function App() {
     const results = await Promise.all(
       unique.map(async (cwd) => {
         try {
-          const threads = await window.pix.session.listForCwd(cwd);
+          const threads = await window.zeno.session.listForCwd(cwd);
           return [cwd, threadsForWorkspaceBucket(threads, cwd)] as const;
         } catch {
           return [cwd, [] as SessionThreadSummary[]] as const;
@@ -802,8 +802,8 @@ function App() {
    */
   async function refreshConversationSessions() {
     try {
-      const convCwd = await window.pix.workspace.ensureConversation();
-      const threads = await window.pix.session.listForCwd(convCwd);
+      const convCwd = await window.zeno.workspace.ensureConversation();
+      const threads = await window.zeno.session.listForCwd(convCwd);
       // Only accept pure-conversation rows; cacheThreadsForCwd also refuses empty races.
       cacheThreadsForCwd(convCwd, threadsForWorkspaceBucket(threads, convCwd));
     } catch {
@@ -824,7 +824,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    void window.pix.themes
+    void window.zeno.themes
       .list()
       .then((library) => {
         if (cancelled) return;
@@ -838,7 +838,7 @@ function App() {
   }, [setThemeLibrary, setThemeSelection]);
 
   useEffect(() => {
-    void window.pix.appearance.setThemeSource(nativeThemeSource);
+    void window.zeno.appearance.setThemeSource(nativeThemeSource);
   }, [nativeThemeSource]);
 
   // Overlay auto-hide scrollbars for main content panes (settings / packages / thread…).
@@ -950,7 +950,7 @@ function App() {
 
   useEffect(
     () =>
-      window.pix.host.onEvent((event) => {
+      window.zeno.host.onEvent((event) => {
         const store = useShellStore.getState();
         if (event.type === "host.ready" || event.type === "runtime.snapshot") {
           store.acceptSnapshot(event.snapshot);
@@ -1015,7 +1015,7 @@ function App() {
         } else if (event.type === "packages.changed") {
           store.setPackages(event.packages);
           // Install/remove/update may load new skills/prompts/extensions.
-          void window.pix.resources
+          void window.zeno.resources
             .list()
             .then((list) => store.setResources(list))
             .catch(() => undefined);
@@ -1081,7 +1081,7 @@ function App() {
 
           if (delivery === "gap") {
             // Recover host high-water mark; liveStream already has this event's tokens.
-            void window.pix.host.snapshot().then(store.acceptSnapshot);
+            void window.zeno.host.snapshot().then(store.acceptSnapshot);
             store.setEvents((current) => appendHostEvent(current, event));
             if (event.sequence > store.lastSequence) store.setLastSequence(event.sequence);
             return;
@@ -1148,7 +1148,7 @@ function App() {
               maybeNotify("complete");
             }
             // Disk is flushed after assistant message — sync rail title/recency.
-            void window.pix.session
+            void window.zeno.session
               .list()
               .then((listed) => {
                 if (!listed?.threads) return;
@@ -1164,7 +1164,7 @@ function App() {
               .catch(() => undefined);
           } else if (event.event.type === "user.message") {
             // Live session now has the user text in memory — refresh rail title/order.
-            void window.pix.session
+            void window.zeno.session
               .list()
               .then((listed) => {
                 if (!listed?.threads) return;
@@ -1354,7 +1354,7 @@ function App() {
     let knownCwd =
       asProjectPath(store.snapshot?.cwd) ??
       asProjectPath(selectedWorkspacePath) ??
-      (await window.pix.workspace.getCwd().catch(() => undefined));
+      (await window.zeno.workspace.getCwd().catch(() => undefined));
     // Prefer a real project cwd; ignore conversation/scratch for "has project" checks.
     if (knownCwd && isNonProjectWorkspacePath(knownCwd)) {
       knownCwd = undefined;
@@ -1362,19 +1362,19 @@ function App() {
     // No user project → host still needs a cwd. Prefer conversation home for pure chat;
     // fall back to date scratch only for background pi-status (packages/resources).
     if (!knownCwd) {
-      knownCwd = await window.pix.workspace.ensureConversation();
+      knownCwd = await window.zeno.workspace.ensureConversation();
     }
     if (!isNonProjectWorkspacePath(knownCwd)) {
       selectWorkspacePath(knownCwd);
     }
     setStatus("正在启动 Agent Host…");
-    const value = await window.pix.host.start({ cwd: knownCwd });
+    const value = await window.zeno.host.start({ cwd: knownCwd });
     acceptSnapshot(value);
     setStatus("Agent Host ready");
     // Apply persisted OpenAI service_tier when the current model supports it.
     if (serviceTier !== "default") {
       try {
-        acceptSnapshot(await window.pix.serviceTier.set(serviceTier));
+        acceptSnapshot(await window.zeno.serviceTier.set(serviceTier));
       } catch {
         // Model may not support service_tier — UI will show unsupported.
       }
@@ -1395,8 +1395,8 @@ function App() {
    */
   async function refreshComposerModels(): Promise<void> {
     const [models, providers] = await Promise.all([
-      window.pix.models.list(),
-      window.pix.providers.list(),
+      window.zeno.models.list(),
+      window.zeno.providers.list(),
     ]);
     const readyProviders = new Set(
       providers.filter((provider) => provider.configured).map((provider) => provider.provider),
@@ -1430,8 +1430,8 @@ function App() {
       if (ensure) await ensureHost();
       else if (!useShellStore.getState().runtimeId) return;
       const [pkgs, res] = await Promise.all([
-        window.pix.packages.list(),
-        window.pix.resources.list(),
+        window.zeno.packages.list(),
+        window.zeno.resources.list(),
       ]);
       setPackages(pkgs);
       setResources(res);
@@ -1442,7 +1442,7 @@ function App() {
 
   async function refresh() {
     try {
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
       await refreshThreads();
     } catch (error) {
       reportAppError(error, "Snapshot failed");
@@ -1454,7 +1454,7 @@ function App() {
     setSessionTreeError(undefined);
     try {
       if (!useShellStore.getState().snapshot) await ensureHost();
-      setSessionTree(await window.pix.session.tree());
+      setSessionTree(await window.zeno.session.tree());
     } catch (error) {
       setSessionTreeError(error instanceof Error ? error.message : "Failed to load session tree");
     } finally {
@@ -1473,7 +1473,7 @@ function App() {
     setSessionInfoError(undefined);
     try {
       if (!useShellStore.getState().snapshot) await ensureHost();
-      setSessionInfo(await window.pix.session.info());
+      setSessionInfo(await window.zeno.session.info());
     } catch (error) {
       setSessionInfoError(error instanceof Error ? error.message : "Failed to load session info");
     } finally {
@@ -1510,7 +1510,7 @@ function App() {
           setSessionNameDialogOpen(true);
           return true;
         }
-        acceptSnapshot(await window.pix.session.setName(nextName));
+        acceptSnapshot(await window.zeno.session.setName(nextName));
         setStatus(t(locale, "session.parity.named", { name: nextName }));
         await refreshThreads();
         return true;
@@ -1522,20 +1522,20 @@ function App() {
         await openSessionTree("fork");
         return true;
       case "clone": {
-        const opened = await window.pix.session.clone();
+        const opened = await window.zeno.session.clone();
         markSessionOpenForBottomScroll();
         applySessionOpen(opened);
         setStatus(t(locale, "session.parity.cloned"));
         return true;
       }
       case "compact": {
-        acceptSnapshot(await window.pix.session.compact(action.instructions));
+        acceptSnapshot(await window.zeno.session.compact(action.instructions));
         setStatus(t(locale, "session.parity.compacted"));
         await refreshThreads();
         return true;
       }
       case "export": {
-        const result = await window.pix.session.exportPick(action.format);
+        const result = await window.zeno.session.exportPick(action.format);
         if (!result) return true;
         setStatus(
           t(locale, "session.parity.exported", {
@@ -1547,8 +1547,8 @@ function App() {
       }
       case "import": {
         const opened = action.path
-          ? await window.pix.session.import(action.path)
-          : await window.pix.session.importPick();
+          ? await window.zeno.session.import(action.path)
+          : await window.zeno.session.importPick();
         if (!opened) return true;
         markSessionOpenForBottomScroll();
         applySessionOpen(opened);
@@ -1556,7 +1556,7 @@ function App() {
         return true;
       }
       case "copy": {
-        const text = await window.pix.session.copyLastAssistant();
+        const text = await window.zeno.session.copyLastAssistant();
         if (!text) {
           reportAppError(
             new Error(t(locale, "session.parity.copyFailed")),
@@ -1571,17 +1571,17 @@ function App() {
       case "share": {
         try {
           setStatus(t(locale, "session.parity.sharing"));
-          const shared = await window.pix.session.share();
+          const shared = await window.zeno.session.share();
           await navigator.clipboard.writeText(shared.url).catch(() => undefined);
           setStatus(t(locale, "session.parity.shared", { url: shared.url }));
-          void window.pix.workspace.openExternal(shared.url).catch(() => undefined);
+          void window.zeno.workspace.openExternal(shared.url).catch(() => undefined);
         } catch (error) {
           reportAppError(error, t(locale, "session.parity.shareFailed"));
         }
         return true;
       }
       case "reload": {
-        acceptSnapshot(await window.pix.runtime.reload());
+        acceptSnapshot(await window.zeno.runtime.reload());
         setStatus(t(locale, "session.parity.reloaded"));
         return true;
       }
@@ -1639,7 +1639,7 @@ function App() {
     try {
       if (item.entryId) {
         markSessionOpenForBottomScroll();
-        const opened = await window.pix.session.navigateTree(item.entryId, {
+        const opened = await window.zeno.session.navigateTree(item.entryId, {
           summarize: false,
         });
         if (opened.cancelled) {
@@ -1712,7 +1712,7 @@ function App() {
       );
       try {
         if (!useShellStore.getState().snapshot) await ensureHost();
-        const result = await window.pix.session.bash(shell.command, {
+        const result = await window.zeno.session.bash(shell.command, {
           excludeFromContext: shell.kind === "hidden-shell",
         });
         acceptSnapshot(result.snapshot);
@@ -1778,7 +1778,7 @@ function App() {
           useShellStore.getState().setQueuedMessages(prevQueue);
           return;
         }
-        const next = await window.pix.agent.prompt(message, queueBehavior, imagePaths);
+        const next = await window.zeno.agent.prompt(message, queueBehavior, imagePaths);
         if (stillSameSession()) acceptSnapshot(next);
       } catch (error) {
         if (!stillSameSession()) return;
@@ -1829,7 +1829,7 @@ function App() {
       if (sessionAtStart && rid) setSessionRunning(sessionAtStart, true, rid);
       promptDispatched = true;
       try {
-        const next = await window.pix.agent.prompt(message, undefined, imagePaths);
+        const next = await window.zeno.agent.prompt(message, undefined, imagePaths);
         if (!stillSameSession()) return;
         acceptSnapshot(next);
         setStatus("Agent settled");
@@ -1857,7 +1857,7 @@ function App() {
           followUp: prevQueue.followUp,
         });
         try {
-          const next = await window.pix.agent.prompt(message, "steer", imagePaths);
+          const next = await window.zeno.agent.prompt(message, "steer", imagePaths);
           if (!stillSameSession()) return;
           acceptSnapshot(next);
           setStatus("Guidance queued");
@@ -1910,7 +1910,7 @@ function App() {
     const queuedCount = queuedMessages.steering.length + queuedMessages.followUp.length;
     if (queuedCount === 0) return;
     try {
-      const next = await window.pix.agent.clearQueue();
+      const next = await window.zeno.agent.clearQueue();
       acceptSnapshot(next);
       // Queued messages never enter sentPrompts / liveStream until host delivery.
       setStatus("Queued messages cleared");
@@ -1922,7 +1922,7 @@ function App() {
   async function pickComposerAttachments(mode: "files" | "folders" = "files") {
     try {
       // Windows/Linux require separate dialogs for files vs folders (Electron limitation).
-      const paths = await window.pix.workspace.pickAttachments({ mode });
+      const paths = await window.zeno.workspace.pickAttachments({ mode });
       if (paths.length === 0) return;
       setAttachments((current) => [...new Set([...current, ...paths])].slice(0, 12));
     } catch (error) {
@@ -1935,7 +1935,7 @@ function App() {
     const key = sessionKeyFromSnapshot(snap);
     const runtimeId = snap?.runtimeId;
     try {
-      acceptSnapshot(await window.pix.agent.abort());
+      acceptSnapshot(await window.zeno.agent.abort());
       setStatus("Agent aborted");
       // Prefer terminal settle events when present; still clear busy so Stop flips
       // back to Send immediately after a successful abort RPC.
@@ -1969,14 +1969,14 @@ function App() {
 
   async function crash() {
     try {
-      await window.pix.test.crashHost();
+      await window.zeno.test.crashHost();
     } catch (error) {
       reportAppError(error, "Crash command failed");
     }
   }
 
   async function stop() {
-    await window.pix.host.stop();
+    await window.zeno.host.stop();
     resetAfterStop();
   }
 
@@ -2023,9 +2023,9 @@ function App() {
    */
   async function reloadModelsAfterPackageChange(): Promise<void> {
     try {
-      await window.pix.models.refreshCatalog().catch(() => window.pix.models.list());
+      await window.zeno.models.refreshCatalog().catch(() => window.zeno.models.list());
       await refreshComposerModels().catch(() => undefined);
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
     } catch {
       // Non-fatal: package op already succeeded.
     }
@@ -2045,12 +2045,12 @@ function App() {
     );
     try {
       await ensureHost();
-      const next = await window.pix.packages.install(source, scope, options);
+      const next = await window.zeno.packages.install(source, scope, options);
       setPackages(next);
       setStatus(
         t(loc, options?.temporary ? "packages.status.installedTemp" : "packages.status.installed"),
       );
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
       await refreshPiStatus({ ensure: false });
       await reloadModelsAfterPackageChange();
     } catch (error) {
@@ -2065,12 +2065,12 @@ function App() {
     const loc = useShellStore.getState().locale;
     setEcoLoading(true);
     try {
-      const next = await window.pix.packages.setEnabled(source, scope, enabled);
+      const next = await window.zeno.packages.setEnabled(source, scope, enabled);
       setPackages(next);
       setStatus(
         t(loc, enabled ? "packages.status.enabled" : "packages.status.disabled", { source }),
       );
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
       await refreshPiStatus({ ensure: false });
       await reloadModelsAfterPackageChange();
     } catch (error) {
@@ -2086,10 +2086,10 @@ function App() {
     setEcoLoading(true);
     setStatus(t(loc, "packages.status.removing", { scope }));
     try {
-      const next = await window.pix.packages.remove(source, scope);
+      const next = await window.zeno.packages.remove(source, scope);
       setPackages(next);
       setStatus(t(loc, "packages.status.removed"));
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
       await refreshPiStatus({ ensure: false });
       await reloadModelsAfterPackageChange();
     } catch (error) {
@@ -2109,10 +2109,10 @@ function App() {
         : t(loc, "packages.status.updatingAll"),
     );
     try {
-      const next = await window.pix.packages.update(source);
+      const next = await window.zeno.packages.update(source);
       setPackages(next);
       setStatus(t(loc, "packages.status.updated"));
-      acceptSnapshot(await window.pix.host.snapshot());
+      acceptSnapshot(await window.zeno.host.snapshot());
       await refreshPiStatus({ ensure: false });
       await reloadModelsAfterPackageChange();
     } catch (error) {
@@ -2130,7 +2130,7 @@ function App() {
     setEcoLoading(true);
     setStatus(t(loc, "packages.status.checkingUpdates"));
     try {
-      const updates = await window.pix.packages.checkUpdates();
+      const updates = await window.zeno.packages.checkUpdates();
       setStatus(
         updates.length === 0
           ? t(loc, "packages.updateCheckedNone")
@@ -2147,7 +2147,7 @@ function App() {
 
   async function refreshRecentWorkspaces() {
     try {
-      const listed = await window.pix.workspace.listRecent();
+      const listed = await window.zeno.workspace.listRecent();
       // Read from ref so callers that just cleared selection don't exclude the old project.
       const selected = asProjectPath(selectedWorkspacePathRef.current);
       // Union with in-memory rail: never let a prefs refresh drop siblings that were
@@ -2186,7 +2186,7 @@ function App() {
         mergeRecentWithOpenProject(prependRecentPath([...prev], cwd, 12), cwd, 12),
       );
     }
-    const snap = await window.pix.workspace.openPath(cwd, {
+    const snap = await window.zeno.workspace.openPath(cwd, {
       resumeRecent: options?.resumeRecent === true && !options?.sessionFile,
       ...(options?.sessionFile ? { sessionFile: options.sessionFile } : {}),
     });
@@ -2196,7 +2196,7 @@ function App() {
     // Re-check host cwd: a concurrent openWorkspacePath (rapid project 新建会话)
     // may have already switched the host; never write the *new* project's sessions
     // under this path's bucket.
-    const listed = await window.pix.session.list();
+    const listed = await window.zeno.session.list();
     const hostCwd = useShellStore.getState().snapshot?.cwd;
     if (!hostCwd || normalizeCwdKey(hostCwd) !== normalizeCwdKey(cwd)) {
       await refreshRecentWorkspaces();
@@ -2210,7 +2210,7 @@ function App() {
 
   async function openWorkspacePicker() {
     try {
-      const picked = await window.pix.workspace.pickFolder();
+      const picked = await window.zeno.workspace.pickFolder();
       if (!picked) return;
       await openWorkspacePath(picked, { resumeRecent: false });
     } catch (error) {
@@ -2220,7 +2220,7 @@ function App() {
 
   async function resumeWorkspace() {
     try {
-      const raw = (await window.pix.workspace.getCwd()) ?? workspacePath;
+      const raw = (await window.zeno.workspace.getCwd()) ?? workspacePath;
       const cwd = asProjectPath(raw);
       if (!cwd) {
         // No real project to resume — stay project-less (do not open date folder as project).
@@ -2237,7 +2237,7 @@ function App() {
     try {
       const next = !(snapshot?.projectTrusted ?? false);
       setStatus(next ? "Trusting project…" : "Untrusting project…");
-      acceptSnapshot(await window.pix.trust.set(next));
+      acceptSnapshot(await window.zeno.trust.set(next));
       setStatus("Agent Host ready");
     } catch (error) {
       reportAppError(error, "Failed to set trust");
@@ -2264,7 +2264,7 @@ function App() {
     setTrustPromptBusy(true);
     try {
       setStatus(trusted ? "Trusting project…" : "Untrusting project…");
-      acceptSnapshot(await window.pix.trust.set(trusted));
+      acceptSnapshot(await window.zeno.trust.set(trusted));
       setStatus("Agent Host ready");
     } catch (error) {
       reportAppError(error, "Failed to set trust");
@@ -2282,11 +2282,11 @@ function App() {
   async function changeModel(provider: string, id: string) {
     try {
       setStatus(`Switching model ${provider}/${id}…`);
-      let next = await window.pix.models.set(provider, id);
+      let next = await window.zeno.models.set(provider, id);
       acceptSnapshot(next);
       // A preference selected while another model was active becomes effective now.
       if ((next.availableServiceTiers?.length ?? 0) > 0 && next.serviceTier !== serviceTier) {
-        next = await window.pix.serviceTier.set(serviceTier);
+        next = await window.zeno.serviceTier.set(serviceTier);
         acceptSnapshot(next);
       }
       setStatus("Agent Host ready");
@@ -2298,7 +2298,7 @@ function App() {
   async function changeThinking(level: string) {
     try {
       setStatus(`Thinking level ${level}…`);
-      acceptSnapshot(await window.pix.thinking.set(level));
+      acceptSnapshot(await window.zeno.thinking.set(level));
       setStatus("Agent Host ready");
     } catch (error) {
       reportAppError(error, "Failed to set thinking level");
@@ -2308,7 +2308,7 @@ function App() {
   async function changeServiceTier(tier: ServiceTierId) {
     setServiceTier(tier);
     try {
-      localStorage.setItem("pix.composer.serviceTier", tier);
+      localStorage.setItem("zeno.composer.serviceTier", tier);
     } catch {
       // ignore
     }
@@ -2319,7 +2319,7 @@ function App() {
     }
     try {
       setStatus(`Service tier ${tier}…`);
-      acceptSnapshot(await window.pix.serviceTier.set(tier));
+      acceptSnapshot(await window.zeno.serviceTier.set(tier));
       setStatus("Agent Host ready");
     } catch (error) {
       reportAppError(error, "Failed to set service tier");
@@ -2352,7 +2352,7 @@ function App() {
       setPrompt("");
       setAttachments([]);
       setStatus("Creating session...");
-      const opened = await window.pix.session.create();
+      const opened = await window.zeno.session.create();
       markSessionOpenForBottomScroll();
       applySessionOpen(opened);
       requestContentReveal();
@@ -2392,7 +2392,7 @@ function App() {
     if (useShellStore.getState().contentMode === "terminal") {
       beginSurfaceTransition();
       setContentMode("chat", { persist: false });
-      await window.pix.terminal.suspend().catch(() => undefined);
+      await window.zeno.terminal.suspend().catch(() => undefined);
     }
 
     setView("thread");
@@ -2427,7 +2427,7 @@ function App() {
       setLastSequence(0);
 
       // Single exclusive main-process op (safe under rapid clicks).
-      const opened = await window.pix.session.createBlankConversation();
+      const opened = await window.zeno.session.createBlankConversation();
       if (gen !== newBlankTaskGenRef.current) return;
 
       markSessionOpenForBottomScroll();
@@ -2498,7 +2498,7 @@ function App() {
           if (useShellStore.getState().contentMode === "terminal") {
             beginSurfaceTransition();
             setContentMode("chat", { persist: false });
-            await window.pix.terminal.suspend().catch(() => undefined);
+            await window.zeno.terminal.suspend().catch(() => undefined);
           }
           if (runGen !== newThreadForProjectGenRef.current) continue;
 
@@ -2523,7 +2523,7 @@ function App() {
           if (runGen !== newThreadForProjectGenRef.current) continue;
 
           setStatus("Creating thread...");
-          const opened = await window.pix.session.create();
+          const opened = await window.zeno.session.create();
           if (runGen !== newThreadForProjectGenRef.current) continue;
 
           markSessionOpenForBottomScroll();
@@ -2577,7 +2577,7 @@ function App() {
       try {
         const nextPinned = loadPinnedProjects().filter((p) => normalizeCwdKey(p) !== pathKey);
         savePinnedProjects(nextPinned);
-        window.dispatchEvent(new Event("pix-project-rail-changed"));
+        window.dispatchEvent(new Event("zeno-project-rail-changed"));
       } catch {
         // ignore
       }
@@ -2587,7 +2587,7 @@ function App() {
       if (selectedProjectKey === pathKey) selectProjectPath(undefined);
       if (wasActive) {
         selectWorkspacePath(undefined);
-        await window.pix.workspace.clearActive().catch(() => undefined);
+        await window.zeno.workspace.clearActive().catch(() => undefined);
         useShellStore.getState().setSnapshot(undefined);
         setRuntimeId(undefined);
         setLastSequence(0);
@@ -2599,7 +2599,7 @@ function App() {
         setModelOptions([]);
       }
 
-      const listed = await window.pix.workspace.removeRecent(path);
+      const listed = await window.zeno.workspace.removeRecent(path);
       setRecentWorkspaces(
         filterRecentWorkspaces(listed, { max: 12 }).filter((p) => normalizeCwdKey(p) !== pathKey),
       );
@@ -2625,13 +2625,13 @@ function App() {
       if (typeof path !== "string" || !path.trim()) return;
       void removeRecentWorkspaceRef.current(path);
     };
-    window.addEventListener("pix-worktree-removed", onWorktreeRemoved);
-    return () => window.removeEventListener("pix-worktree-removed", onWorktreeRemoved);
+    window.addEventListener("zeno-worktree-removed", onWorktreeRemoved);
+    return () => window.removeEventListener("zeno-worktree-removed", onWorktreeRemoved);
   }, []);
 
   async function revealWorkspace(path: string) {
     try {
-      await window.pix.workspace.revealInFolder(path);
+      await window.zeno.workspace.revealInFolder(path);
     } catch (error) {
       reportAppError(error, "Failed to reveal folder");
     }
@@ -2646,7 +2646,7 @@ function App() {
     try {
       if (!useShellStore.getState().runtimeId) await ensureHost();
       setStatus("Forking thread...");
-      const opened = await window.pix.session.fork(entryId);
+      const opened = await window.zeno.session.fork(entryId);
       markSessionOpenForBottomScroll();
       applySessionOpen(opened);
       setPrompt(opened.selectedText ?? "");
@@ -2713,7 +2713,7 @@ function App() {
     if (fromMode === "terminal" && !stayTerminal) {
       setContentMode("chat", { persist: false });
       try {
-        await window.pix.terminal.suspend();
+        await window.zeno.terminal.suspend();
       } catch {
         // ignore
       }
@@ -2747,7 +2747,7 @@ function App() {
         }
       }
       if (!targetCwd) {
-        targetCwd = await window.pix.workspace.ensureConversation();
+        targetCwd = await window.zeno.workspace.ensureConversation();
       }
 
       const currentCwd = store.snapshot?.cwd;
@@ -2794,11 +2794,11 @@ function App() {
 
       // Host must run under the session's cwd. Pure conversation vs project are different hosts.
       if (needWorkspaceSwitch) {
-        await window.pix.workspace.openPath(targetCwd, { sessionFile: sessionPath });
+        await window.zeno.workspace.openPath(targetCwd, { sessionFile: sessionPath });
       }
 
       // Authoritative open: history + threads + snapshot in one store update.
-      const opened = await window.pix.session.switch(sessionPath);
+      const opened = await window.zeno.session.switch(sessionPath);
       // Keep switchingSessionRef true until after apply+reveal so layout won't
       // treat the empty interim as a settled empty session.
       applySessionOpen(opened);
@@ -2890,12 +2890,12 @@ function App() {
     let contentReloaded = false;
     try {
       // Suspend (keep process warm) so re-entering this session is instant.
-      const suspended = await window.pix.terminal.suspend();
+      const suspended = await window.zeno.terminal.suspend();
       const store = useShellStore.getState();
       const sessionFile =
         suspended.sessionFile?.trim() || store.snapshot?.sessionFile?.trim() || undefined;
       if (sessionFile) {
-        const opened = await window.pix.session.switch(sessionFile);
+        const opened = await window.zeno.session.switch(sessionFile);
         applySessionOpen(opened);
         // Keep ProjectList's per-cwd cache in sync — otherwise active flags and
         // titles lag behind store.threads and sidebar markers look incomplete.
@@ -2912,7 +2912,7 @@ function App() {
     } catch (error) {
       reportAppError(error, t(locale, "contentMode.closeFailed"));
       try {
-        await window.pix.terminal.dispose();
+        await window.zeno.terminal.dispose();
       } catch {
         // ignore
       }
@@ -3102,7 +3102,7 @@ function App() {
           ["--sidebar-current-width" as string]: `${railWidth}px`,
         } as React.CSSProperties
       }
-      data-testid="pix-app"
+      data-testid="zeno-app"
       data-theme={activeSkinMode}
       data-theme-skin={themeSelection.id}
       data-bootstrap-ready={bootstrapReady ? "true" : "false"}
@@ -3616,7 +3616,7 @@ function App() {
             } else {
               setStatus(t(locale, "sessionTree.busy.navigating"));
             }
-            const opened = await window.pix.session.navigateTree(node.id, options);
+            const opened = await window.zeno.session.navigateTree(node.id, options);
             if (opened.cancelled) {
               setStatus(t(locale, "session.parity.treeFailed"));
               return;
@@ -3650,7 +3650,7 @@ function App() {
         onRename={async (name) => {
           if (!name) return;
           try {
-            acceptSnapshot(await window.pix.session.setName(name));
+            acceptSnapshot(await window.zeno.session.setName(name));
             await refreshSessionInfo();
             await refreshThreads();
           } catch (error) {
@@ -3659,7 +3659,7 @@ function App() {
         }}
         onExport={async (format) => {
           try {
-            const result = await window.pix.session.exportPick(format);
+            const result = await window.zeno.session.exportPick(format);
             if (!result) return;
             setStatus(t(locale, "session.parity.exported", { format, path: result.path }));
           } catch (error) {
@@ -3669,17 +3669,17 @@ function App() {
         onShare={async () => {
           try {
             setStatus(t(locale, "session.parity.sharing"));
-            const shared = await window.pix.session.share();
+            const shared = await window.zeno.session.share();
             await navigator.clipboard.writeText(shared.url).catch(() => undefined);
             setStatus(t(locale, "session.parity.shared", { url: shared.url }));
-            void window.pix.workspace.openExternal(shared.url).catch(() => undefined);
+            void window.zeno.workspace.openExternal(shared.url).catch(() => undefined);
           } catch (error) {
             reportAppError(error, t(locale, "session.parity.shareFailed"));
           }
         }}
         onClone={async () => {
           try {
-            const opened = await window.pix.session.clone();
+            const opened = await window.zeno.session.clone();
             markSessionOpenForBottomScroll();
             applySessionOpen(opened);
             setSessionInfoOpen(false);
@@ -3690,7 +3690,7 @@ function App() {
         }}
         onCompact={async () => {
           try {
-            acceptSnapshot(await window.pix.session.compact());
+            acceptSnapshot(await window.zeno.session.compact());
             await refreshSessionInfo();
             setStatus(t(locale, "session.parity.compacted"));
           } catch (error) {
@@ -3715,7 +3715,7 @@ function App() {
           void (async () => {
             try {
               if (!useShellStore.getState().snapshot) await ensureHost();
-              acceptSnapshot(await window.pix.session.setName(name));
+              acceptSnapshot(await window.zeno.session.setName(name));
               setStatus(t(locale, "session.parity.named", { name }));
               await refreshThreads();
             } catch (error) {
@@ -3823,7 +3823,7 @@ function PackagesPage(props: {
     setCatalogLoadingMore(false);
     catalogLoadingMoreRef.current = false;
     try {
-      const result = await window.pix.packages.searchCatalog(
+      const result = await window.zeno.packages.searchCatalog(
         query.trim() || undefined,
         CATALOG_PAGE,
         0,
@@ -3848,7 +3848,7 @@ function PackagesPage(props: {
     const gen = catalogLoadGen.current;
     const from = catalog.length;
     try {
-      const result = await window.pix.packages.searchCatalog(
+      const result = await window.zeno.packages.searchCatalog(
         catalogQuery.trim() || undefined,
         CATALOG_PAGE,
         from,
@@ -4334,7 +4334,7 @@ function ResourcesPage(props: {
                         type="button"
                         className="btn-ghost text-xs"
                         data-testid={`resource-open-${item.kind}-${item.name}`}
-                        onClick={() => void window.pix.workspace.openFile(item.path)}
+                        onClick={() => void window.zeno.workspace.openFile(item.path)}
                       >
                         {tr("resources.open")}
                       </button>

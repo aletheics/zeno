@@ -7,7 +7,7 @@ import {
 
 describe("overlay-scroll", () => {
   it("covers all unified scrollport surfaces", () => {
-    expect(OVERLAY_SCROLL_SELECTOR).toContain(".pix-scroll");
+    expect(OVERLAY_SCROLL_SELECTOR).toContain(".zeno-scroll");
     expect(OVERLAY_SCROLL_SELECTOR).toContain(".page-body");
     expect(OVERLAY_SCROLL_SELECTOR).toContain(".settings-page-body");
     expect(OVERLAY_SCROLL_SELECTOR).toContain(".timeline-scroll");

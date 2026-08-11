@@ -94,22 +94,22 @@ let ensureInFlight: Promise<PiCliEnsureResult> | undefined;
  *
  * Default is **false**: Agent Host + terminal default to the **builtin** SDK
  * (Settings → Pi). Global install is opt-in via Settings or `ensurePiCli({ force: true })`.
- * Set PIX_FORCE_PI_INSTALL=1 only for explicit debug/CI that needs auto global install.
+ * Set ZENO_FORCE_PI_INSTALL=1 only for explicit debug/CI that needs auto global install.
  */
 export function shouldAutoInstallPiCli(env: NodeJS.ProcessEnv = process.env): boolean {
   // Explicit opt-outs always win (fixtures / e2e).
-  if (env.PIX_SKIP_PI_INSTALL === "1" || env.PIX_SKIP_PI_INSTALL === "true") return false;
-  if (env.PIX_ISOLATED === "1" || env.PIX_ISOLATED === "true") return false;
-  if (env.PIX_WORKSPACE?.trim()) return false;
-  if (env.PI_CODING_AGENT_DIR?.trim() && env.PIX_ENABLE_TEST_COMMANDS === "1") return false;
+  if (env.ZENO_SKIP_PI_INSTALL === "1" || env.ZENO_SKIP_PI_INSTALL === "true") return false;
+  if (env.ZENO_ISOLATED === "1" || env.ZENO_ISOLATED === "true") return false;
+  if (env.ZENO_WORKSPACE?.trim()) return false;
+  if (env.PI_CODING_AGENT_DIR?.trim() && env.ZENO_ENABLE_TEST_COMMANDS === "1") return false;
   // Opt-in only (debug/CI). Product default never auto-installs.
-  if (env.PIX_FORCE_PI_INSTALL === "1" || env.PIX_FORCE_PI_INSTALL === "true") return true;
+  if (env.ZENO_FORCE_PI_INSTALL === "1" || env.ZENO_FORCE_PI_INSTALL === "true") return true;
   return false;
 }
 
 function emit(onProgress: PiCliEnsureOptions["onProgress"], event: PiCliProgressEvent): void {
   // Always log so `pnpm dev` terminal shows install work even when UI chrome is hidden.
-  console.log(`[pix:pi] ${event.phase}: ${event.message}`);
+  console.log(`[zeno:pi] ${event.phase}: ${event.message}`);
   try {
     onProgress?.(event);
   } catch {
@@ -421,7 +421,7 @@ function pipeInstallOutput(
 
 /**
  * Detect (and optionally install) the global `pi` CLI.
- * By default only detects — install requires `force: true` or PIX_FORCE_PI_INSTALL.
+ * By default only detects — install requires `force: true` or ZENO_FORCE_PI_INSTALL.
  * Concurrent callers share one in-flight promise.
  */
 export function ensurePiCli(options: PiCliEnsureOptions = {}): Promise<PiCliEnsureResult> {

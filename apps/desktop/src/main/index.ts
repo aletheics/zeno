@@ -118,7 +118,7 @@ import { ThemeLibrary } from "./theme-library.ts";
 
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: "pix-theme",
+    scheme: "zeno-theme",
     privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true },
   },
 ]);
@@ -151,7 +151,7 @@ function bootstrapBundledRuntimesAndPath(): void {
     resourcesPath?: string;
     mainModuleUrl?: string;
   } = {
-    userDataPath: userDataPath || join(homedir(), ".pix-runtimes-fallback"),
+    userDataPath: userDataPath || join(homedir(), ".zeno-runtimes-fallback"),
     mainModuleUrl: import.meta.url,
   };
   if (typeof process.resourcesPath === "string" && process.resourcesPath) {
@@ -172,7 +172,7 @@ function bootstrapBundledRuntimesAndPath(): void {
       };
     }
   } catch (error) {
-    console.warn("[pix] runtime provision failed:", error);
+    console.warn("[zeno] runtime provision failed:", error);
   }
 
   configureBundledRuntimes({
@@ -312,9 +312,9 @@ async function getPiTuiController(): Promise<PiTuiPtyController> {
 
 const execFileAsync = promisify(execFile);
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
-const HOST_EVENT_CHANNEL = "pix:host:event";
-const PI_PROGRESS_CHANNEL = "pix:pi:progress";
-const APP_UPDATE_CHANNEL = "pix:app:update-status";
+const HOST_EVENT_CHANNEL = "zeno:host:event";
+const PI_PROGRESS_CHANNEL = "zeno:pi:progress";
+const APP_UPDATE_CHANNEL = "zeno:app:update-status";
 
 /** Best-effort branch / worktree labels for composer chrome (no git binary required). */
 function readGitContext(cwd: string | undefined): GitContextInfo {
@@ -799,7 +799,7 @@ function setWorktreePrefs(patch: {
 function getGitPrefs(): GitPrefs {
   const prefs = loadDesktopPrefs();
   return {
-    branchPrefix: prefs.gitBranchPrefix?.trim() || "pix/",
+    branchPrefix: prefs.gitBranchPrefix?.trim() || "zeno/",
     pullMode: prefs.gitPullMode === "squash" ? "squash" : "merge",
     forcePush: prefs.gitForcePush === true,
     draftPr: prefs.gitDraftPr === true,
@@ -1217,7 +1217,7 @@ async function fileIconDataUrl(filePath: string): Promise<string | undefined> {
 
 /** Convert .icns/.png via macOS `sips` — more reliable than nativeImage for some ICNS. */
 async function sipsIconDataUrl(iconPath: string): Promise<string | undefined> {
-  const out = join(tmpdir(), `pix-icon-${randomUUID()}.png`);
+  const out = join(tmpdir(), `zeno-icon-${randomUUID()}.png`);
   try {
     await execFileAsync("sips", ["-s", "format", "png", "-z", "64", "64", iconPath, "--out", out], {
       windowsHide: true,
@@ -1303,7 +1303,7 @@ const macAppIconCache = new Map<string, string>();
  * Hard-capped: never block the env panel for seconds per app.
  */
 async function qlmanageAppIconDataUrl(appPath: string): Promise<string | undefined> {
-  const outDir = join(tmpdir(), "pix-app-icons");
+  const outDir = join(tmpdir(), "zeno-app-icons");
   try {
     mkdirSync(outDir, { recursive: true });
     await execFileAsync("qlmanage", ["-t", "-s", "64", "-o", outDir, appPath], {
@@ -1612,7 +1612,7 @@ async function searchPiPackageCatalog(
   const offset = Math.max(0, Math.floor(from));
   const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
   const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "pix-desktop" },
+    headers: { Accept: "application/json", "User-Agent": "zeno-desktop" },
   });
   if (!res.ok) {
     throw new Error(`插件目录请求失败 (${res.status})`);
@@ -1741,7 +1741,7 @@ end tell`;
   await execFileAsync(found.target, [cwd], { windowsHide: true });
 }
 
-/** Restored BrowserWindow geometry (userData/pix-desktop.json). */
+/** Restored BrowserWindow geometry (userData/zeno-desktop.json). */
 interface WindowBoundsPrefs {
   x: number;
   y: number;
@@ -1831,7 +1831,7 @@ export type GitPrefs = {
 };
 
 function prefsPath(): string {
-  return join(app.getPath("userData"), "pix-desktop.json");
+  return join(app.getPath("userData"), "zeno-desktop.json");
 }
 
 function isEphemeralWorkspacePath(path: string): boolean {
@@ -1839,14 +1839,14 @@ function isEphemeralWorkspacePath(path: string): boolean {
   return (
     normalized.includes("/tmp/") ||
     normalized.includes("/var/folders/") ||
-    normalized.includes("/pix-e2e-") ||
-    normalized.includes("/pix-fake-") ||
-    normalized.includes("/pix-test-") ||
-    normalized.includes("/pix-p0") ||
+    normalized.includes("/zeno-e2e-") ||
+    normalized.includes("/zeno-fake-") ||
+    normalized.includes("/zeno-test-") ||
+    normalized.includes("/zeno-p0") ||
     normalized.includes("/fork-probe") ||
     normalized.includes("/recent-ws-") ||
     normalized.includes("/other-workspace") ||
-    /\/t\/pix-/.test(normalized)
+    /\/t\/zeno-/.test(normalized)
   );
 }
 
@@ -1995,7 +1995,7 @@ function applyAppScale(win: BrowserWindow | null | undefined, scale: number): vo
   try {
     win.webContents.setZoomFactor(scale / 100);
   } catch (error) {
-    console.warn("[pix] set app scale failed:", error);
+    console.warn("[zeno] set app scale failed:", error);
   }
 }
 
@@ -2240,7 +2240,7 @@ function processEnvironment(): Record<string, string> {
   const builtin = resolveBuiltinSdkCached();
   const global = cachedGlobalSdk ?? { source: "global" as const, available: false };
   const sdkEnv = piSdkSpawnEnv(preference, builtin, global);
-  appliedPiSdkSource = sdkEnv.PIX_PI_SDK_SOURCE === "global" ? "global" : "builtin";
+  appliedPiSdkSource = sdkEnv.ZENO_PI_SDK_SOURCE === "global" ? "global" : "builtin";
   return { ...withProxy, ...sdkEnv };
 }
 
@@ -2271,7 +2271,7 @@ async function applyAppSessionProxy(channel?: ProxyChannelPrefs): Promise<void> 
     const { session } = await import("electron");
     await session.defaultSession.setProxy(config);
   } catch (error) {
-    console.warn("[pix] applyAppSessionProxy failed:", error);
+    console.warn("[zeno] applyAppSessionProxy failed:", error);
   }
 }
 
@@ -2338,7 +2338,7 @@ class HostSupervisor {
     // Env fixture wins for isolated/e2e. Otherwise restore last durable workspace
     // (loadDesktopPrefs already falls back to first recent real project).
     this.#workspaceCwd =
-      process.env.PIX_WORKSPACE ?? durableWorkspacePath(prefs.lastWorkspace) ?? undefined;
+      process.env.ZENO_WORKSPACE ?? durableWorkspacePath(prefs.lastWorkspace) ?? undefined;
   }
 
   activeSessionFile(): string | undefined {
@@ -2747,7 +2747,7 @@ class HostSupervisor {
   /**
    * Global "新建会话": detach from the live project session.
    * - Product: clear cwd so the next start requires an explicit project pick.
-   * - Isolated/e2e (`PIX_WORKSPACE`): keep the fixture cwd for subsequent session.create.
+   * - Isolated/e2e (`ZENO_WORKSPACE`): keep the fixture cwd for subsequent session.create.
    * Keeps the project on the recent list so it stays visible in the sidebar groups.
    */
   async clearActiveWorkspace(): Promise<void> {
@@ -2762,7 +2762,7 @@ class HostSupervisor {
     this.#snapshot = undefined;
     this.#host = undefined;
     this.#resumeRecent = false;
-    const fixture = process.env.PIX_WORKSPACE;
+    const fixture = process.env.ZENO_WORKSPACE;
     if (fixture) {
       this.#workspaceCwd = fixture;
       this.#requireExplicitWorkspace = false;
@@ -2786,7 +2786,7 @@ class HostSupervisor {
     history: SessionHistoryMessage[];
   }> {
     return this.#exclusive(async () => {
-      const convCwd = process.env.PIX_WORKSPACE?.trim() || ensureConversationWorkspacePath();
+      const convCwd = process.env.ZENO_WORKSPACE?.trim() || ensureConversationWorkspacePath();
       const alreadyOnConv =
         Boolean(this.#host && this.#snapshot) &&
         !this.#host!.stopping &&
@@ -2798,8 +2798,8 @@ class HostSupervisor {
         // Park generating project sessions; do not abort them for a blank chat.
         await this.#clearActiveExclusive();
         // Fixture workspace (e2e) wins over conversation home when set.
-        if (process.env.PIX_WORKSPACE?.trim()) {
-          this.#workspaceCwd = process.env.PIX_WORKSPACE.trim();
+        if (process.env.ZENO_WORKSPACE?.trim()) {
+          this.#workspaceCwd = process.env.ZENO_WORKSPACE.trim();
           this.#requireExplicitWorkspace = false;
         } else {
           this.#workspaceCwd = convCwd;
@@ -2842,12 +2842,12 @@ class HostSupervisor {
     ]);
 
     // Pi home state (packages/resources/settings) must work without a user project.
-    // Prefer supervisor workspace (set by openPath / start options) over PIX_WORKSPACE
-    // so e2e/product can switch projects even when PIX_WORKSPACE is set for fixtures.
-    // Fallback: PIX_WORKSPACE → last durable project → Documents/Zeno/YYYY-MM-DD scratch.
+    // Prefer supervisor workspace (set by openPath / start options) over ZENO_WORKSPACE
+    // so e2e/product can switch projects even when ZENO_WORKSPACE is set for fixtures.
+    // Fallback: ZENO_WORKSPACE → last durable project → Documents/Zeno/YYYY-MM-DD scratch.
     const cwd =
       this.#workspaceCwd ??
-      process.env.PIX_WORKSPACE ??
+      process.env.ZENO_WORKSPACE ??
       (this.#requireExplicitWorkspace
         ? undefined
         : durableWorkspacePath(loadDesktopPrefs().lastWorkspace)) ??
@@ -2863,15 +2863,15 @@ class HostSupervisor {
     // Share CLI config: only override agentDir/model/tools when explicitly set
     // (isolated/e2e). Product omits them → pi getAgentDir() + default tools/models.
     if (process.env.PI_CODING_AGENT_DIR) command.agentDir = process.env.PI_CODING_AGENT_DIR;
-    const modelProvider = process.env.PIX_MODEL_PROVIDER;
-    const modelId = process.env.PIX_MODEL_ID;
+    const modelProvider = process.env.ZENO_MODEL_PROVIDER;
+    const modelId = process.env.ZENO_MODEL_ID;
     if (modelProvider && modelId) command.model = { provider: modelProvider, id: modelId };
-    if (process.env.PIX_TOOLS) {
-      command.tools = process.env.PIX_TOOLS.split(",").map((tool) => tool.trim());
+    if (process.env.ZENO_TOOLS) {
+      command.tools = process.env.ZENO_TOOLS.split(",").map((tool) => tool.trim());
     }
     if (this.#sessionFile) command.sessionFile = this.#sessionFile;
     // Persist sessions like the CLI unless explicitly disabled.
-    else if (process.env.PIX_PERSIST_SESSION !== "0") command.persistSession = true;
+    else if (process.env.ZENO_PERSIST_SESSION !== "0") command.persistSession = true;
     if (this.#resumeRecent && !this.#sessionFile) command.resumeRecent = true;
 
     const event = await this.#request(command);
@@ -3857,7 +3857,7 @@ class HostSupervisor {
   }
 
   armCrashOnEvent(eventType: string): void {
-    if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+    if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
       throw new Error("Test crash commands are disabled");
     }
     this.#crashOnEvent = eventType;
@@ -3878,7 +3878,7 @@ class HostSupervisor {
   }
 
   async photonProbe(imagePath: string): Promise<PhotonProbeResult> {
-    if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+    if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
       throw new Error("Photon probe command is disabled");
     }
     const event = await this.#request({
@@ -3894,7 +3894,7 @@ class HostSupervisor {
   }
 
   async probeSequenceGap(): Promise<HostSnapshot> {
-    if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+    if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
       throw new Error("Sequence gap command is disabled");
     }
     const event = await this.#request({
@@ -3910,7 +3910,7 @@ class HostSupervisor {
   }
 
   async crashHost(): Promise<void> {
-    if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+    if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
       throw new Error("Test crash commands are disabled");
     }
     const host = this.#host;
@@ -4028,7 +4028,7 @@ class HostSupervisor {
         this.#count("extensionUi.request");
         // Only auto-answer / surface extension UI for the foreground host.
         if (!isForeground) return;
-        if (process.env.PIX_AUTO_EXTENSION_UI === "1") {
+        if (process.env.ZENO_AUTO_EXTENSION_UI === "1") {
           const args =
             typeof message.args === "object" && message.args !== null
               ? (message.args as Record<string, unknown>)
@@ -4039,7 +4039,7 @@ class HostSupervisor {
               : message.method === "select" && Array.isArray(args.options)
                 ? args.options[0]
                 : message.method === "input" || message.method === "editor"
-                  ? "pix-test-input"
+                  ? "zeno-test-input"
                   : undefined;
           host.child.postMessage({
             protocolVersion: IPC_PROTOCOL_VERSION,
@@ -4308,7 +4308,7 @@ function applyDockIcon(iconPath: string | undefined): void {
   if (!iconPath) return;
   const image = nativeImage.createFromPath(iconPath);
   if (image.isEmpty()) {
-    console.warn("[pix] dock icon empty:", iconPath);
+    console.warn("[zeno] dock icon empty:", iconPath);
     return;
   }
   try {
@@ -4321,7 +4321,7 @@ function applyDockIcon(iconPath: string | undefined): void {
         : image.resize({ width: size, height: size, quality: "best" });
     app.dock.setIcon(squared);
   } catch (error) {
-    console.warn("[pix] dock setIcon failed:", error);
+    console.warn("[zeno] dock setIcon failed:", error);
   }
 }
 
@@ -4344,10 +4344,10 @@ function applyAppBranding(): void {
         iconPath,
       });
     } catch (error) {
-      console.warn("[pix] setAboutPanelOptions failed:", error);
+      console.warn("[zeno] setAboutPanelOptions failed:", error);
     }
   } else {
-    console.warn("[pix] app icon not found (build/ or process.resourcesPath)");
+    console.warn("[zeno] app icon not found (build/ or process.resourcesPath)");
   }
 }
 
@@ -4374,7 +4374,7 @@ function applyWindowsTitleBarOverlay(win: BrowserWindow | null | undefined): voi
       height: TITLEBAR_HEIGHT_PX,
     });
   } catch (error) {
-    console.warn("[pix] setTitleBarOverlay failed:", error);
+    console.warn("[zeno] setTitleBarOverlay failed:", error);
   }
 }
 
@@ -4453,7 +4453,7 @@ async function createWindow(): Promise<void> {
   attachWindowBoundsPersistence(mainWindow);
   const emitWindowState = () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    mainWindow.webContents.send("pix:window:state", {
+    mainWindow.webContents.send("zeno:window:state", {
       isMaximized: mainWindow.isMaximized(),
     });
   };
@@ -4552,7 +4552,7 @@ function noteOsNotificationFailure(error: unknown): void {
         "Enable notifications for Electron/Zeno in System Settings → Notifications, " +
         "or use a packaged/signed build. Further failures are quiet for 5 minutes."
       : " Desktop notifications failed; further failures are quiet for 5 minutes.";
-  console.warn(`[pix] notification failed: ${detail}.${hint}`);
+  console.warn(`[zeno] notification failed: ${detail}.${hint}`);
 }
 
 /**
@@ -4564,7 +4564,7 @@ async function showOsNotification(payload: ShowOsNotificationPayload): Promise<b
     if (!Notification.isSupported()) {
       if (!osNotificationFailureLogged) {
         osNotificationFailureLogged = true;
-        console.warn("[pix] notifications unsupported on this platform");
+        console.warn("[zeno] notifications unsupported on this platform");
       }
       return false;
     }
@@ -4648,7 +4648,7 @@ void app
     // Name + About/Dock icon (must be after ready for About panel iconPath on some builds).
     applyAppBranding();
     themeLibrary = new ThemeLibrary(app.getPath("userData"));
-    protocol.handle("pix-theme", async (request) => {
+    protocol.handle("zeno-theme", async (request) => {
       try {
         const url = new URL(request.url);
         const assetPath =
@@ -4680,17 +4680,17 @@ void app
     } else {
       Menu.setApplicationMenu(null);
     }
-    ipcMain.handle("pix:app:get-runtime", () => ({
+    ipcMain.handle("zeno:app:get-runtime", () => ({
       platform: process.platform,
       isPackaged: app.isPackaged,
       enableTestCommands:
-        process.env.PIX_ENABLE_TEST_COMMANDS === "1" ||
-        process.env.PIX_ENABLE_TEST_COMMANDS === "true",
+        process.env.ZENO_ENABLE_TEST_COMMANDS === "1" ||
+        process.env.ZENO_ENABLE_TEST_COMMANDS === "true",
       appVersion: app.getVersion(),
       /** Windows uses native titleBarOverlay buttons; Linux needs renderer caption buttons. */
       customWindowControls: process.platform === "linux",
     }));
-    ipcMain.handle("pix:app:get-update-status", () => {
+    ipcMain.handle("zeno:app:get-update-status", () => {
       if (!autoUpdate) {
         return {
           state: "idle" as const,
@@ -4700,7 +4700,7 @@ void app
       }
       return autoUpdate.getStatus();
     });
-    ipcMain.handle("pix:app:check-for-updates", () => {
+    ipcMain.handle("zeno:app:check-for-updates", () => {
       if (!autoUpdate) {
         return {
           state: "not-available" as const,
@@ -4710,7 +4710,7 @@ void app
       }
       return autoUpdate.checkForUpdates();
     });
-    ipcMain.handle("pix:app:download-update", () => {
+    ipcMain.handle("zeno:app:download-update", () => {
       if (!autoUpdate) {
         return {
           state: "error" as const,
@@ -4721,11 +4721,11 @@ void app
       }
       return autoUpdate.downloadUpdate();
     });
-    ipcMain.handle("pix:app:quit-and-install", () => {
+    ipcMain.handle("zeno:app:quit-and-install", () => {
       autoUpdate?.quitAndInstall();
     });
-    ipcMain.handle("pix:proxy:get", () => getProxyPrefs());
-    ipcMain.handle("pix:proxy:set", async (_event, next: unknown) => {
+    ipcMain.handle("zeno:proxy:get", () => getProxyPrefs());
+    ipcMain.handle("zeno:proxy:set", async (_event, next: unknown) => {
       const prev = getProxyPrefs();
       const saved = setProxyPrefs(normalizeProxyPrefs(next));
       await applyAppSessionProxy(saved.app);
@@ -4734,49 +4734,49 @@ void app
         try {
           await supervisor.stop();
         } catch (error) {
-          console.warn("[pix] stop host after AI proxy change failed:", error);
+          console.warn("[zeno] stop host after AI proxy change failed:", error);
         }
       }
       return saved;
     });
-    ipcMain.handle("pix:proxy:discover-local", () => discoverLocalProxies());
-    ipcMain.handle("pix:window:minimize", () => {
+    ipcMain.handle("zeno:proxy:discover-local", () => discoverLocalProxies());
+    ipcMain.handle("zeno:window:minimize", () => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
     });
-    ipcMain.handle("pix:window:toggle-maximize", () => {
+    ipcMain.handle("zeno:window:toggle-maximize", () => {
       if (!mainWindow || mainWindow.isDestroyed()) return false;
       if (mainWindow.isMaximized()) mainWindow.unmaximize();
       else mainWindow.maximize();
       return mainWindow.isMaximized();
     });
-    ipcMain.handle("pix:window:close", () => {
+    ipcMain.handle("zeno:window:close", () => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
     });
-    ipcMain.handle("pix:window:is-maximized", () =>
+    ipcMain.handle("zeno:window:is-maximized", () =>
       Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()),
     );
-    ipcMain.handle("pix:appearance:set-theme-source", (_event, source: unknown) => {
+    ipcMain.handle("zeno:appearance:set-theme-source", (_event, source: unknown) => {
       if (source !== "light" && source !== "dark" && source !== "system") {
         throw new Error("Invalid native theme source");
       }
       nativeTheme.themeSource = source;
       applyNonMacWindowChrome(mainWindow);
     });
-    ipcMain.handle("pix:appearance:get-app-scale", () => getAppScale());
-    ipcMain.handle("pix:appearance:set-app-scale", (_event, scale: unknown) => setAppScale(scale));
+    ipcMain.handle("zeno:appearance:get-app-scale", () => getAppScale());
+    ipcMain.handle("zeno:appearance:set-app-scale", (_event, scale: unknown) => setAppScale(scale));
     const requireThemeLibrary = (): ThemeLibrary => {
       if (!themeLibrary) throw new Error("Theme library is not ready");
       return themeLibrary;
     };
-    ipcMain.handle("pix:themes:list", () => requireThemeLibrary().list());
-    ipcMain.handle("pix:themes:activate", (_event, id: unknown) =>
+    ipcMain.handle("zeno:themes:list", () => requireThemeLibrary().list());
+    ipcMain.handle("zeno:themes:activate", (_event, id: unknown) =>
       requireThemeLibrary().activate(id),
     );
-    ipcMain.handle("pix:themes:save", (_event, input: unknown) =>
+    ipcMain.handle("zeno:themes:save", (_event, input: unknown) =>
       requireThemeLibrary().save(input),
     );
-    ipcMain.handle("pix:themes:remove", (_event, id: unknown) => requireThemeLibrary().remove(id));
-    ipcMain.handle("pix:themes:import-pick", async () => {
+    ipcMain.handle("zeno:themes:remove", (_event, id: unknown) => requireThemeLibrary().remove(id));
+    ipcMain.handle("zeno:themes:import-pick", async () => {
       if (!mainWindow) return undefined;
       const result = await dialog.showOpenDialog(mainWindow, {
         title: "Import Zeno theme skin",
@@ -4785,7 +4785,7 @@ void app
       if (result.canceled || !result.filePaths[0]) return undefined;
       return requireThemeLibrary().importDirectory(result.filePaths[0]);
     });
-    ipcMain.handle("pix:themes:export-pick", async (_event, id: unknown) => {
+    ipcMain.handle("zeno:themes:export-pick", async (_event, id: unknown) => {
       if (!mainWindow) return {};
       const result = await dialog.showOpenDialog(mainWindow, {
         title: "Export Zeno theme skin",
@@ -4815,16 +4815,16 @@ void app
         try {
           await supervisor.start({ force: false });
         } catch (error) {
-          console.warn("[pix] host refresh after pi install failed:", error);
+          console.warn("[zeno] host refresh after pi install failed:", error);
         }
       }
       cachedGlobalSdk = undefined;
       void resolveGlobalSdkCached(true).catch(() => undefined);
       return result;
     };
-    ipcMain.handle("pix:pi:ensure", () => runDetectPiCli());
-    ipcMain.handle("pix:runtimes:get-status", () => getActiveBundledRuntimeStatus());
-    ipcMain.handle("pix:runtimes:set-prefs", (_event, raw: unknown) => {
+    ipcMain.handle("zeno:pi:ensure", () => runDetectPiCli());
+    ipcMain.handle("zeno:runtimes:get-status", () => getActiveBundledRuntimeStatus());
+    ipcMain.handle("zeno:runtimes:set-prefs", (_event, raw: unknown) => {
       const next = normalizeBundledRuntimePrefs(raw);
       const prefs = loadDesktopPrefs();
       saveDesktopPrefs({
@@ -4839,9 +4839,9 @@ void app
       applyManagedRuntimeToProcessEnv(process.env);
       return getActiveBundledRuntimeStatus();
     });
-    ipcMain.handle("pix:pi-sdk:get-status", () => collectPiSdkStatus());
+    ipcMain.handle("zeno:pi-sdk:get-status", () => collectPiSdkStatus());
     ipcMain.handle(
-      "pix:pi-sdk:set-source",
+      "zeno:pi-sdk:set-source",
       async (_event, source: unknown, options?: { force?: boolean }) => {
         const next = normalizePiSdkSource(source);
         const force = options?.force === true;
@@ -4885,13 +4885,13 @@ void app
             await supervisor.stop();
             await supervisor.start({ force: true });
           } catch (error) {
-            console.warn("[pix] host recycle after pi SDK switch failed:", error);
+            console.warn("[zeno] host recycle after pi SDK switch failed:", error);
           }
         }
         return collectPiSdkStatus();
       },
     );
-    ipcMain.handle("pix:pi-sdk:list-config-files", async () => {
+    ipcMain.handle("zeno:pi-sdk:list-config-files", async () => {
       let agentDir = defaultAgentDir();
       try {
         const snap = await supervisor?.snapshot();
@@ -4901,7 +4901,7 @@ void app
       }
       return listPiConfigFiles(agentDir);
     });
-    ipcMain.handle("pix:pi-sdk:reveal-config", async (_event, id: unknown) => {
+    ipcMain.handle("zeno:pi-sdk:reveal-config", async (_event, id: unknown) => {
       if (typeof id !== "string" || !id.trim()) throw new Error("Invalid config id");
       let agentDir = defaultAgentDir();
       try {
@@ -4915,7 +4915,7 @@ void app
       if (!entry.exists) throw new Error(`Config path does not exist: ${entry.path}`);
       shell.showItemInFolder(entry.path);
     });
-    ipcMain.handle("pix:pi-sdk:open-config", async (_event, id: unknown) => {
+    ipcMain.handle("zeno:pi-sdk:open-config", async (_event, id: unknown) => {
       if (typeof id !== "string" || !id.trim()) throw new Error("Invalid config id");
       let agentDir = defaultAgentDir();
       try {
@@ -4931,8 +4931,8 @@ void app
       const error = await shell.openPath(entry.path);
       if (error) throw new Error(error);
     });
-    ipcMain.handle("pix:pi-sdk:install-global", () => runInstallGlobalPiCli());
-    ipcMain.handle("pix:pi-sdk:check-latest", () => collectPiSdkStatus({ forceLatest: true }));
+    ipcMain.handle("zeno:pi-sdk:install-global", () => runInstallGlobalPiCli());
+    ipcMain.handle("zeno:pi-sdk:check-latest", () => collectPiSdkStatus({ forceLatest: true }));
 
     // Only resolve global package when user already prefers global SDK.
     // Default builtin: skip global pi probe entirely at startup.
@@ -4949,57 +4949,57 @@ void app
     });
 
     ipcMain.handle(
-      "pix:host:start",
+      "zeno:host:start",
       (_event, options?: { cwd?: string; sessionFile?: string; resumeRecent?: boolean }) =>
         supervisor?.start(options),
     );
-    ipcMain.handle("pix:host:snapshot", () => supervisor?.snapshot());
-    ipcMain.handle("pix:host:stop", () => {
+    ipcMain.handle("zeno:host:snapshot", () => supervisor?.snapshot());
+    ipcMain.handle("zeno:host:stop", () => {
       piTuiController?.disposeAll();
       piTuiGuard.release();
       return supervisor?.stop();
     });
-    ipcMain.handle("pix:workspace:get-cwd", () => supervisor?.getWorkspaceCwd());
-    ipcMain.handle("pix:workspace:list-recent", () => supervisor?.listRecentWorkspaces());
+    ipcMain.handle("zeno:workspace:get-cwd", () => supervisor?.getWorkspaceCwd());
+    ipcMain.handle("zeno:workspace:list-recent", () => supervisor?.listRecentWorkspaces());
     ipcMain.handle(
-      "pix:workspace:open-path",
+      "zeno:workspace:open-path",
       (_event, cwd: string, options?: { resumeRecent?: boolean }) =>
         supervisor?.openWorkspace(cwd, options),
     );
-    ipcMain.handle("pix:workspace:remove-recent", (_event, cwd: string) =>
+    ipcMain.handle("zeno:workspace:remove-recent", (_event, cwd: string) =>
       supervisor?.removeRecentWorkspace(cwd),
     );
-    ipcMain.handle("pix:workspace:clear-active", () => supervisor?.clearActiveWorkspace());
-    ipcMain.handle("pix:workspace:get-git-context", (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:clear-active", () => supervisor?.clearActiveWorkspace());
+    ipcMain.handle("zeno:workspace:get-git-context", (_event, cwd?: string) => {
       const path =
         typeof cwd === "string" && cwd.trim() ? cwd : (supervisor?.getWorkspaceCwd() ?? undefined);
       return readGitContext(path);
     });
-    ipcMain.handle("pix:workspace:list-git-branches", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:list-git-branches", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return listGitBranches(path);
     });
     ipcMain.handle(
-      "pix:workspace:checkout-git-branch",
+      "zeno:workspace:checkout-git-branch",
       async (_event, branch: string, cwd?: string) => {
         const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
         return checkoutGitBranch(path, branch);
       },
     );
     ipcMain.handle(
-      "pix:workspace:create-git-branch",
+      "zeno:workspace:create-git-branch",
       async (_event, branch: string, options?: { checkout?: boolean; cwd?: string }) => {
         const path = resolveWorkspaceCwd(options?.cwd, supervisor?.getWorkspaceCwd());
         return createGitBranch(path, branch, options?.checkout !== false);
       },
     );
-    ipcMain.handle("pix:workspace:list-git-worktrees", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:list-git-worktrees", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return listGitWorktrees(path);
     });
-    ipcMain.handle("pix:workspace:list-managed-worktrees", async () => listAllManagedWorktrees());
+    ipcMain.handle("zeno:workspace:list-managed-worktrees", async () => listAllManagedWorktrees());
     ipcMain.handle(
-      "pix:workspace:create-git-worktree",
+      "zeno:workspace:create-git-worktree",
       async (
         _event,
         options: {
@@ -5015,26 +5015,26 @@ void app
       },
     );
     ipcMain.handle(
-      "pix:workspace:remove-git-worktree",
+      "zeno:workspace:remove-git-worktree",
       async (_event, worktreePath: string, cwd?: string) => {
         return removeGitWorktree(worktreePath, cwd);
       },
     );
-    ipcMain.handle("pix:workspace:get-worktree-prefs", (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:get-worktree-prefs", (_event, cwd?: string) => {
       const path =
         typeof cwd === "string" && cwd.trim() ? cwd : (supervisor?.getWorkspaceCwd() ?? undefined);
       return getWorktreePrefsView(path);
     });
     ipcMain.handle(
-      "pix:workspace:set-worktree-prefs",
+      "zeno:workspace:set-worktree-prefs",
       (
         _event,
         patch: { rootConfigured?: string; autoDelete?: boolean; autoDeleteLimit?: number },
       ) => setWorktreePrefs(patch ?? {}),
     );
-    ipcMain.handle("pix:workspace:get-git-prefs", () => getGitPrefs());
+    ipcMain.handle("zeno:workspace:get-git-prefs", () => getGitPrefs());
     ipcMain.handle(
-      "pix:workspace:set-git-prefs",
+      "zeno:workspace:set-git-prefs",
       (
         _event,
         patch: {
@@ -5049,15 +5049,15 @@ void app
         },
       ) => setGitPrefs(patch ?? {}),
     );
-    ipcMain.handle("pix:workspace:reveal-in-folder", (_event, cwd: string) => {
+    ipcMain.handle("zeno:workspace:reveal-in-folder", (_event, cwd: string) => {
       if (typeof cwd === "string" && cwd.trim()) shell.showItemInFolder(cwd);
     });
-    ipcMain.handle("pix:workspace:open-file", async (_event, path: string) => {
+    ipcMain.handle("zeno:workspace:open-file", async (_event, path: string) => {
       if (typeof path !== "string" || !path.trim()) throw new Error("Invalid file path");
       const error = await shell.openPath(path);
       if (error) throw new Error(error);
     });
-    ipcMain.handle("pix:workspace:open-external", async (_event, url: string) => {
+    ipcMain.handle("zeno:workspace:open-external", async (_event, url: string) => {
       if (typeof url !== "string") throw new Error("Invalid external URL");
       const protocol = new URL(url).protocol;
       if (!new Set(["http:", "https:", "mailto:"]).has(protocol)) {
@@ -5065,48 +5065,48 @@ void app
       }
       await shell.openExternal(url);
     });
-    ipcMain.handle("pix:workspace:ensure-default", () => ensureDefaultWorkspacePath());
-    ipcMain.handle("pix:workspace:ensure-conversation", () => ensureConversationWorkspacePath());
-    ipcMain.handle("pix:workspace:git-status", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:ensure-default", () => ensureDefaultWorkspacePath());
+    ipcMain.handle("zeno:workspace:ensure-conversation", () => ensureConversationWorkspacePath());
+    ipcMain.handle("zeno:workspace:git-status", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return gitStatus(path);
     });
-    ipcMain.handle("pix:workspace:git-commit", async (_event, message: string, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:git-commit", async (_event, message: string, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return gitCommit(path, message);
     });
-    ipcMain.handle("pix:workspace:git-pull", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:git-pull", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return gitPull(path);
     });
-    ipcMain.handle("pix:workspace:git-push", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:git-push", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return gitPush(path);
     });
     ipcMain.handle(
-      "pix:workspace:git-commit-and-push",
+      "zeno:workspace:git-commit-and-push",
       async (_event, message: string, cwd?: string) => {
         const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
         return gitCommitAndPush(path, message);
       },
     );
-    ipcMain.handle("pix:workspace:git-generate-commit-message", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:git-generate-commit-message", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return generateCommitMessage(path);
     });
-    ipcMain.handle("pix:workspace:open-create-pr", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:open-create-pr", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return openCreatePullRequest(path);
     });
-    ipcMain.handle("pix:workspace:list-open-targets", async (_event, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:list-open-targets", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return listOpenTargets(path);
     });
-    ipcMain.handle("pix:workspace:open-in-app", async (_event, appId: string, cwd?: string) => {
+    ipcMain.handle("zeno:workspace:open-in-app", async (_event, appId: string, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
       return openInApp(appId, path);
     });
-    ipcMain.handle("pix:workspace:pick-folder", async () => {
+    ipcMain.handle("zeno:workspace:pick-folder", async () => {
       if (!mainWindow) return undefined;
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ["openDirectory", "createDirectory"],
@@ -5118,7 +5118,7 @@ void app
     // directory picker. Combining openFile+openDirectory forces directory-only UI, so
     // users could not select files. Callers pass mode explicitly.
     ipcMain.handle(
-      "pix:workspace:pick-attachments",
+      "zeno:workspace:pick-attachments",
       async (_event, options?: { mode?: "files" | "folders" }) => {
         if (!mainWindow) return [];
         const mode = options?.mode === "folders" ? "folders" : "files";
@@ -5137,7 +5137,7 @@ void app
       },
     );
     ipcMain.handle(
-      "pix:workspace:search-paths",
+      "zeno:workspace:search-paths",
       async (_event, query?: string, options?: { cwd?: string; limit?: number }) => {
         const fromOpts =
           typeof options?.cwd === "string" && options.cwd.trim() ? options.cwd.trim() : undefined;
@@ -5151,9 +5151,9 @@ void app
       },
     );
     ipcMain.handle(
-      "pix:workspace:save-clipboard-image",
+      "zeno:workspace:save-clipboard-image",
       async (_event, options?: { bytes?: number[]; ext?: string }) => {
-        const dir = join(app.getPath("temp"), "pix-attachments");
+        const dir = join(app.getPath("temp"), "zeno-attachments");
         mkdirSync(dir, { recursive: true });
         let buffer: Buffer | undefined;
         let ext =
@@ -5173,7 +5173,7 @@ void app
       },
     );
     /** Local image → small data-URL thumbnail for AttachmentMedia variant="image". */
-    ipcMain.handle("pix:workspace:read-attachment-preview", async (_event, filePath?: string) => {
+    ipcMain.handle("zeno:workspace:read-attachment-preview", async (_event, filePath?: string) => {
       if (typeof filePath !== "string" || !filePath.trim()) return undefined;
       const abs = isAbsolute(filePath) ? resolve(filePath) : resolve(filePath);
       if (!existsSync(abs)) return undefined;
@@ -5221,55 +5221,55 @@ void app
         return undefined;
       }
     });
-    ipcMain.handle("pix:trust:get", () => supervisor?.getTrust());
-    ipcMain.handle("pix:trust:set", (_event, trusted: boolean) => supervisor?.setTrust(trusted));
-    ipcMain.handle("pix:models:list", () => supervisor?.listModels());
-    ipcMain.handle("pix:models:set", (_event, provider: string, id: string) =>
+    ipcMain.handle("zeno:trust:get", () => supervisor?.getTrust());
+    ipcMain.handle("zeno:trust:set", (_event, trusted: boolean) => supervisor?.setTrust(trusted));
+    ipcMain.handle("zeno:models:list", () => supervisor?.listModels());
+    ipcMain.handle("zeno:models:set", (_event, provider: string, id: string) =>
       supervisor?.setModel(provider, id),
     );
-    ipcMain.handle("pix:models:get-config", () => supervisor?.getModelsJsonConfig());
-    ipcMain.handle("pix:models:upsert-custom", (_event, input: UpsertCustomProviderInput) =>
+    ipcMain.handle("zeno:models:get-config", () => supervisor?.getModelsJsonConfig());
+    ipcMain.handle("zeno:models:upsert-custom", (_event, input: UpsertCustomProviderInput) =>
       supervisor?.upsertCustomProvider(input),
     );
-    ipcMain.handle("pix:models:remove-custom", (_event, provider: string) =>
+    ipcMain.handle("zeno:models:remove-custom", (_event, provider: string) =>
       supervisor?.removeCustomProvider(provider),
     );
-    ipcMain.handle("pix:models:remove-custom-model", (_event, provider: string, modelId: string) =>
+    ipcMain.handle("zeno:models:remove-custom-model", (_event, provider: string, modelId: string) =>
       supervisor?.removeCustomModel(provider, modelId),
     );
-    ipcMain.handle("pix:models:open-config", () => supervisor?.openModelsJson());
-    ipcMain.handle("pix:models:reveal-config", () => supervisor?.revealModelsJson());
-    ipcMain.handle("pix:thinking:set", (_event, level: string) =>
+    ipcMain.handle("zeno:models:open-config", () => supervisor?.openModelsJson());
+    ipcMain.handle("zeno:models:reveal-config", () => supervisor?.revealModelsJson());
+    ipcMain.handle("zeno:thinking:set", (_event, level: string) =>
       supervisor?.setThinkingLevel(level),
     );
-    ipcMain.handle("pix:service-tier:set", (_event, tier: string) =>
+    ipcMain.handle("zeno:service-tier:set", (_event, tier: string) =>
       supervisor?.setServiceTier(tier),
     );
-    ipcMain.handle("pix:providers:list", () => supervisor?.listProviders());
-    ipcMain.handle("pix:providers:usage", () => supervisor?.listProviderUsage());
-    ipcMain.handle("pix:providers:set-api-key", (_event, provider: string, apiKey: string) =>
+    ipcMain.handle("zeno:providers:list", () => supervisor?.listProviders());
+    ipcMain.handle("zeno:providers:usage", () => supervisor?.listProviderUsage());
+    ipcMain.handle("zeno:providers:set-api-key", (_event, provider: string, apiKey: string) =>
       supervisor?.setProviderApiKey(provider, apiKey),
     );
-    ipcMain.handle("pix:providers:clear-auth", (_event, provider: string) =>
+    ipcMain.handle("zeno:providers:clear-auth", (_event, provider: string) =>
       supervisor?.clearProviderAuth(provider),
     );
-    ipcMain.handle("pix:providers:oauth-start", (_event, provider: string, operationId?: string) =>
+    ipcMain.handle("zeno:providers:oauth-start", (_event, provider: string, operationId?: string) =>
       supervisor?.startProviderOAuth(provider, operationId),
     );
     ipcMain.handle(
-      "pix:providers:oauth-respond",
+      "zeno:providers:oauth-respond",
       (_event, operationId: string, promptId: string, value?: string, cancelled?: boolean) =>
         supervisor?.respondProviderOAuth(operationId, promptId, value, cancelled),
     );
-    ipcMain.handle("pix:providers:oauth-cancel", (_event, operationId: string) =>
+    ipcMain.handle("zeno:providers:oauth-cancel", (_event, operationId: string) =>
       supervisor?.cancelProviderOAuth(operationId),
     );
-    ipcMain.handle("pix:settings:get", () => supervisor?.getPiSettings());
-    ipcMain.handle("pix:settings:patch", (_event, patch: PiSettingsPatch) =>
+    ipcMain.handle("zeno:settings:get", () => supervisor?.getPiSettings());
+    ipcMain.handle("zeno:settings:patch", (_event, patch: PiSettingsPatch) =>
       supervisor?.patchPiSettings(patch),
     );
     ipcMain.handle(
-      "pix:agent:prompt",
+      "zeno:agent:prompt",
       async (
         _event,
         message: string,
@@ -5292,7 +5292,7 @@ void app
 
     // ── Embedded pi TUI (real PTY; contentMode terminal) ─────────────────────
     ipcMain.handle(
-      "pix:terminal:open",
+      "zeno:terminal:open",
       async (
         _event,
         options: { sessionFile: string; cwd: string; cols?: number; rows?: number },
@@ -5325,10 +5325,10 @@ void app
           const opened = await controller.open(plan, {
             // Tag every stream event. Electron can deliver a queued event from the
             // disposed PTY after the next session has already mounted.
-            onData: (data) => send("pix:terminal:data", { data, sessionFile: plan.sessionFile }),
+            onData: (data) => send("zeno:terminal:data", { data, sessionFile: plan.sessionFile }),
             onExit: (event) => {
               piTuiGuard.release(plan.sessionKey);
-              send("pix:terminal:exit", { ...event, sessionFile: plan.sessionFile });
+              send("zeno:terminal:exit", { ...event, sessionFile: plan.sessionFile });
             },
           });
           return {
@@ -5342,15 +5342,15 @@ void app
         }
       },
     );
-    ipcMain.handle("pix:terminal:write", async (_event, data: string) => {
+    ipcMain.handle("zeno:terminal:write", async (_event, data: string) => {
       const controller = await getPiTuiController();
       controller.write(typeof data === "string" ? data : String(data ?? ""));
     });
-    ipcMain.handle("pix:terminal:resize", async (_event, cols: number, rows: number) => {
+    ipcMain.handle("zeno:terminal:resize", async (_event, cols: number, rows: number) => {
       const controller = await getPiTuiController();
       controller.resize(Number(cols) || 80, Number(rows) || 24);
     });
-    ipcMain.handle("pix:terminal:suspend", async () => {
+    ipcMain.handle("zeno:terminal:suspend", async () => {
       if (!piTuiController?.isAlive()) {
         piTuiGuard.release();
         return {};
@@ -5360,7 +5360,7 @@ void app
       piTuiGuard.release();
       return sessionFile ? { sessionFile } : {};
     });
-    ipcMain.handle("pix:terminal:dispose", async () => {
+    ipcMain.handle("zeno:terminal:dispose", async () => {
       if (!piTuiController) {
         piTuiGuard.release();
         return {};
@@ -5369,7 +5369,7 @@ void app
       piTuiGuard.release();
       return sessionFile ? { sessionFile } : {};
     });
-    ipcMain.handle("pix:terminal:status", async () => {
+    ipcMain.handle("zeno:terminal:status", async () => {
       if (!piTuiController) {
         return { open: false, parkedSessionFiles: [], sessionCount: 0 };
       }
@@ -5383,10 +5383,10 @@ void app
         sessionCount: status.parkedSessionFiles.length + (status.live ? 1 : 0),
       };
     });
-    ipcMain.handle("pix:agent:queue-clear", () => supervisor?.clearQueue());
-    ipcMain.handle("pix:agent:abort", () => supervisor?.abort());
-    ipcMain.handle("pix:session:list", () => supervisor?.listSessions());
-    ipcMain.handle("pix:session:list-for-cwd", async (_event, cwd: string) => {
+    ipcMain.handle("zeno:agent:queue-clear", () => supervisor?.clearQueue());
+    ipcMain.handle("zeno:agent:abort", () => supervisor?.abort());
+    ipcMain.handle("zeno:session:list", () => supervisor?.listSessions());
+    ipcMain.handle("zeno:session:list-for-cwd", async (_event, cwd: string) => {
       if (typeof cwd !== "string" || !cwd.trim()) return [];
       const norm = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
       const requested = norm(cwd);
@@ -5417,87 +5417,87 @@ void app
       const { listProjectSessions } = await import("@zeno/agent-runtime");
       return listProjectSessions(cwd);
     });
-    ipcMain.handle("pix:session:new", () => supervisor?.newSession());
-    ipcMain.handle("pix:session:create-blank", () => supervisor?.createBlankConversation());
-    ipcMain.handle("pix:session:switch", (_event, sessionPath: string) =>
+    ipcMain.handle("zeno:session:new", () => supervisor?.newSession());
+    ipcMain.handle("zeno:session:create-blank", () => supervisor?.createBlankConversation());
+    ipcMain.handle("zeno:session:switch", (_event, sessionPath: string) =>
       supervisor?.switchSession(sessionPath),
     );
-    ipcMain.handle("pix:session:fork", (_event, entryId?: string) =>
+    ipcMain.handle("zeno:session:fork", (_event, entryId?: string) =>
       supervisor?.forkSession(entryId),
     );
-    ipcMain.handle("pix:session:tree", () => supervisor?.sessionTree());
+    ipcMain.handle("zeno:session:tree", () => supervisor?.sessionTree());
     ipcMain.handle(
-      "pix:session:navigate-tree",
+      "zeno:session:navigate-tree",
       (_event, targetId: string, options?: { summarize?: boolean; customInstructions?: string }) =>
         supervisor?.navigateSessionTree(targetId, options),
     );
-    ipcMain.handle("pix:session:compact", (_event, instructions?: string) =>
+    ipcMain.handle("zeno:session:compact", (_event, instructions?: string) =>
       supervisor?.compactSession(instructions),
     );
-    ipcMain.handle("pix:session:set-name", (_event, name: string) =>
+    ipcMain.handle("zeno:session:set-name", (_event, name: string) =>
       supervisor?.setSessionName(name),
     );
-    ipcMain.handle("pix:session:clone", () => supervisor?.cloneSession());
-    ipcMain.handle("pix:session:info", () => supervisor?.sessionInfo());
-    ipcMain.handle("pix:session:export", (_event, format: "html" | "jsonl", outputPath?: string) =>
+    ipcMain.handle("zeno:session:clone", () => supervisor?.cloneSession());
+    ipcMain.handle("zeno:session:info", () => supervisor?.sessionInfo());
+    ipcMain.handle("zeno:session:export", (_event, format: "html" | "jsonl", outputPath?: string) =>
       supervisor?.exportSession(format, outputPath),
     );
-    ipcMain.handle("pix:session:export-pick", (_event, format: "html" | "jsonl") =>
+    ipcMain.handle("zeno:session:export-pick", (_event, format: "html" | "jsonl") =>
       supervisor?.exportSessionPick(format),
     );
-    ipcMain.handle("pix:session:import", (_event, inputPath: string) =>
+    ipcMain.handle("zeno:session:import", (_event, inputPath: string) =>
       supervisor?.importSession(inputPath),
     );
-    ipcMain.handle("pix:session:import-pick", () => supervisor?.importSessionPick());
+    ipcMain.handle("zeno:session:import-pick", () => supervisor?.importSessionPick());
     ipcMain.handle(
-      "pix:session:bash",
+      "zeno:session:bash",
       (_event, command: string, options?: { excludeFromContext?: boolean }) =>
         supervisor?.sessionBash(command, options),
     );
-    ipcMain.handle("pix:session:copy-last", () => supervisor?.copyLastAssistant());
-    ipcMain.handle("pix:session:share", () => supervisor?.shareSession());
-    ipcMain.handle("pix:runtime:reload", () => supervisor?.reloadRuntime());
-    ipcMain.handle("pix:models:list-scoped", () => supervisor?.listScopedModels());
-    ipcMain.handle("pix:models:refresh-catalog", () => supervisor?.refreshModelCatalog());
-    ipcMain.handle("pix:packages:list", () => supervisor?.listPackages());
+    ipcMain.handle("zeno:session:copy-last", () => supervisor?.copyLastAssistant());
+    ipcMain.handle("zeno:session:share", () => supervisor?.shareSession());
+    ipcMain.handle("zeno:runtime:reload", () => supervisor?.reloadRuntime());
+    ipcMain.handle("zeno:models:list-scoped", () => supervisor?.listScopedModels());
+    ipcMain.handle("zeno:models:refresh-catalog", () => supervisor?.refreshModelCatalog());
+    ipcMain.handle("zeno:packages:list", () => supervisor?.listPackages());
     ipcMain.handle(
-      "pix:packages:install",
+      "zeno:packages:install",
       (_event, source: string, scope: "global" | "project", options?: { temporary?: boolean }) =>
         supervisor?.installPackage(source, scope, options),
     );
     ipcMain.handle(
-      "pix:packages:set-enabled",
+      "zeno:packages:set-enabled",
       (_event, source: string, scope: "global" | "project", enabled: boolean) =>
         supervisor?.setPackageEnabled(source, scope, enabled),
     );
-    ipcMain.handle("pix:packages:remove", (_event, source: string, scope: "global" | "project") =>
+    ipcMain.handle("zeno:packages:remove", (_event, source: string, scope: "global" | "project") =>
       supervisor?.removePackage(source, scope),
     );
-    ipcMain.handle("pix:packages:update", (_event, source?: string) =>
+    ipcMain.handle("zeno:packages:update", (_event, source?: string) =>
       supervisor?.updatePackage(source),
     );
-    ipcMain.handle("pix:packages:check-updates", () => supervisor?.checkPackageUpdates());
+    ipcMain.handle("zeno:packages:check-updates", () => supervisor?.checkPackageUpdates());
     ipcMain.handle(
-      "pix:packages:search-catalog",
+      "zeno:packages:search-catalog",
       (_event, query?: string, size?: number, from?: number) =>
         searchPiPackageCatalog(query, size, from),
     );
-    ipcMain.handle("pix:resources:list", () => supervisor?.listResources());
-    ipcMain.handle("pix:extension-ui:respond", (_event, response: ExtensionUiResponse) =>
+    ipcMain.handle("zeno:resources:list", () => supervisor?.listResources());
+    ipcMain.handle("zeno:extension-ui:respond", (_event, response: ExtensionUiResponse) =>
       supervisor?.extensionUiRespond(response),
     );
-    if (process.env.PIX_ENABLE_TEST_COMMANDS === "1") {
-      ipcMain.handle("pix:test:crash-host", () => supervisor?.crashHost());
+    if (process.env.ZENO_ENABLE_TEST_COMMANDS === "1") {
+      ipcMain.handle("zeno:test:crash-host", () => supervisor?.crashHost());
     }
 
-    ipcMain.handle("pix:notifications:show", (_event, payload: ShowOsNotificationPayload) =>
+    ipcMain.handle("zeno:notifications:show", (_event, payload: ShowOsNotificationPayload) =>
       showOsNotification(payload ?? { title: "" }),
     );
-    ipcMain.handle("pix:notifications:open-system-settings", () => {
+    ipcMain.handle("zeno:notifications:open-system-settings", () => {
       openSystemNotificationSettings();
     });
 
-    if (process.env.PIX_NO_AUTO_RESUME !== "1" && supervisor) {
+    if (process.env.ZENO_NO_AUTO_RESUME !== "1" && supervisor) {
       // Product cold start: restore last durable workspace and continue recent pi session.
       // Skip ephemeral fixture paths and missing directories.
       const cwd = durableWorkspacePath(supervisor.getWorkspaceCwd());
@@ -5510,7 +5510,7 @@ void app
           });
           console.log(
             JSON.stringify({
-              type: "pix.m2.auto_resume",
+              type: "zeno.m2.auto_resume",
               cwd: snapshot.cwd,
               sessionId: snapshot.sessionId,
               sessionFile: snapshot.sessionFile,

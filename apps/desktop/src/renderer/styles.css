@@ -799,7 +799,7 @@ html[data-custom-window-controls="true"] .page-header {
  * Base rail chrome (overridden by theme-skin rules when a skin is active).
  * Modes: native translucent | material glass | solid.
  */
-.pix-sidebar-translucent {
+.zeno-sidebar-translucent {
   background: transparent !important;
   border-color: color-mix(in srgb, var(--sidebar-border) 22%, transparent) !important;
   -webkit-backdrop-filter: none;
@@ -808,23 +808,23 @@ html[data-custom-window-controls="true"] .page-header {
     inset -1px 0 0 color-mix(in srgb, #fff 8%, transparent),
     1px 0 0 color-mix(in srgb, #000 12%, transparent);
 }
-[data-theme="light"] .pix-sidebar-translucent {
+[data-theme="light"] .zeno-sidebar-translucent {
   border-color: color-mix(in srgb, var(--sidebar-border) 24%, transparent) !important;
   box-shadow:
     inset -1px 0 0 color-mix(in srgb, #fff 52%, transparent),
     1px 0 0 color-mix(in srgb, #000 4%, transparent);
 }
-.pix-sidebar-glass,
-.pix-sidebar-solid {
+.zeno-sidebar-glass,
+.zeno-sidebar-solid {
   border-color: var(--sidebar-border);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-.pix-sidebar-solid {
+.zeno-sidebar-solid {
   background: var(--sidebar) !important;
   box-shadow: none;
 }
-.pix-sidebar-glass {
+.zeno-sidebar-glass {
   /* Fallback before skin CSS variables apply; live skins paint via html[data-theme-skin-*]. */
   background: var(--sidebar) !important;
   box-shadow: none;
@@ -832,7 +832,7 @@ html[data-custom-window-controls="true"] .page-header {
 
 .sidebar {
   @apply flex h-full min-w-0 flex-col border-r;
-  /* default overridden by pix-sidebar-* */
+  /* default overridden by zeno-sidebar-* */
   border-color: var(--sidebar-border);
 }
 
@@ -1109,9 +1109,9 @@ html[data-custom-window-controls="true"] .page-header {
 /*
  * Floating overlay scrollbars (all main surfaces + / @ menus):
  * - Native bar fully suppressed → never reserves layout width
- * - Floating .pix-scroll-thumb (no border) auto-hides; hover + drag supported
+ * - Floating .zeno-scroll-thumb (no border) auto-hides; hover + drag supported
  */
-.pix-scroll,
+.zeno-scroll,
 .timeline-scroll,
 .page-body,
 .settings-page-body,
@@ -1136,7 +1136,7 @@ html[data-custom-window-controls="true"] .page-header {
   scrollbar-color: transparent transparent;
   font-size: var(--ui-font-size, 14px);
 }
-.pix-scroll::-webkit-scrollbar,
+.zeno-scroll::-webkit-scrollbar,
 .timeline-scroll::-webkit-scrollbar,
 .page-body::-webkit-scrollbar,
 .settings-page-body::-webkit-scrollbar,
@@ -1150,7 +1150,7 @@ html[data-custom-window-controls="true"] .page-header {
 }
 
 /* Floating thumb on document.body — zero layout cost, no border. */
-.pix-scroll-thumb {
+.zeno-scroll-thumb {
   position: fixed;
   z-index: 10050; /* above FloatingMenu (10000) */
   width: 12px;
@@ -1166,7 +1166,7 @@ html[data-custom-window-controls="true"] .page-header {
   touch-action: none;
   user-select: none;
 }
-.pix-scroll-thumb::before {
+.zeno-scroll-thumb::before {
   content: "";
   position: absolute;
   inset-block: 2px;
@@ -1179,16 +1179,16 @@ html[data-custom-window-controls="true"] .page-header {
     width 0.12s ease,
     background-color 0.12s ease;
 }
-.pix-scroll-thumb[data-visible="true"] {
+.zeno-scroll-thumb[data-visible="true"] {
   opacity: 1;
   pointer-events: auto;
 }
-.pix-scroll-thumb[data-hovered="true"]::before,
-.pix-scroll-thumb[data-dragging="true"]::before {
+.zeno-scroll-thumb[data-hovered="true"]::before,
+.zeno-scroll-thumb[data-dragging="true"]::before {
   width: 8px;
   background: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
 }
-.pix-scroll-thumb[data-dragging="true"] {
+.zeno-scroll-thumb[data-dragging="true"] {
   cursor: grabbing;
 }
 
@@ -1767,93 +1767,93 @@ html[data-custom-window-controls="true"] .page-header {
 }
 
 /* Assistant Markdown (react-markdown + remark-gfm) */
-.pix-md {
+.zeno-md {
   @apply min-w-0;
   font-size: var(--ui-font-size, 14px);
   font-weight: var(--font-weight-regular, 400);
 }
-.pix-md > :first-child {
+.zeno-md > :first-child {
   @apply mt-0;
 }
-.pix-md > :last-child {
+.zeno-md > :last-child {
   @apply mb-0;
 }
-.pix-md p {
+.zeno-md p {
   @apply my-2 leading-relaxed wrap-break-word font-normal;
 }
-.pix-md h1,
-.pix-md h2,
-.pix-md h3,
-.pix-md h4 {
+.zeno-md h1,
+.zeno-md h2,
+.zeno-md h3,
+.zeno-md h4 {
   @apply mt-3 mb-1.5 font-semibold tracking-tight text-[var(--foreground)];
 }
-.pix-md h1 {
+.zeno-md h1 {
   @apply text-[1.25em];
 }
-.pix-md h2 {
+.zeno-md h2 {
   @apply text-[1.125em];
 }
-.pix-md h3 {
+.zeno-md h3 {
   @apply text-[1.05em];
 }
-.pix-md ul,
-.pix-md ol {
+.zeno-md ul,
+.zeno-md ol {
   @apply my-2 pl-5;
 }
-.pix-md ul {
+.zeno-md ul {
   @apply list-disc;
 }
-.pix-md ol {
+.zeno-md ol {
   @apply list-decimal;
 }
-.pix-md li {
+.zeno-md li {
   @apply my-0.5;
 }
-.pix-md li > p {
+.zeno-md li > p {
   @apply my-0.5;
 }
-.pix-md a {
+.zeno-md a {
   color: var(--link, #379cfc);
   @apply underline-offset-2 hover:underline;
 }
 /* File source chips use their own chrome — don't paint as plain blue underlined links. */
-.pix-md a.content-file-link,
-.pix-md a.content-source-cite {
+.zeno-md a.content-file-link,
+.zeno-md a.content-source-cite {
   color: var(--foreground);
   text-decoration: none;
 }
-.pix-md a.content-file-link:hover,
-.pix-md a.content-source-cite:hover {
+.zeno-md a.content-file-link:hover,
+.zeno-md a.content-source-cite:hover {
   color: var(--foreground);
   text-decoration: none;
 }
-.pix-md code {
+.zeno-md code {
   @apply rounded bg-[var(--muted)] px-1 py-0.5 font-mono text-[0.9em];
 }
-.pix-md pre {
+.zeno-md pre {
   @apply my-2 overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--muted)] p-3;
 }
-.pix-md pre code {
+.zeno-md pre code {
   @apply bg-transparent p-0 leading-relaxed;
   font-size: var(--code-font-size, 12px);
 }
-.pix-md blockquote {
+.zeno-md blockquote {
   @apply my-2 border-l-2 border-[var(--border)] pl-3 text-[var(--muted-foreground)];
 }
-.pix-md table {
+.zeno-md table {
   @apply my-2 w-full border-collapse text-[13px];
 }
-.pix-md th,
-.pix-md td {
+.zeno-md th,
+.zeno-md td {
   @apply border border-[var(--border)] px-2 py-1.5 text-left align-top;
 }
-.pix-md th {
+.zeno-md th {
   @apply bg-[var(--muted)] font-medium;
 }
-.pix-md hr {
+.zeno-md hr {
   @apply my-3 border-0 border-t border-[var(--border)];
 }
-.pix-md strong {
+.zeno-md strong {
   @apply font-semibold;
 }
 
@@ -2419,7 +2419,7 @@ html[data-custom-window-controls="true"] .page-header {
   margin-right: auto;
   margin-left: auto;
 }
-/* Floating terminal scrollbar — same chrome as .pix-scroll-thumb, pane-right edge. */
+/* Floating terminal scrollbar — same chrome as .zeno-scroll-thumb, pane-right edge. */
 .pi-tui-scroll-thumb {
   position: fixed;
   z-index: 10050;
@@ -2709,8 +2709,8 @@ html[data-custom-window-controls="true"] .page-header {
   color: var(--foreground);
 }
 /*
- * Code body: scroll both axes (tool diffs live outside .pix-md too).
- * Use .content-code-block prefix so these beat .pix-md pre / .pix-md code.
+ * Code body: scroll both axes (tool diffs live outside .zeno-md too).
+ * Use .content-code-block prefix so these beat .zeno-md pre / .zeno-md code.
  */
 .content-code-block .content-code-pre {
   max-height: 560px;
@@ -3027,7 +3027,7 @@ html[data-custom-window-controls="true"] .page-header {
   max-width: 100%;
   overflow-x: hidden;
 }
-.pix-md .content-table-scroll table {
+.zeno-md .content-table-scroll table {
   width: 100%;
   min-width: 0;
   table-layout: fixed;
@@ -3036,15 +3036,15 @@ html[data-custom-window-controls="true"] .page-header {
   border-spacing: 0;
   font-size: 0.92em;
 }
-.pix-md .content-table-scroll thead th {
+.zeno-md .content-table-scroll thead th {
   position: sticky;
   top: 0;
   z-index: 1;
   background: color-mix(in srgb, var(--muted) 88%, var(--surface-panel, var(--background)));
   font-weight: 600;
 }
-.pix-md .content-table-scroll th,
-.pix-md .content-table-scroll td {
+.zeno-md .content-table-scroll th,
+.zeno-md .content-table-scroll td {
   min-width: 0;
   border-width: 0 1px 1px 0;
   border-style: solid;
@@ -3055,18 +3055,18 @@ html[data-custom-window-controls="true"] .page-header {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-.pix-md .content-table-scroll th:last-child,
-.pix-md .content-table-scroll td:last-child {
+.zeno-md .content-table-scroll th:last-child,
+.zeno-md .content-table-scroll td:last-child {
   border-right: 0;
 }
-.pix-md .content-table-scroll tr:last-child th,
-.pix-md .content-table-scroll tr:last-child td {
+.zeno-md .content-table-scroll tr:last-child th,
+.zeno-md .content-table-scroll tr:last-child td {
   border-bottom: 0;
 }
-.pix-md .content-table-scroll tbody tr:hover td {
+.zeno-md .content-table-scroll tbody tr:hover td {
   background: color-mix(in srgb, var(--hover-fill, var(--muted)) 55%, transparent);
 }
-.pix-md .content-table-scroll code {
+.zeno-md .content-table-scroll code {
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -3185,7 +3185,7 @@ html[data-custom-window-controls="true"] .page-header {
   overflow-x: hidden;
   overflow-y: auto;
 }
-.pix-md .content-table-expanded-scroll table {
+.zeno-md .content-table-expanded-scroll table {
   table-layout: auto;
 }
 @media (max-width: 720px) {
@@ -3205,27 +3205,27 @@ html[data-custom-window-controls="true"] .page-header {
     border-radius: 12px;
   }
 }
-.pix-md .contains-task-list {
+.zeno-md .contains-task-list {
   padding-left: 0;
   list-style: none;
 }
-.pix-md .task-list-item {
+.zeno-md .task-list-item {
   display: flex;
   align-items: flex-start;
   gap: 7px;
 }
-.pix-md .task-list-item > input {
+.zeno-md .task-list-item > input {
   margin-top: 0.4em;
   accent-color: var(--switch-on);
 }
-.pix-md .katex-display {
+.zeno-md .katex-display {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   margin: 14px 0;
   padding: 4px 0;
 }
-.pix-md .katex {
+.zeno-md .katex {
   font-size: 1.04em;
 }
 .content-file-link {
@@ -3272,13 +3272,13 @@ html[data-custom-window-controls="true"] .page-header {
   opacity: 0.85;
 }
 /* GFM footnote superscript refs */
-.pix-md .content-cite-sup {
+.zeno-md .content-cite-sup {
   font-size: 0.72em;
   line-height: 0;
   margin-inline: 0.1em;
   vertical-align: super;
 }
-.pix-md a.content-cite-ref {
+.zeno-md a.content-cite-ref {
   display: inline-flex;
   min-width: 1.15em;
   align-items: center;
@@ -3294,34 +3294,34 @@ html[data-custom-window-controls="true"] .page-header {
   text-decoration: none;
   vertical-align: baseline;
 }
-.pix-md a.content-cite-ref:hover {
+.zeno-md a.content-cite-ref:hover {
   background: color-mix(in srgb, var(--link, #379cfc) 16%, transparent);
   color: var(--link, #379cfc);
 }
-.pix-md a.content-cite-backref {
+.zeno-md a.content-cite-backref {
   margin-left: 0.25em;
   color: var(--muted-foreground);
   text-decoration: none;
   opacity: 0.75;
 }
-.pix-md a.content-cite-backref:hover {
+.zeno-md a.content-cite-backref:hover {
   color: var(--link, #379cfc);
   opacity: 1;
 }
 /* Footnotes / sources block at end of message */
-.pix-md .content-footnotes {
+.zeno-md .content-footnotes {
   margin-top: 1rem;
   padding-top: 0.65rem;
   border-top: 1px solid var(--divider, var(--border));
   color: var(--muted-foreground);
   font-size: 12.5px;
 }
-.pix-md .content-footnotes-marker {
+.zeno-md .content-footnotes-marker {
   margin-bottom: 0.35rem;
   color: var(--muted-foreground);
 }
-.pix-md .content-footnotes > h2.sr-only,
-.pix-md .content-footnotes > .sr-only {
+.zeno-md .content-footnotes > h2.sr-only,
+.zeno-md .content-footnotes > .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -3332,19 +3332,19 @@ html[data-custom-window-controls="true"] .page-header {
   white-space: nowrap;
   border: 0;
 }
-.pix-md .content-footnotes > ol {
+.zeno-md .content-footnotes > ol {
   margin: 0.25rem 0 0;
   padding-left: 1.25rem;
   list-style: decimal;
 }
-.pix-md .content-footnotes li {
+.zeno-md .content-footnotes li {
   margin: 0.35rem 0;
   color: var(--muted-foreground);
 }
-.pix-md .content-footnotes li > p {
+.zeno-md .content-footnotes li > p {
   margin: 0.15rem 0;
 }
-.pix-md .content-cite-flash {
+.zeno-md .content-cite-flash {
   border-radius: 4px;
   outline: 1px solid color-mix(in srgb, var(--link, #379cfc) 45%, transparent);
   background: color-mix(in srgb, var(--link, #379cfc) 10%, transparent);

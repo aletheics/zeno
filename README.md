@@ -49,7 +49,7 @@ Product launch uses your real `HOME` and the same agent dir as the CLI (`~/.pi/a
 Optional isolated launch (temp home + fixture workspace + fake model):
 
 ```bash
-PIX_ISOLATED=1 pnpm dev
+ZENO_ISOLATED=1 pnpm dev
 ```
 
 Browser-only chat timeline preview (no Electron), for iterating on session content rendering:

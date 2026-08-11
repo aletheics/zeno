@@ -232,7 +232,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
 
   function notifyRail() {
     try {
-      window.dispatchEvent(new Event("pix-project-rail-changed"));
+      window.dispatchEvent(new Event("zeno-project-rail-changed"));
     } catch {
       // ignore
     }

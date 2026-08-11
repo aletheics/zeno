@@ -183,7 +183,7 @@ function useTimelineAttachmentPreviews(paths: string[]): Record<string, string> 
     void Promise.all(
       images.map(async (path) => {
         try {
-          const url = await window.pix?.workspace?.readAttachmentPreview?.(path);
+          const url = await window.zeno?.workspace?.readAttachmentPreview?.(path);
           return url ? ([path, url] as const) : undefined;
         } catch {
           return undefined;
@@ -230,7 +230,7 @@ function AttachmentList(props: { paths: string[]; locale: Locale }) {
                 data-testid={isImage && preview ? "attachment-image-preview" : undefined}
                 onClick={() => {
                   if (isImage && preview) setPreviewPath(path);
-                  else void window.pix?.workspace?.openFile?.(path);
+                  else void window.zeno?.workspace?.openFile?.(path);
                 }}
                 aria-label={
                   isImage && preview
@@ -348,7 +348,7 @@ function ToolCard(props: { item: Extract<TimelineItem, { kind: "tool" }>; locale
         <CollapsibleContent className="content-tool-body">
           {item.args !== undefined ? (
             <ToolSection title={t(props.locale, "timeline.toolInput")}>
-              <pre className="pix-scroll">
+              <pre className="zeno-scroll">
                 {(() => {
                   // read/list: path only — same as process-step expand (not args JSON).
                   const kind = classifyToolName(item.toolName);
@@ -366,7 +366,7 @@ function ToolCard(props: { item: Extract<TimelineItem, { kind: "tool" }>; locale
           ) : null}
           {item.output ? (
             <ToolSection title={t(props.locale, "timeline.toolOutput")}>
-              <pre className="pix-scroll">{item.output}</pre>
+              <pre className="zeno-scroll">{item.output}</pre>
             </ToolSection>
           ) : null}
         </CollapsibleContent>
@@ -1039,7 +1039,7 @@ function ProcessPathLink(props: {
       title={props.path}
       onClick={(e) => {
         e.stopPropagation();
-        void window.pix?.workspace?.openFile?.(props.path);
+        void window.zeno?.workspace?.openFile?.(props.path);
       }}
     >
       {label}

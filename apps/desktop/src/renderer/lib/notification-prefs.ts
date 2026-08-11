@@ -18,7 +18,7 @@ export type NotificationPrefs = {
 };
 
 /** Bumped when defaults change so stale localStorage does not keep broken prefs. */
-const KEY = "pix.notifications.prefs.v2";
+const KEY = "zeno.notifications.prefs.v2";
 
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   enabled: true,

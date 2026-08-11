@@ -2,7 +2,7 @@
  * Desktop launcher (no watch). Used by `pnpm dev` after build.
  *
  * - Interactive: real HOME and last durable workspace.
- * - Isolated (`PIX_ISOLATED=1`): temp HOME, fixture workspace, fake model.
+ * - Isolated (`ZENO_ISOLATED=1`): temp HOME, fixture workspace, fake model.
  */
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url);
 const electron = require("electron");
 const appDirectory = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-const isolated = process.env.PIX_ISOLATED === "1";
+const isolated = process.env.ZENO_ISOLATED === "1";
 const prepared = await prepareLaunchEnv({ isolated });
 
 console.log(prepared.label);

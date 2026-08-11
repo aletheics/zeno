@@ -14,8 +14,8 @@ export type AppearancePrefs = {
   codeFontFamily: string;
 };
 
-const KEY = "pix.appearance.prefs.v1";
-export const APPEARANCE_PREFS_CHANGED_EVENT = "pix-appearance-prefs";
+const KEY = "zeno.appearance.prefs.v1";
+export const APPEARANCE_PREFS_CHANGED_EVENT = "zeno-appearance-prefs";
 
 /** Matches styles.css @theme --font-sans default. */
 export const DEFAULT_UI_FONT_FAMILY =

@@ -1,5 +1,5 @@
 /**
- * Node ESM resolve hook: when PIX_PI_SDK_SOURCE=global and PIX_PI_SDK_ROOT is set,
+ * Node ESM resolve hook: when ZENO_PI_SDK_SOURCE=global and ZENO_PI_SDK_ROOT is set,
  * remap @earendil-works/pi-coding-agent imports to that package root.
  *
  * Registered from agent-host bootstrap before loading the main host module.
@@ -11,9 +11,9 @@ import { pathToFileURL } from "node:url";
 const PACKAGE = "@earendil-works/pi-coding-agent";
 
 function packageRoot() {
-  const root = process.env.PIX_PI_SDK_ROOT?.trim();
+  const root = process.env.ZENO_PI_SDK_ROOT?.trim();
   if (!root) return undefined;
-  if (process.env.PIX_PI_SDK_SOURCE?.trim() !== "global") return undefined;
+  if (process.env.ZENO_PI_SDK_SOURCE?.trim() !== "global") return undefined;
   if (!existsSync(join(root, "package.json"))) return undefined;
   return root;
 }

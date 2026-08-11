@@ -24,7 +24,7 @@ export function RuntimesSection(props: { locale: Locale }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const next = await window.pix.runtimes.getStatus();
+      const next = await window.zeno.runtimes.getStatus();
       setStatus(next);
     } catch {
       setStatus(undefined);
@@ -41,7 +41,7 @@ export function RuntimesSection(props: { locale: Locale }) {
     if (!status || busy) return;
     setBusy(true);
     try {
-      const next = await window.pix.runtimes.setPrefs({
+      const next = await window.zeno.runtimes.setPrefs({
         useBundledNode: partial.useBundledNode ?? status.prefs.useBundledNode,
         useBundledPython: partial.useBundledPython ?? status.prefs.useBundledPython,
       });

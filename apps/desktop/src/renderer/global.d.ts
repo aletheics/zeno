@@ -1,8 +1,8 @@
-import type { PixDesktopApi } from "@zeno/contracts";
+import type { ZenoDesktopApi } from "@zeno/contracts";
 
 declare global {
   interface Window {
-    pix: PixDesktopApi;
+    zeno: ZenoDesktopApi;
   }
 }
 

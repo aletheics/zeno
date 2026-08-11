@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), "pix-trust-"));
+  const root = await mkdtemp(join(tmpdir(), "zeno-trust-"));
   temporaryDirectories.push(root);
   const home = join(root, "home");
   const agentDir = join(home, ".pi", "agent");
@@ -38,13 +38,13 @@ async function fixture() {
     join(agentDir, "models.json"),
     JSON.stringify({
       providers: {
-        "pix-fake": {
+        "zeno-fake": {
           baseUrl: server.baseUrl,
           apiKey: "test-key",
           api: "openai-completions",
           models: [
             {
-              id: "pix-fake",
+              id: "zeno-fake",
               name: "Zeno",
               reasoning: true,
               input: ["text"],
@@ -54,7 +54,7 @@ async function fixture() {
               compat: { supportsUsageInStreaming: true },
             },
             {
-              id: "pix-fake-b",
+              id: "zeno-fake-b",
               name: "Zeno B",
               reasoning: false,
               input: ["text"],
@@ -80,7 +80,7 @@ describe("Workspace model trust resume", () => {
     const handle = await createPixRuntime({
       cwd: project,
       agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       persistSession: true,
       projectTrusted: false,
     });
@@ -94,9 +94,9 @@ describe("Workspace model trust resume", () => {
       expect(Array.isArray(snap.availableThinkingLevels)).toBe(true);
 
       const models = handle.listModels();
-      expect(models.some((m) => m.id === "pix-fake")).toBe(true);
-      expect(models.some((m) => m.id === "pix-fake-b")).toBe(true);
-      expect(models.find((m) => m.id === "pix-fake")).toMatchObject({
+      expect(models.some((m) => m.id === "zeno-fake")).toBe(true);
+      expect(models.some((m) => m.id === "zeno-fake-b")).toBe(true);
+      expect(models.find((m) => m.id === "zeno-fake")).toMatchObject({
         api: "openai-completions",
         input: ["text"],
         contextWindow: 8192,
@@ -104,11 +104,11 @@ describe("Workspace model trust resume", () => {
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       });
 
-      // setModel may require auth; pix-fake has key in models.json
-      const afterModel = await handle.setModel("pix-fake", "pix-fake-b");
+      // setModel may require auth; zeno-fake has key in models.json
+      const afterModel = await handle.setModel("zeno-fake", "zeno-fake-b");
       expect(afterModel.model).toEqual({
-        provider: "pix-fake",
-        id: "pix-fake-b",
+        provider: "zeno-fake",
+        id: "zeno-fake-b",
         api: "openai-completions",
         reasoning: false,
       });
@@ -133,7 +133,7 @@ describe("Workspace model trust resume", () => {
     const resumed = await createPixRuntime({
       cwd: project,
       agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       persistSession: true,
       resumeRecent: true,
       projectTrusted: true,
@@ -156,7 +156,7 @@ describe("Workspace model trust resume", () => {
     const switched = await createPixRuntime({
       cwd: other,
       agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       persistSession: true,
       projectTrusted: true,
     });
@@ -176,23 +176,23 @@ describe("provider auth projection", () => {
     const handle = await createPixRuntime({
       cwd: project,
       agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       projectTrusted: true,
     });
     try {
       const before = handle.listProviders();
-      expect(before.some((p) => p.provider === "pix-fake")).toBe(true);
-      const pix = before.find((p) => p.provider === "pix-fake");
-      expect(pix?.configured).toBe(true);
+      expect(before.some((p) => p.provider === "zeno-fake")).toBe(true);
+      const zeno = before.find((p) => p.provider === "zeno-fake");
+      expect(zeno?.configured).toBe(true);
       // models.json key counts as configured source
       expect(JSON.stringify(before)).not.toMatch(/test-key|sk-/i);
 
-      const afterSet = await handle.setProviderApiKey("pix-fake", "sk-test-provider-key-not-real");
-      const updated = afterSet.find((p) => p.provider === "pix-fake");
+      const afterSet = await handle.setProviderApiKey("zeno-fake", "sk-test-provider-key-not-real");
+      const updated = afterSet.find((p) => p.provider === "zeno-fake");
       expect(updated?.configured).toBe(true);
       expect(JSON.stringify(afterSet)).not.toContain("sk-test-provider-key-not-real");
 
-      const cleared = await handle.clearProviderAuth("pix-fake");
+      const cleared = await handle.clearProviderAuth("zeno-fake");
       // may still be configured via models.json key
       expect(JSON.stringify(cleared)).not.toContain("sk-test-provider-key-not-real");
     } finally {

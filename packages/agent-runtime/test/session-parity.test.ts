@@ -29,11 +29,11 @@ async function writeModels(agentDir: string, baseUrl: string) {
     join(agentDir, "models.json"),
     `${JSON.stringify({
       providers: {
-        "pix-fake": {
+        "zeno-fake": {
           baseUrl,
           api: "openai-completions",
           apiKey: "test",
-          models: [{ id: "pix-fake", name: "pix-fake", reasoning: false }],
+          models: [{ id: "zeno-fake", name: "zeno-fake", reasoning: false }],
         },
       },
     })}\n`,
@@ -149,7 +149,7 @@ describe("session-parity pure helpers", () => {
 
 describe("session-parity runtime APIs", () => {
   it("round-trips session name, settings queue modes, tree navigate, compact, export", async () => {
-    const paths = await fixture("pix-parity-");
+    const paths = await fixture("zeno-parity-");
     await writeFile(
       join(paths.agentDir, "settings.json"),
       `${JSON.stringify({
@@ -168,7 +168,7 @@ describe("session-parity runtime APIs", () => {
     const handle = await createPixRuntime({
       cwd: paths.project,
       agentDir: paths.agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       tools: ["read"],
       persistSession: true,
     });

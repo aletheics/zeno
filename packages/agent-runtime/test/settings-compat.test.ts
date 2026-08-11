@@ -68,7 +68,7 @@ async function runRuntime(cwd: string, agentDir: string, home: string): Promise<
 }
 
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), "pix-settings-"));
+  const root = await mkdtemp(join(tmpdir(), "zeno-settings-"));
   temporaryDirectories.push(root);
   const home = join(root, "home");
   const agentDir = join(home, ".pi", "agent");

@@ -10,13 +10,13 @@ try {
 
   const messages = handle.runtime.session.messages;
   const customMessages = messages.filter((message) => message.role === "custom");
-  const visibleSource = customMessages.find((message) => message.customType === "pix-u05");
-  const hiddenSource = customMessages.find((message) => message.customType === "pix-ext-hidden");
+  const visibleSource = customMessages.find((message) => message.customType === "zeno-u05");
+  const hiddenSource = customMessages.find((message) => message.customType === "zeno-ext-hidden");
 
   const entries = handle.runtime.session.sessionManager
     .getEntries()
     .filter((entry) => entry.type === "custom");
-  const entrySource = entries.find((entry) => entry.customType === "pix-ext-entry");
+  const entrySource = entries.find((entry) => entry.customType === "zeno-ext-entry");
 
   const visible = visibleSource ? projectCustomMessage(visibleSource) : null;
   const hidden = hiddenSource ? projectCustomMessage(hiddenSource) : null;
@@ -30,8 +30,8 @@ try {
 
   // Host-side projection must not touch registered factories either.
   if (handle.runtime.session.extensionRunner) {
-    const messageRenderer = handle.runtime.session.extensionRunner.getMessageRenderer("pix-u05");
-    const entryRenderer = handle.runtime.session.extensionRunner.getEntryRenderer("pix-ext-entry");
+    const messageRenderer = handle.runtime.session.extensionRunner.getMessageRenderer("zeno-u05");
+    const entryRenderer = handle.runtime.session.extensionRunner.getEntryRenderer("zeno-ext-entry");
     if (messageRenderer) {
       // Existence of factory is fine; we must not call it for desktop projection.
     }

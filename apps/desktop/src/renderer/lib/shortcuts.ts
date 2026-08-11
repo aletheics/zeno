@@ -43,8 +43,8 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
   },
 ];
 
-const STORAGE_KEY = "pix.shortcuts.overrides";
-export const SHORTCUT_OVERRIDES_CHANGED_EVENT = "pix:shortcut-overrides-changed";
+const STORAGE_KEY = "zeno.shortcuts.overrides";
+export const SHORTCUT_OVERRIDES_CHANGED_EVENT = "zeno:shortcut-overrides-changed";
 
 /**
  * Overrides map. Missing key → use default.

@@ -301,7 +301,7 @@ describe("host contract validation", () => {
         type: "providers.list",
         providers: [
           {
-            provider: "pix-fake",
+            provider: "zeno-fake",
             displayName: "Zeno",
             configured: true,
             source: "models_json_key",

@@ -26,7 +26,7 @@ export const PI_DOCS_SETTINGS_URL = "https://pi.dev/docs/latest/settings";
 export const PI_DOCS_USAGE_URL = "https://pi.dev/docs/latest/usage";
 
 export function openSettingsDocs(url: string): void {
-  void window.pix.workspace.openExternal(url).catch(() => undefined);
+  void window.zeno.workspace.openExternal(url).catch(() => undefined);
 }
 
 /**

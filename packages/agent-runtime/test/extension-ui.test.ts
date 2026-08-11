@@ -13,7 +13,7 @@ describe("U01-U04 portable Extension UI bridge", () => {
     const request = requests.at(-1);
     expect(request).toMatchObject({ method: "select", runtimeId: "runtime-current" });
     if (!request) throw new Error("Select request was not emitted");
-    // Host/renderer must receive the options array (pix#32).
+    // Host/renderer must receive the options array (zeno#32).
     expect(request).toMatchObject({
       args: { title: "Choose", options: ["alpha", "beta"] },
     });
@@ -142,7 +142,7 @@ describe("U01-U04 portable Extension UI bridge", () => {
     expect(styled).toBe("MCP: 1/2 servers");
     expect(theme.bold("x")).toBe("x");
     // ExtensionUIContext.getTheme requires a name argument in pi types.
-    expect(bridge.uiContext.getTheme("pix-portable")).toBe(theme);
+    expect(bridge.uiContext.getTheme("zeno-portable")).toBe(theme);
 
     bridge.uiContext.setStatus("mcp", styled);
     expect(requests.some((r) => r.method === "setStatus")).toBe(true);

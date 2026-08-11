@@ -58,7 +58,7 @@ function normalizedLanguage(language: string | undefined): string {
 function MermaidDiagram(props: { source: string; locale: Locale }) {
   const reactId = useId();
   const diagramId = useMemo(
-    () => `pix-mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
+    () => `zeno-mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
     [reactId],
   );
   const [state, setState] = useState<{ svg?: string; error?: string }>({});

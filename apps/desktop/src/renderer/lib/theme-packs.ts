@@ -263,7 +263,7 @@ const CSS_VARIABLE_TO_THEME_TOKEN: Record<string, ThemeTokenName> = Object.fromE
   Object.entries(THEME_TOKEN_CSS_VARIABLES).map(([name, cssVariable]) => [cssVariable, name]),
 ) as Record<string, ThemeTokenName>;
 
-const THEME_SELECTION_STORAGE_KEY = "pix.theme.selection.v2";
+const THEME_SELECTION_STORAGE_KEY = "zeno.theme.selection.v2";
 const MAX_CSS_VALUE_LENGTH = 1_000;
 const MAX_THEME_NAME_LENGTH = 80;
 const MAX_THEME_DESCRIPTION_LENGTH = 280;
@@ -1128,10 +1128,10 @@ function isSafeThemeAssetUrl(value: string | undefined, allowBuiltin = false): v
     }
   }
   try {
-    const url = new URL(value, "https://pix.local");
+    const url = new URL(value, "https://zeno.local");
     if (url.protocol === "blob:") return true;
     if (
-      url.protocol === "pix-theme:" &&
+      url.protocol === "zeno-theme:" &&
       (/^skin-[a-f0-9-]{36}$/i.test(url.hostname) || isThemePresetId(url.hostname))
     ) {
       return true;
@@ -1182,7 +1182,7 @@ const SKIN_CSS_VARIABLES = [
   "--skin-task-intensity",
 ] as const;
 
-const CUSTOM_THEME_STYLE_ID = "pix-theme-custom-css";
+const CUSTOM_THEME_STYLE_ID = "zeno-theme-custom-css";
 
 function applyCustomThemeCss(value: string | undefined): void {
   document.getElementById(CUSTOM_THEME_STYLE_ID)?.remove();

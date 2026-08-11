@@ -180,7 +180,7 @@ function scrollToMarkdownAnchor(from: HTMLElement, href: string): boolean {
   if (!href.startsWith("#") || href.length < 2) return false;
   const id = decodeURIComponent(href.slice(1));
   if (!id) return false;
-  const root = from.closest(".pix-md");
+  const root = from.closest(".zeno-md");
   if (!root) return false;
   let target: Element | null = null;
   try {
@@ -234,9 +234,9 @@ function MarkdownLink(props: {
     }
     event.preventDefault();
     if (target.kind === "external") {
-      void window.pix?.workspace?.openExternal?.(target.href);
+      void window.zeno?.workspace?.openExternal?.(target.href);
     } else if (target.kind === "file") {
-      void window.pix?.workspace?.openFile?.(target.path, {
+      void window.zeno?.workspace?.openFile?.(target.path, {
         ...(target.line ? { line: target.line } : {}),
         ...(target.column ? { column: target.column } : {}),
       });
@@ -353,7 +353,7 @@ function MediaContent(props: {
     }
     let cancelled = false;
     setSource("");
-    void window.pix?.workspace
+    void window.zeno?.workspace
       ?.readAttachmentPreview?.(filePath)
       .then((url) => {
         if (cancelled) return;
@@ -371,7 +371,7 @@ function MediaContent(props: {
   async function handleImageError() {
     if (!filePath || source.startsWith("data:")) return;
     try {
-      const url = await window.pix?.workspace?.readAttachmentPreview?.(filePath);
+      const url = await window.zeno?.workspace?.readAttachmentPreview?.(filePath);
       if (url) setSource(url);
     } catch {
       // leave broken state
@@ -543,7 +543,7 @@ function MarkdownTable(props: {
         onOpenChange={setExpanded}
         title={t(props.locale, "timeline.tableExpand")}
         closeLabel={t(props.locale, "timeline.tableClose")}
-        className="pix-md"
+        className="zeno-md"
       >
         <div className="content-table-expanded" data-testid="markdown-table-expanded">
           {/* No copy in expanded view — close only. */}
@@ -569,7 +569,7 @@ export const MarkdownContent = memo(function MarkdownContent(props: {
   if (!text) return null;
 
   return (
-    <div className={cn("pix-md", props.className)} data-testid="markdown-content">
+    <div className={cn("zeno-md", props.className)} data-testid="markdown-content">
       <ReactMarkdown
         // remark-gfm enables GFM tables, strikethrough, task lists, and autolinks.
         remarkPlugins={[remarkGfm, remarkMath]}

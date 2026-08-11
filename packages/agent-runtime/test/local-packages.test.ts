@@ -81,7 +81,7 @@ afterEach(async () => {
 
 describe("P04 local package transport", () => {
   it("persists absolute global and relative project sources without copying them", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-"));
     temporaryDirectories.push(root);
     const agentDir = join(root, "home", ".pi", "agent");
     const cwd = join(root, "project");
@@ -90,8 +90,8 @@ describe("P04 local package transport", () => {
     await Promise.all([
       mkdir(agentDir, { recursive: true }),
       mkdir(join(cwd, ".pi"), { recursive: true }),
-      createPackage(globalPackage, "pix-global-local-fixture"),
-      createPackage(projectPackage, "pix-project-local-fixture"),
+      createPackage(globalPackage, "zeno-global-local-fixture"),
+      createPackage(projectPackage, "zeno-project-local-fixture"),
     ]);
 
     const settings = SettingsManager.create(cwd, agentDir, { projectTrusted: true });

@@ -27,13 +27,13 @@ async function writeModels(agentDir: string, baseUrl: string): Promise<void> {
     join(agentDir, "models.json"),
     JSON.stringify({
       providers: {
-        "pix-fake": {
+        "zeno-fake": {
           baseUrl,
           apiKey: "test-key-not-secret",
           api: "openai-completions",
           models: [
             {
-              id: "pix-fake",
+              id: "zeno-fake",
               name: "Zeno Fake Model",
               reasoning: false,
               input: ["text"],
@@ -59,7 +59,7 @@ afterEach(async () => {
 
 describe("R02 session replacement", () => {
   it("new/switch/fork rebind extensions and cancel old UI requests", async () => {
-    const paths = await fixture("pix-run-");
+    const paths = await fixture("zeno-run-");
     await writeFile(paths.toolPath, "r02\n");
     await mkdir(join(paths.agentDir, "extensions"), { recursive: true });
     await writeFile(
@@ -83,7 +83,7 @@ describe("R02 session replacement", () => {
     const handle = await createPixRuntime({
       cwd: paths.project,
       agentDir: paths.agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       persistSession: true,
       onExtensionUiRequest: (request) => requests.push(request),
     });
@@ -163,7 +163,7 @@ describe("R02 session replacement", () => {
 
 describe("R03 queue/retry/compaction", () => {
   it("emits queue, auto-retry, and compaction terminal events from native runtime", async () => {
-    const paths = await fixture("pix-run-");
+    const paths = await fixture("zeno-run-");
     await writeFile(paths.toolPath, "r03\n");
     // Enable retry with short delays; compaction available via manual compact().
     await writeFile(
@@ -185,7 +185,7 @@ describe("R03 queue/retry/compaction", () => {
     const handle = await createPixRuntime({
       cwd: paths.project,
       agentDir: paths.agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
       tools: ["read"],
     });
 
@@ -240,7 +240,7 @@ describe("R03 queue/retry/compaction", () => {
   }, 60_000);
 
   it("records auto_retry events when the model returns 429", async () => {
-    const paths = await fixture("pix-run-retry-");
+    const paths = await fixture("zeno-run-retry-");
     await writeFile(paths.toolPath, "r03-retry\n");
     await writeFile(
       join(paths.agentDir, "settings.json"),
@@ -259,7 +259,7 @@ describe("R03 queue/retry/compaction", () => {
     const handle = await createPixRuntime({
       cwd: paths.project,
       agentDir: paths.agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
     });
     const events: Array<{ type: string; [key: string]: unknown }> = [];
     const unsubscribe = handle.runtime.session.subscribe((event) => {

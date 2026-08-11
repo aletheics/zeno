@@ -10,8 +10,8 @@
 
 export type ContentMode = "chat" | "terminal";
 
-const GLOBAL_KEY = "pix.contentMode";
-const BY_SESSION_KEY = "pix.contentMode.bySession";
+const GLOBAL_KEY = "zeno.contentMode";
+const BY_SESSION_KEY = "zeno.contentMode.bySession";
 /** Bound growth — drop oldest entries when exceeded. */
 const MAX_SESSION_ENTRIES = 80;
 

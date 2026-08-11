@@ -214,8 +214,8 @@ export function ProjectList(props: ProjectListProps) {
       setUnreadThreads(loadUnreadThreads());
       setDeletedThreads(loadDeletedThreads());
     };
-    window.addEventListener("pix-thread-prefs", sync);
-    return () => window.removeEventListener("pix-thread-prefs", sync);
+    window.addEventListener("zeno-thread-prefs", sync);
+    return () => window.removeEventListener("zeno-thread-prefs", sync);
   }, []);
 
   // Settings worktree delete / external rail changes: reload pin list.
@@ -226,8 +226,8 @@ export function ProjectList(props: ProjectListProps) {
       setPriorityProjectOrder(loadProjectPriorityOrder());
       setArchived(loadArchivedProjects());
     };
-    window.addEventListener("pix-project-rail-changed", syncRail);
-    return () => window.removeEventListener("pix-project-rail-changed", syncRail);
+    window.addEventListener("zeno-project-rail-changed", syncRail);
+    return () => window.removeEventListener("zeno-project-rail-changed", syncRail);
   }, []);
 
   const allPaths = useMemo(() => {
@@ -268,7 +268,7 @@ export function ProjectList(props: ProjectListProps) {
     void Promise.all(
       allPaths.map(async (path) => {
         try {
-          const ctx = await window.pix.workspace.getGitContext(path);
+          const ctx = await window.zeno.workspace.getGitContext(path);
           return [normalizeWorkspaceKey(path), ctx.isMainWorktree === false] as const;
         } catch {
           return [normalizeWorkspaceKey(path), false] as const;
@@ -399,7 +399,7 @@ export function ProjectList(props: ProjectListProps) {
     setPinned((prev) => {
       const next = prev.filter((p) => p.replace(/\\/g, "/").replace(/\/+$/, "") !== key);
       try {
-        localStorage.setItem("pix.projects.pinned", JSON.stringify(next));
+        localStorage.setItem("zeno.projects.pinned", JSON.stringify(next));
       } catch {
         // ignore
       }
@@ -409,7 +409,7 @@ export function ProjectList(props: ProjectListProps) {
     setArchived((prev) => {
       const next = prev.filter((p) => p.replace(/\\/g, "/").replace(/\/+$/, "") !== key);
       try {
-        localStorage.setItem("pix.projects.archived", JSON.stringify(next));
+        localStorage.setItem("zeno.projects.archived", JSON.stringify(next));
       } catch {
         // ignore
       }
@@ -697,7 +697,7 @@ export function ProjectList(props: ProjectListProps) {
     }
     draggedProjectRef.current = { path, scope };
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("application/x-pix-project-path", path);
+    event.dataTransfer.setData("application/x-zeno-project-path", path);
     setProjectDrag({ sourcePath: path, scope });
   }
 
@@ -752,7 +752,7 @@ export function ProjectList(props: ProjectListProps) {
     }
     draggedThreadIdRef.current = threadId;
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("application/x-pix-thread-id", threadId);
+    event.dataTransfer.setData("application/x-zeno-thread-id", threadId);
     setThreadDrag({ sourceId: threadId });
   }
 
@@ -768,7 +768,7 @@ export function ProjectList(props: ProjectListProps) {
 
   function dropThread(targetId: string, event: ReactDragEvent<HTMLDivElement>) {
     const sourceId =
-      draggedThreadIdRef.current || event.dataTransfer.getData("application/x-pix-thread-id");
+      draggedThreadIdRef.current || event.dataTransfer.getData("application/x-zeno-thread-id");
     if (conversationSortMode === "manual" && sourceId && sourceId !== targetId) {
       event.preventDefault();
       const rect = event.currentTarget.getBoundingClientRect();
@@ -1245,7 +1245,7 @@ export function ProjectList(props: ProjectListProps) {
   return (
     // Single scroll for 置顶/项目/对话 — avoid flex-squeezing 对话 to zero height.
     <div
-      className="pix-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-0.5"
+      className="zeno-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-0.5"
       data-testid="project-list"
       data-group-mode={groupMode}
     >

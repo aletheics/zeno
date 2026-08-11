@@ -117,9 +117,9 @@ export function CreateWorktreeDialog(props: {
     void (async () => {
       try {
         const [branches, worktrees, gitCtx] = await Promise.all([
-          window.pix.workspace.listGitBranches(props.projectPath),
-          window.pix.workspace.listGitWorktrees(props.projectPath).catch(() => []),
-          window.pix.workspace.getGitContext(props.projectPath).catch(() => ({})),
+          window.zeno.workspace.listGitBranches(props.projectPath),
+          window.zeno.workspace.listGitWorktrees(props.projectPath).catch(() => []),
+          window.zeno.workspace.getGitContext(props.projectPath).catch(() => ({})),
         ]);
         if (cancelled) return;
 
@@ -166,7 +166,7 @@ export function CreateWorktreeDialog(props: {
     const newBranch = name.trim() || autoName;
     setBusy(true);
     try {
-      const result = await window.pix.workspace.createGitWorktree({
+      const result = await window.zeno.workspace.createGitWorktree({
         cwd: props.projectPath,
         name: folderName,
         newBranch,

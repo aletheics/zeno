@@ -30,7 +30,7 @@ function assert(condition, message) {
 }
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-after-pack-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-after-pack-"));
   try {
     const appOutDir = join(root, "mac-arm64");
     const resources = join(appOutDir, "Zeno.app", "Contents", "Resources");
@@ -69,7 +69,7 @@ function assert(condition, message) {
 
 {
   // Windows layout: resources/ under appOutDir
-  const root = mkdtempSync(join(tmpdir(), "pix-after-pack-win-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-after-pack-win-"));
   try {
     const appOutDir = join(root, "win-unpacked");
     const resources = join(appOutDir, "resources");

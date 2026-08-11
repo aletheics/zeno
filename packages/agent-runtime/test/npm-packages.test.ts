@@ -220,7 +220,7 @@ afterEach(async () => {
 
 describe("P01/P02/P08 npm package transport", () => {
   it("installs both scopes, updates only an unpinned range, and resolves while offline", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-p02-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-p02-"));
     temporaryDirectories.push(root);
     const agentDir = join(root, "home", ".pi", "agent");
     const cwd = join(root, "project");
@@ -229,8 +229,8 @@ describe("P01/P02/P08 npm package transport", () => {
       mkdir(join(cwd, ".pi"), { recursive: true }),
     ]);
 
-    const globalName = "pix-fake-npm-global-fixture";
-    const projectName = "pix-fake-npm-project-fixture";
+    const globalName = "zeno-fake-npm-global-fixture";
+    const projectName = "zeno-fake-npm-project-fixture";
     const packages: RegistryPackage[] = [];
     for (const name of [globalName, projectName]) {
       packages.push({

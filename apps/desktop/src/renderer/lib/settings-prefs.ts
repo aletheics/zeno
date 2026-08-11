@@ -9,8 +9,8 @@ export type AccessVisibility = {
   full: boolean;
 };
 
-const ACCESS_MODE_KEY = "pix.accessMode";
-const ACCESS_MODE_LEGACY_KEY = "pix.composer.access";
+const ACCESS_MODE_KEY = "zeno.accessMode";
+const ACCESS_MODE_LEGACY_KEY = "zeno.composer.access";
 
 function loadBool(key: string, fallback: boolean): boolean {
   try {
@@ -58,18 +58,18 @@ export function saveAccessMode(mode: AccessMode): void {
  */
 export function loadAccessVisibility(): AccessVisibility {
   const visibility: AccessVisibility = {
-    default: loadBool("pix.settings.access.showDefault", true),
-    autoReview: loadBool("pix.settings.access.showAutoReview", true),
-    full: loadBool("pix.settings.access.showFull", true),
+    default: loadBool("zeno.settings.access.showDefault", true),
+    autoReview: loadBool("zeno.settings.access.showAutoReview", true),
+    full: loadBool("zeno.settings.access.showFull", true),
   };
   return ensureAccessVisibility(visibility);
 }
 
 export function saveAccessVisibility(visibility: AccessVisibility): void {
   const next = ensureAccessVisibility(visibility);
-  saveBool("pix.settings.access.showDefault", next.default);
-  saveBool("pix.settings.access.showAutoReview", next.autoReview);
-  saveBool("pix.settings.access.showFull", next.full);
+  saveBool("zeno.settings.access.showDefault", next.default);
+  saveBool("zeno.settings.access.showAutoReview", next.autoReview);
+  saveBool("zeno.settings.access.showFull", next.full);
 }
 
 /** At least one option must stay visible. */
@@ -95,26 +95,26 @@ export function resolveAccessMode(mode: AccessMode, visibility: AccessVisibility
 }
 
 export function loadPreventSleep(): boolean {
-  return loadBool("pix.settings.preventSleep", false);
+  return loadBool("zeno.settings.preventSleep", false);
 }
 
 export function savePreventSleep(value: boolean): void {
-  saveBool("pix.settings.preventSleep", value);
+  saveBool("zeno.settings.preventSleep", value);
 }
 
 export function loadSuggestions(): boolean {
-  return loadBool("pix.settings.suggestions", true);
+  return loadBool("zeno.settings.suggestions", true);
 }
 
 export function saveSuggestions(value: boolean): void {
-  saveBool("pix.settings.suggestions", value);
+  saveBool("zeno.settings.suggestions", value);
 }
 
 /** Whether the composer shows context-window usage (e.g. 0% / 12%). Default on. */
 export function loadShowContextUsage(): boolean {
-  return loadBool("pix.settings.showContextUsage", true);
+  return loadBool("zeno.settings.showContextUsage", true);
 }
 
 export function saveShowContextUsage(value: boolean): void {
-  saveBool("pix.settings.showContextUsage", value);
+  saveBool("zeno.settings.showContextUsage", value);
 }

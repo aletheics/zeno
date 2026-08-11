@@ -34,10 +34,10 @@ function sendChunk(response: ServerResponse, value: unknown): void {
 
 function chunk(delta: Record<string, unknown>, finishReason: string | null = null) {
   return {
-    id: "chatcmpl-pix-fake",
+    id: "chatcmpl-zeno-fake",
     object: "chat.completion.chunk",
     created: 1,
-    model: "pix-fake",
+    model: "zeno-fake",
     choices: [{ index: 0, delta, finish_reason: finishReason }],
   };
 }
@@ -183,7 +183,7 @@ export class FakeOpenAiServer {
           tool_calls: [
             {
               index: 0,
-              id: "call-pix-tool",
+              id: "call-zeno-tool",
               type: "function",
               function: {
                 name: this.#toolCall.name,

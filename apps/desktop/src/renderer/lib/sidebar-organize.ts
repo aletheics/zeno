@@ -8,13 +8,13 @@ export type ConversationSortMode = SortMode;
 export const SORT_MODES: readonly SortMode[] = ["priority", "recent", "manual"] as const;
 export const GROUP_MODES: readonly GroupMode[] = ["project", "list"] as const;
 
-const GROUP_KEY = "pix.sidebar.groupMode";
-const SORT_KEY = "pix.sidebar.sortMode";
+const GROUP_KEY = "zeno.sidebar.groupMode";
+const SORT_KEY = "zeno.sidebar.sortMode";
 /** Sort prefs for the 对话 (conversations) section — independent of projects. */
-const CONVERSATION_SORT_KEY = "pix.sidebar.conversationSortMode";
-const PROJECTS_OPEN_KEY = "pix.sidebar.projectsOpen";
-const THREADS_OPEN_KEY = "pix.sidebar.threadsOpen";
-const PINNED_OPEN_KEY = "pix.sidebar.pinnedOpen";
+const CONVERSATION_SORT_KEY = "zeno.sidebar.conversationSortMode";
+const PROJECTS_OPEN_KEY = "zeno.sidebar.projectsOpen";
+const THREADS_OPEN_KEY = "zeno.sidebar.threadsOpen";
+const PINNED_OPEN_KEY = "zeno.sidebar.pinnedOpen";
 
 function loadString(key: string, fallback: string): string {
   try {
@@ -67,7 +67,7 @@ export function loadGroupMode(): GroupMode {
 export function saveGroupMode(mode: GroupMode): void {
   saveString(GROUP_KEY, mode);
   try {
-    window.dispatchEvent(new Event("pix-sidebar-group-mode"));
+    window.dispatchEvent(new Event("zeno-sidebar-group-mode"));
   } catch {
     // ignore (non-browser)
   }

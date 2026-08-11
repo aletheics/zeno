@@ -116,7 +116,7 @@ function assertEqual(actual, expected, message) {
 
 // ── pruneNodeRuntime drops include/share, keeps bin/node ────────────────────
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-prune-node-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-prune-node-"));
   try {
     const nodeRoot = join(root, "node");
     mkdirSync(join(nodeRoot, "bin"), { recursive: true });
@@ -140,7 +140,7 @@ function assertEqual(actual, expected, message) {
 
 // ── prunePythonRuntime drops Tcl/Tk + idle, keeps python bin ────────────────
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-prune-py-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-prune-py-"));
   try {
     const pyRoot = join(root, "python");
     const bin = join(pyRoot, "bin");
@@ -175,7 +175,7 @@ function assertEqual(actual, expected, message) {
 
 // ── invalid versions file ───────────────────────────────────────────────────
 {
-  const bad = join(mkdtempSync(join(tmpdir(), "pix-ver-")), "versions.json");
+  const bad = join(mkdtempSync(join(tmpdir(), "zeno-ver-")), "versions.json");
   writeFileSync(bad, JSON.stringify({ node: "1.0.0" }));
   let threw = false;
   try {
@@ -203,7 +203,7 @@ function assertEqual(actual, expected, message) {
 
 // ── packShippingArchives produces node/python tar.gz ────────────────────────
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-pack-arch-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-pack-arch-"));
   try {
     mkdirSync(join(root, "node", "bin"), { recursive: true });
     mkdirSync(join(root, "python", "bin"), { recursive: true });

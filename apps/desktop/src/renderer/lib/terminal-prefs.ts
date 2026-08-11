@@ -38,8 +38,8 @@ export type TerminalPrefs = {
   colorScheme: TerminalColorScheme;
 };
 
-const KEY = "pix.terminal.prefs.v1";
-export const TERMINAL_PREFS_CHANGED_EVENT = "pix-terminal-prefs";
+const KEY = "zeno.terminal.prefs.v1";
+export const TERMINAL_PREFS_CHANGED_EVENT = "zeno-terminal-prefs";
 
 export const DEFAULT_TERMINAL_PREFS: TerminalPrefs = {
   fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",

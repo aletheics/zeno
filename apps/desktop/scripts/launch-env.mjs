@@ -19,15 +19,15 @@ export async function prepareLaunchEnv(options = {}) {
     const environment = {
       ...process.env,
       // CLI-compatible durable sessions unless the user disables.
-      PIX_PERSIST_SESSION: process.env.PIX_PERSIST_SESSION ?? "1",
+      ZENO_PERSIST_SESSION: process.env.ZENO_PERSIST_SESSION ?? "1",
     };
     delete environment.ELECTRON_RUN_AS_NODE;
     // Never inherit probe fixtures into product mode.
-    delete environment.PIX_WORKSPACE;
-    delete environment.PIX_TOOLS;
-    if (!process.env.PIX_MODEL_PROVIDER) {
-      delete environment.PIX_MODEL_PROVIDER;
-      delete environment.PIX_MODEL_ID;
+    delete environment.ZENO_WORKSPACE;
+    delete environment.ZENO_TOOLS;
+    if (!process.env.ZENO_MODEL_PROVIDER) {
+      delete environment.ZENO_MODEL_PROVIDER;
+      delete environment.ZENO_MODEL_ID;
     }
     // Use the same agent dir as the `pi` CLI unless the user overrode it.
     if (!process.env.PI_CODING_AGENT_DIR) {
@@ -40,7 +40,7 @@ export async function prepareLaunchEnv(options = {}) {
     };
   }
 
-  const root = await mkdtemp(join(tmpdir(), "pix-fake-"));
+  const root = await mkdtemp(join(tmpdir(), "zeno-fake-"));
   const home = join(root, "home");
   const agentDir = join(home, ".pi", "agent");
   const workspace = join(root, "workspace");
@@ -59,13 +59,13 @@ export async function prepareLaunchEnv(options = {}) {
     join(agentDir, "models.json"),
     JSON.stringify({
       providers: {
-        "pix-fake": {
+        "zeno-fake": {
           baseUrl: fakeModel.baseUrl,
           apiKey: "test-key-not-secret",
           api: "openai-completions",
           models: [
             {
-              id: "pix-fake",
+              id: "zeno-fake",
               name: "Zeno Fake Model",
               reasoning: false,
               input: ["text"],
@@ -86,12 +86,12 @@ export async function prepareLaunchEnv(options = {}) {
     USERPROFILE: home,
     XDG_CONFIG_HOME: join(home, ".config"),
     PI_CODING_AGENT_DIR: agentDir,
-    PIX_WORKSPACE: workspace,
-    PIX_MODEL_PROVIDER: "pix-fake",
-    PIX_MODEL_ID: "pix-fake",
-    PIX_TOOLS: "read",
-    PIX_PERSIST_SESSION: "1",
-    PIX_ENABLE_TEST_COMMANDS: "1",
+    ZENO_WORKSPACE: workspace,
+    ZENO_MODEL_PROVIDER: "zeno-fake",
+    ZENO_MODEL_ID: "zeno-fake",
+    ZENO_TOOLS: "read",
+    ZENO_PERSIST_SESSION: "1",
+    ZENO_ENABLE_TEST_COMMANDS: "1",
   };
   delete environment.ELECTRON_RUN_AS_NODE;
 
@@ -100,7 +100,7 @@ export async function prepareLaunchEnv(options = {}) {
     label: `Zeno isolated home: ${root}`,
     cleanup: async () => {
       await fakeModel.stop();
-      if (process.env.PIX_KEEP_HOME === "1") console.log(`Kept Zeno home: ${root}`);
+      if (process.env.ZENO_KEEP_HOME === "1") console.log(`Kept Zeno home: ${root}`);
       else await rm(root, { recursive: true, force: true });
     },
   };

@@ -31,7 +31,7 @@ export type AutoUpdateController = {
 export const DEFAULT_UPDATE_FEED = {
   provider: "github" as const,
   owner: "num-scope",
-  repo: "pix",
+  repo: "zeno",
   releaseType: "release" as const,
 };
 
@@ -175,7 +175,7 @@ export function createAutoUpdateController(options: {
       // Download still requires the on-disk yml (see missingUpdateConfigError).
       instance.setFeedURL(DEFAULT_UPDATE_FEED);
     } catch (error) {
-      console.warn("[pix] setFeedURL failed:", error);
+      console.warn("[zeno] setFeedURL failed:", error);
     }
   }
 
@@ -422,7 +422,7 @@ export function createAutoUpdateController(options: {
   if (isPackaged) {
     startupTimer = setTimeout(() => {
       void checkForUpdates().catch((error) => {
-        console.warn("[pix] startup update check failed:", error);
+        console.warn("[zeno] startup update check failed:", error);
       });
     }, startupDelayMs);
   }

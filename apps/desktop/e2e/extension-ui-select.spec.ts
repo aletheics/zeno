@@ -30,14 +30,14 @@ async function installSelectExtension(agentDir: string): Promise<void> {
 }
 
 test.describe("Extension UI select", () => {
-  test("renders options from ui.select so the user can pick one", async ({ page, pix }) => {
-    await installSelectExtension(pix.agentDir);
+  test("renders options from ui.select so the user can pick one", async ({ page, zeno }) => {
+    await installSelectExtension(zeno.agentDir);
     await startHost(page);
 
     // Reload after host is ready so session_start runs with a known runtimeId
     // and the extension is definitely bound (cold start may race first bind).
     await page.evaluate(async () => {
-      await window.pix.runtime.reload();
+      await window.zeno.runtime.reload();
     });
 
     const dialog = page.getByTestId("extension-ui-select-dialog");

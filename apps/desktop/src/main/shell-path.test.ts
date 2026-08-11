@@ -30,7 +30,7 @@ describe("shell-path", () => {
 
   it("augmentEnvPath prepends extraBinDirs (bundled runtimes) before user bins", () => {
     const sep = process.platform === "win32" ? ";" : ":";
-    const bundled = join(tmpdir(), "pix-bundled-bin-xyz");
+    const bundled = join(tmpdir(), "zeno-bundled-bin-xyz");
     mkdirSync(bundled, { recursive: true });
     const env = augmentEnvPath(
       {
@@ -45,7 +45,7 @@ describe("shell-path", () => {
   });
 
   it("candidateCommandPaths finds binaries under a home bin dir", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-shell-path-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-shell-path-"));
     const bin = join(root, ".local", "bin");
     mkdirSync(bin, { recursive: true });
     const piPath = join(bin, "pi");
@@ -61,10 +61,10 @@ describe("shell-path", () => {
   });
 
   it("commonUserBinDirs only returns existing directories", () => {
-    const dirs = commonUserBinDirs(join(tmpdir(), "pix-missing-home-dir-xyz"));
+    const dirs = commonUserBinDirs(join(tmpdir(), "zeno-missing-home-dir-xyz"));
     for (const dir of dirs) {
       // System paths like /usr/local/bin may exist; user-home ones for missing home must not.
-      expect(dir.includes("pix-missing-home-dir-xyz")).toBe(false);
+      expect(dir.includes("zeno-missing-home-dir-xyz")).toBe(false);
     }
   });
 });

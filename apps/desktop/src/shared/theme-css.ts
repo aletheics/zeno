@@ -3,7 +3,7 @@ export const MAX_THEME_CUSTOM_CSS_LENGTH = 32 * 1024;
 const SELECTOR_HOOKS = [
   ".app-shell",
   ".shell-content",
-  ".pix-sidebar-",
+  ".zeno-sidebar-",
   ".thread-",
   ".composer-",
   ".timeline",

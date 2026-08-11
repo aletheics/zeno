@@ -177,7 +177,7 @@ describe("project prefs helpers", () => {
 describe("thread unread", () => {
   beforeEach(() => {
     try {
-      localStorage?.removeItem?.("pix.threads.unread");
+      localStorage?.removeItem?.("zeno.threads.unread");
     } catch {
       // ignore
     }

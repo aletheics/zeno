@@ -5,10 +5,10 @@
  */
 
 export const OVERLAY_SCROLL_SELECTOR =
-  ".pix-scroll, .timeline-scroll, .page-body, .settings-page-body, .composer-suggest-scroll, .composer-prompt-scroll, .command-palette-scroll";
+  ".zeno-scroll, .timeline-scroll, .page-body, .settings-page-body, .composer-suggest-scroll, .composer-prompt-scroll, .command-palette-scroll";
 
 const HIDE_MS = 900;
-const THUMB_CLASS = "pix-scroll-thumb";
+const THUMB_CLASS = "zeno-scroll-thumb";
 const MIN_THUMB_PX = 28;
 const THUMB_HITBOX_PX = 12;
 
@@ -71,7 +71,7 @@ function thumbForHost(host: HTMLElement): HTMLDivElement | null {
 function hostForThumb(thumb: Element): HTMLElement | null {
   const id = thumb.getAttribute("data-for");
   if (!id) return null;
-  const host = document.querySelector<HTMLElement>(`[data-pix-scroll-id="${CSS.escape(id)}"]`);
+  const host = document.querySelector<HTMLElement>(`[data-zeno-scroll-id="${CSS.escape(id)}"]`);
   return host && isScrollport(host) ? host : null;
 }
 

@@ -1,6 +1,6 @@
 /**
  * Independent proxy prefs for AI (agent-host / models / OAuth) vs app (Electron session).
- * Stored in pix-desktop.json; AI channel is injected into utilityProcess env.
+ * Stored in zeno-desktop.json; AI channel is injected into utilityProcess env.
  */
 
 export type ProxyMode = "off" | "system" | "custom";

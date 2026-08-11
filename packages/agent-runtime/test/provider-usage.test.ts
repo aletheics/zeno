@@ -13,7 +13,7 @@ function services(options: {
   const known = new Set(options.providers);
   const oauth = new Set(options.oauth ?? []);
   return {
-    agentDir: "/tmp/pix-provider-usage-test",
+    agentDir: "/tmp/zeno-provider-usage-test",
     modelRuntime: {
       getProvider(provider) {
         return known.has(provider) ? { name: `Name ${provider}` } : undefined;

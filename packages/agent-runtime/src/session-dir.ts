@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
 /** Matches pi `ENV_SESSION_DIR` (`PI_CODING_AGENT_SESSION_DIR`). */
-export const PIX_SESSION_DIR_ENV = "PI_CODING_AGENT_SESSION_DIR";
+export const ZENO_SESSION_DIR_ENV = "PI_CODING_AGENT_SESSION_DIR";
 
 export type SessionDirSource = "explicit" | "env" | "settings" | "default";
 
@@ -47,7 +47,7 @@ export function resolvePixSessionDir(options: ResolvePixSessionDirOptions): Reso
   if (explicit) return { sessionDir: explicit, source: "explicit" };
 
   const env = options.env ?? process.env;
-  const fromEnv = normalizeOptionalPath(env[PIX_SESSION_DIR_ENV]);
+  const fromEnv = normalizeOptionalPath(env[ZENO_SESSION_DIR_ENV]);
   if (fromEnv) return { sessionDir: fromEnv, source: "env" };
 
   let settingsSessionDir = options.settingsSessionDir;

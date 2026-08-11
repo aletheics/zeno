@@ -8,8 +8,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const source = process.env.PIX_PI_SDK_SOURCE?.trim();
-const root = process.env.PIX_PI_SDK_ROOT?.trim();
+const source = process.env.ZENO_PI_SDK_SOURCE?.trim();
+const root = process.env.ZENO_PI_SDK_ROOT?.trim();
 
 if (source === "global" && root) {
   const hookPath = join(here, "pi-sdk-hook.mjs");

@@ -1,21 +1,21 @@
 /** Desktop-only project chrome prefs (pin / archive / rename / expand). */
 
-const PINNED_KEY = "pix.projects.pinned";
-const PROJECT_MANUAL_ORDER_KEY = "pix.projects.manualOrder";
+const PINNED_KEY = "zeno.projects.pinned";
+const PROJECT_MANUAL_ORDER_KEY = "zeno.projects.manualOrder";
 /** First-seen / import order for「优先级」— append-only; never reordered by open/use. */
-const PROJECT_PRIORITY_ORDER_KEY = "pix.projects.priorityOrder";
-const ARCHIVED_KEY = "pix.projects.archived";
-const ALIASES_KEY = "pix.projects.aliases";
-const EXPANDED_KEY = "pix.projects.expanded";
+const PROJECT_PRIORITY_ORDER_KEY = "zeno.projects.priorityOrder";
+const ARCHIVED_KEY = "zeno.projects.archived";
+const ALIASES_KEY = "zeno.projects.aliases";
+const EXPANDED_KEY = "zeno.projects.expanded";
 
 export const PROJECT_THREADS_PAGE = 5;
 
-const THREAD_ALIASES_KEY = "pix.threads.aliases";
-const THREAD_ARCHIVED_KEY = "pix.threads.archived";
-const THREAD_PINNED_KEY = "pix.threads.pinned";
-const THREAD_MANUAL_ORDER_KEY = "pix.threads.manualOrder";
-const THREAD_UNREAD_KEY = "pix.threads.unread";
-const THREAD_DELETED_KEY = "pix.threads.deleted";
+const THREAD_ALIASES_KEY = "zeno.threads.aliases";
+const THREAD_ARCHIVED_KEY = "zeno.threads.archived";
+const THREAD_PINNED_KEY = "zeno.threads.pinned";
+const THREAD_MANUAL_ORDER_KEY = "zeno.threads.manualOrder";
+const THREAD_UNREAD_KEY = "zeno.threads.unread";
+const THREAD_DELETED_KEY = "zeno.threads.deleted";
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -382,7 +382,7 @@ export type ArchivedThreadMeta = {
   archivedAt?: string;
 };
 
-const THREAD_ARCHIVED_META_KEY = "pix.threads.archivedMeta";
+const THREAD_ARCHIVED_META_KEY = "zeno.threads.archivedMeta";
 
 export function loadArchivedThreadMeta(): Record<string, ArchivedThreadMeta> {
   const map = readJson<Record<string, ArchivedThreadMeta>>(THREAD_ARCHIVED_META_KEY, {});
@@ -458,7 +458,7 @@ export function threadUnreadKeys(thread: { id: string; path?: string }): string[
 export function notifyThreadPrefsChanged(): void {
   if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
   try {
-    window.dispatchEvent(new Event("pix-thread-prefs"));
+    window.dispatchEvent(new Event("zeno-thread-prefs"));
   } catch {
     // ignore (SSR / tests)
   }

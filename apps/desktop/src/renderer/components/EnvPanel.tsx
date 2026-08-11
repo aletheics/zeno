@@ -127,11 +127,11 @@ export function EnvPanel(props: {
     }
     try {
       const [st, ctx, br] = await Promise.all([
-        window.pix.workspace.gitStatus(props.cwd).catch(() => undefined),
-        window.pix.workspace
+        window.zeno.workspace.gitStatus(props.cwd).catch(() => undefined),
+        window.zeno.workspace
           .getGitContext(props.cwd)
           .catch((): GitContextInfo => ({ branch: "—", worktree: "本地", isMainWorktree: true })),
-        window.pix.workspace.listGitBranches(props.cwd).catch(() => [] as GitBranchInfo[]),
+        window.zeno.workspace.listGitBranches(props.cwd).catch(() => [] as GitBranchInfo[]),
       ]);
       setStatus(st);
       setGitContext(ctx);
@@ -140,7 +140,7 @@ export function EnvPanel(props: {
       // keep previous
     }
     // Icons / app discovery can be slow — never block the whole panel on it.
-    void window.pix.workspace
+    void window.zeno.workspace
       .listOpenTargets(props.cwd)
       .then((targets) => setApps(targets))
       .catch(() => setApps([]));
@@ -159,8 +159,8 @@ export function EnvPanel(props: {
 
   useEffect(() => {
     const onPrefs = () => setVisibility(loadEnvPanelVisibility());
-    window.addEventListener("pix-env-panel-prefs", onPrefs);
-    return () => window.removeEventListener("pix-env-panel-prefs", onPrefs);
+    window.addEventListener("zeno-env-panel-prefs", onPrefs);
+    return () => window.removeEventListener("zeno-env-panel-prefs", onPrefs);
   }, []);
 
   async function runGit(action: () => Promise<GitStatusSummary>) {
@@ -173,11 +173,11 @@ export function EnvPanel(props: {
       // Refresh git state only — keep rows enabled; don't re-lock for icons.
       if (props.cwd) {
         const [st, ctx, br] = await Promise.all([
-          window.pix.workspace.gitStatus(props.cwd).catch(() => undefined),
-          window.pix.workspace
+          window.zeno.workspace.gitStatus(props.cwd).catch(() => undefined),
+          window.zeno.workspace
             .getGitContext(props.cwd)
             .catch((): GitContextInfo => ({ branch: "—", worktree: "本地", isMainWorktree: true })),
-          window.pix.workspace.listGitBranches(props.cwd).catch(() => [] as GitBranchInfo[]),
+          window.zeno.workspace.listGitBranches(props.cwd).catch(() => [] as GitBranchInfo[]),
         ]);
         setStatus(st);
         setGitContext(ctx);
@@ -313,7 +313,7 @@ export function EnvPanel(props: {
             className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[var(--foreground)] outline-none placeholder:text-[var(--text-subtle)] disabled:opacity-50"
           />
         </div>
-        <div className="pix-scroll max-h-[260px] overscroll-contain py-0.5">
+        <div className="zeno-scroll max-h-[260px] overscroll-contain py-0.5">
           {filteredBranches.length === 0 ? (
             <p className="px-3 py-3 text-[12px] text-[var(--text-subtle)]">
               {tr("composer.branch.empty")}
@@ -341,7 +341,7 @@ export function EnvPanel(props: {
                     if (!props.cwd || busy) return;
                     setBusy(true);
                     try {
-                      const next = await window.pix.workspace.checkoutGitBranch(b.name, props.cwd);
+                      const next = await window.zeno.workspace.checkoutGitBranch(b.name, props.cwd);
                       setGitContext(next);
                       closeFlyout();
                       void refresh();
@@ -378,7 +378,7 @@ export function EnvPanel(props: {
                   if (!props.cwd || !isValidBranchName(name)) return;
                   setBusy(true);
                   try {
-                    const next = await window.pix.workspace.createGitBranch(name, {
+                    const next = await window.zeno.workspace.createGitBranch(name, {
                       checkout: true,
                       cwd: props.cwd,
                     });
@@ -422,7 +422,7 @@ export function EnvPanel(props: {
           disabled={busy}
           onClick={() => {
             closeFlyout();
-            void runGit(() => window.pix.workspace.gitPush(props.cwd));
+            void runGit(() => window.zeno.workspace.gitPush(props.cwd));
           }}
         />
         <ActionRow
@@ -441,7 +441,7 @@ export function EnvPanel(props: {
           disabled={busy}
           onClick={() => {
             closeFlyout();
-            void runGit(() => window.pix.workspace.gitPull(props.cwd));
+            void runGit(() => window.zeno.workspace.gitPull(props.cwd));
           }}
         />
         <ActionRow
@@ -450,7 +450,7 @@ export function EnvPanel(props: {
           disabled={busy}
           onClick={() => {
             closeFlyout();
-            void window.pix.workspace
+            void window.zeno.workspace
               .openCreatePullRequest(props.cwd)
               .catch((error) =>
                 showAppError(error instanceof Error ? error.message : tr("env.error.git")),
@@ -473,7 +473,7 @@ export function EnvPanel(props: {
               disabled={busy}
               onClick={() => {
                 closeFlyout();
-                void window.pix.workspace
+                void window.zeno.workspace
                   .openInApp(app.id, props.cwd)
                   .catch((error) =>
                     showAppError(error instanceof Error ? error.message : tr("env.error.open")),
@@ -634,7 +634,7 @@ export function EnvPanel(props: {
           if (!msg) {
             setCommitGenerating(true);
             try {
-              msg = (await window.pix.workspace.gitGenerateCommitMessage(props.cwd)).trim();
+              msg = (await window.zeno.workspace.gitGenerateCommitMessage(props.cwd)).trim();
               setCommitMsg(msg);
             } catch (error) {
               showAppError(error instanceof Error ? error.message : tr("env.commitGenerateFailed"));
@@ -648,9 +648,9 @@ export function EnvPanel(props: {
             return;
           }
           if (commitMode === "commitAndPush") {
-            await runGit(() => window.pix.workspace.gitCommitAndPush(msg, props.cwd));
+            await runGit(() => window.zeno.workspace.gitCommitAndPush(msg, props.cwd));
           } else {
-            await runGit(() => window.pix.workspace.gitCommit(msg, props.cwd));
+            await runGit(() => window.zeno.workspace.gitCommit(msg, props.cwd));
           }
         }}
       />

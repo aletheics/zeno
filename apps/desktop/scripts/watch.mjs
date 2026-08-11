@@ -4,7 +4,7 @@
  * - Starts Vite dev server for renderer (HMR for React components).
  * - Watches main / preload / agent source files; restarts Electron on changes.
  * - `pnpm dev` (root) or `pnpm run dev` (apps/desktop).
- * - Interactive: real HOME. Isolated: `PIX_ISOLATED=1` (temp HOME, fake model).
+ * - Interactive: real HOME. Isolated: `ZENO_ISOLATED=1` (temp HOME, fake model).
  */
 import { spawn, execSync } from "node:child_process";
 import { watchFile, unwatchFile } from "node:fs";
@@ -18,7 +18,7 @@ const electron = require("electron");
 const appDir = dirname(fileURLToPath(import.meta.url));
 const desktopDir = resolve(appDir, "..");
 
-const isolated = process.env.PIX_ISOLATED === "1";
+const isolated = process.env.ZENO_ISOLATED === "1";
 const prepared = await prepareLaunchEnv({ isolated });
 console.log(prepared.label);
 

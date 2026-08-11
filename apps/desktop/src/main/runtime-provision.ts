@@ -246,7 +246,7 @@ export function ensureIsolationDirs(options: {
         timeout: 120_000,
       });
     } catch (error) {
-      console.warn("[pix] python venv create failed:", error);
+      console.warn("[zeno] python venv create failed:", error);
     }
   }
 
@@ -377,7 +377,7 @@ export function ensureProvisionedRuntimes(options: {
 
       const roots = rootsFromRuntimeRoot(userRoot);
       if (!roots) {
-        console.warn("[pix] runtime extract finished but binaries missing");
+        console.warn("[zeno] runtime extract finished but binaries missing");
       } else {
         const iso = isolationDirsForPythonRoot(
           options.userDataPath,
@@ -397,7 +397,7 @@ export function ensureProvisionedRuntimes(options: {
           provisionStampPath(options.userDataPath),
           `${JSON.stringify(nextStamp, null, 2)}\n`,
         );
-        console.log("[pix] provisioned managed runtimes into", userRoot);
+        console.log("[zeno] provisioned managed runtimes into", userRoot);
         return {
           roots,
           npmPrefix: iso.npmPrefix,
@@ -407,7 +407,7 @@ export function ensureProvisionedRuntimes(options: {
         };
       }
     } catch (error) {
-      console.warn("[pix] runtime archive extract failed:", error);
+      console.warn("[zeno] runtime archive extract failed:", error);
       // fall through to expanded vendor
     }
   }

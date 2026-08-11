@@ -224,7 +224,7 @@ describe("PiTuiPtyController", () => {
 
   it("spawns pi via node when the CLI is a node shebang script", async () => {
     const tracker = { spawns: [] as SpawnRecord[], writes: [] as string[], kills: 0 };
-    const root = mkdtempSync(join(tmpdir(), "pix-pty-launch-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pty-launch-"));
     const bin = join(root, "bin");
     mkdirSync(bin, { recursive: true });
     const piPath = join(bin, "pi");
@@ -244,7 +244,7 @@ describe("PiTuiPtyController", () => {
 
 describe("resolvePiPtyLaunch", () => {
   it("uses node to run a shebang or .js CLI when node is available", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-pty-resolve-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pty-resolve-"));
     const script = join(root, "cli.js");
     writeFileSync(script, "#!/usr/bin/env node\n", { mode: 0o755 });
 
@@ -260,7 +260,7 @@ describe("resolvePiPtyLaunch", () => {
   });
 
   it("honors NODE_BINARY override", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-pty-resolve-nodebin-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pty-resolve-nodebin-"));
     const bin = join(root, "bin");
     mkdirSync(bin, { recursive: true });
     const nodePath = join(bin, "custom-node");
@@ -351,7 +351,7 @@ describe("resolvePiPtyLaunch", () => {
   });
 
   it("prefers configured bundled node over PATH without ELECTRON_RUN_AS_NODE", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-pty-bundled-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pty-bundled-"));
     const nodeBinDir = join(root, "node", "bin");
     mkdirSync(nodeBinDir, { recursive: true });
     const bundledNode = join(nodeBinDir, "node");
@@ -381,7 +381,7 @@ describe("resolvePiPtyLaunch", () => {
   });
 
   it("rewrites asar paths to asar.unpacked when the real file exists", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-pty-unpacked-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-pty-unpacked-"));
     const asarCli = join(root, "app.asar", "node_modules", "pkg", "cli.js");
     const unpackedCli = join(root, "app.asar.unpacked", "node_modules", "pkg", "cli.js");
     mkdirSync(dirname(unpackedCli), { recursive: true });

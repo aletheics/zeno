@@ -129,7 +129,7 @@ describe("normalizeProviderBaseUrl", () => {
 
 describe("normalizeModelsJsonBaseUrls", () => {
   it("rewrites mixed provider baseUrls in models.json", async () => {
-    const agentDir = await mkdtemp(join(tmpdir(), "pix-baseurl-"));
+    const agentDir = await mkdtemp(join(tmpdir(), "zeno-baseurl-"));
     await writeFile(
       join(agentDir, "models.json"),
       `${JSON.stringify(
@@ -164,7 +164,7 @@ describe("normalizeModelsJsonBaseUrls", () => {
   });
 
   it("normalizes baseUrl on upsert regardless of user trailing /v1", async () => {
-    const agentDir = await mkdtemp(join(tmpdir(), "pix-baseurl-upsert-"));
+    const agentDir = await mkdtemp(join(tmpdir(), "zeno-baseurl-upsert-"));
     const view = await upsertCustomProviderInModelsJson(agentDir, {
       provider: "AnyRouter",
       baseUrl: "https://anyrouter.top/v1",

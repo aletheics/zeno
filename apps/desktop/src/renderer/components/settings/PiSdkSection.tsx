@@ -172,8 +172,8 @@ export function PiSdkSection(props: { locale: Locale }) {
     setLoading(true);
     try {
       const [next, list] = await Promise.all([
-        window.pix.piSdk.getStatus(),
-        window.pix.piSdk.listConfigFiles(),
+        window.zeno.piSdk.getStatus(),
+        window.zeno.piSdk.listConfigFiles(),
       ]);
       setSdkStatus(next);
       setFiles(list);
@@ -198,7 +198,7 @@ export function PiSdkSection(props: { locale: Locale }) {
 
     let latest = status;
     try {
-      latest = await window.pix.piSdk.getStatus();
+      latest = await window.zeno.piSdk.getStatus();
       setSdkStatus(latest);
     } catch {
       // keep previous status
@@ -210,9 +210,9 @@ export function PiSdkSection(props: { locale: Locale }) {
 
     setBusy(true);
     try {
-      const next = await window.pix.piSdk.setSource(source, { force: isBusy });
+      const next = await window.zeno.piSdk.setSource(source, { force: isBusy });
       setSdkStatus(next);
-      setFiles(await window.pix.piSdk.listConfigFiles());
+      setFiles(await window.zeno.piSdk.listConfigFiles());
       setStatus(
         tr("piSdk.using") +
           ` · ${source === "builtin" ? tr("piSdk.builtin") : tr("piSdk.global")}` +
@@ -222,9 +222,9 @@ export function PiSdkSection(props: { locale: Locale }) {
       if (isBusyError(error)) {
         if (window.confirm(tr("piSdk.switchConfirmBusy"))) {
           try {
-            const next = await window.pix.piSdk.setSource(source, { force: true });
+            const next = await window.zeno.piSdk.setSource(source, { force: true });
             setSdkStatus(next);
-            setFiles(await window.pix.piSdk.listConfigFiles());
+            setFiles(await window.zeno.piSdk.listConfigFiles());
             return;
           } catch (retryError) {
             showAppError(
@@ -246,13 +246,13 @@ export function PiSdkSection(props: { locale: Locale }) {
   async function installOrUpdateGlobal(mode: "install" | "update") {
     setBusy(true);
     try {
-      const result = await window.pix.piSdk.installGlobal();
+      const result = await window.zeno.piSdk.installGlobal();
       if (result.error) {
         showAppError(result.error);
       } else {
-        const next = await window.pix.piSdk.checkLatest();
+        const next = await window.zeno.piSdk.checkLatest();
         setSdkStatus(next);
-        setFiles(await window.pix.piSdk.listConfigFiles());
+        setFiles(await window.zeno.piSdk.listConfigFiles());
         if (mode === "update" && (result.version || next.latestVersion)) {
           setStatus(
             tr("piSdk.updateDone", {
@@ -272,7 +272,7 @@ export function PiSdkSection(props: { locale: Locale }) {
   async function checkLatest() {
     setBusy(true);
     try {
-      const next = await window.pix.piSdk.checkLatest();
+      const next = await window.zeno.piSdk.checkLatest();
       setSdkStatus(next);
     } catch (error) {
       showAppError(error instanceof Error ? error.message : tr("piSdk.switchFailed"));
@@ -487,7 +487,7 @@ export function PiSdkSection(props: { locale: Locale }) {
                       testId={`pi-sdk-reveal-${file.id}`}
                       disabled={!file.exists || busy}
                       onClick={() => {
-                        void window.pix.piSdk.revealConfig(file.id).catch((error) => {
+                        void window.zeno.piSdk.revealConfig(file.id).catch((error) => {
                           showAppError(error instanceof Error ? error.message : String(error));
                         });
                       }}
@@ -498,7 +498,7 @@ export function PiSdkSection(props: { locale: Locale }) {
                         testId={`pi-sdk-open-${file.id}`}
                         disabled={!file.exists || busy}
                         onClick={() => {
-                          void window.pix.piSdk.openConfig(file.id).catch((error) => {
+                          void window.zeno.piSdk.openConfig(file.id).catch((error) => {
                             showAppError(error instanceof Error ? error.message : String(error));
                           });
                         }}

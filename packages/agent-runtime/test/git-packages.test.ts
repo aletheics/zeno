@@ -31,13 +31,13 @@ async function createGitPackage(
   withManifest = false,
 ) {
   const work = join(root, `${name}-work`);
-  const bare = join(remoteRoot, "pix", `${name}.git`);
+  const bare = join(remoteRoot, "zeno", `${name}.git`);
   await Promise.all([
     mkdir(join(work, "prompts"), { recursive: true }),
-    mkdir(join(remoteRoot, "pix"), { recursive: true }),
+    mkdir(join(remoteRoot, "zeno"), { recursive: true }),
   ]);
   await git(work, "init", "-b", "main");
-  await git(work, "config", "user.email", "pix-fake@example.invalid");
+  await git(work, "config", "user.email", "zeno-fake@example.invalid");
   await git(work, "config", "user.name", "Zeno");
   await git(work, "config", "core.autocrlf", "false");
   await git(work, "config", "core.eol", "lf");
@@ -47,7 +47,7 @@ async function createGitPackage(
     await writeFile(
       join(work, "package.json"),
       JSON.stringify({
-        name: `pix-${name}-fixture`,
+        name: `zeno-${name}-fixture`,
         version: "1.0.0",
         pi: { prompts: ["prompts/*.md"] },
       }),
@@ -129,7 +129,7 @@ afterEach(async () => {
 
 describe("P03 git package transport", () => {
   it("clones both scopes, keeps pinned refs fixed, updates a branch, and reconciles a new ref", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-"));
     temporaryDirectories.push(root);
     const agentDir = join(root, "home", ".pi", "agent");
     const cwd = join(root, "project");
@@ -142,9 +142,9 @@ describe("P03 git package transport", () => {
     const globalFixture = await createGitPackage(root, remoteRoot, "global");
     const projectFixture = await createGitPackage(root, remoteRoot, "project");
     const port = await startGitServer(remoteRoot);
-    const globalV1 = `http://127.0.0.1:${port}/pix/global.git@v1`;
-    const globalV2 = `http://127.0.0.1:${port}/pix/global.git@v2`;
-    const projectMain = `http://127.0.0.1:${port}/pix/project.git`;
+    const globalV1 = `http://127.0.0.1:${port}/zeno/global.git@v1`;
+    const globalV2 = `http://127.0.0.1:${port}/zeno/global.git@v2`;
+    const projectMain = `http://127.0.0.1:${port}/zeno/project.git`;
 
     const settings = SettingsManager.create(cwd, agentDir, { projectTrusted: true });
     const manager = new DefaultPackageManager({ cwd, agentDir, settingsManager: settings });
@@ -200,7 +200,7 @@ describe("P03 git package transport", () => {
   }, 60_000);
 
   it("recovers a retained clone after an injected dependency-install failure", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-git-dependency-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-git-dependency-"));
     temporaryDirectories.push(root);
     const agentDir = join(root, "home", ".pi", "agent");
     const cwd = join(root, "project");
@@ -212,7 +212,7 @@ describe("P03 git package transport", () => {
     ]);
     await createGitPackage(root, remoteRoot, "dependency", true);
     const port = await startGitServer(remoteRoot);
-    const source = `http://127.0.0.1:${port}/pix/dependency.git@v1`;
+    const source = `http://127.0.0.1:${port}/zeno/dependency.git@v1`;
 
     const wrapperDirectory = join(root, "bin");
     const wrapper = join(wrapperDirectory, "npm-wrapper.mjs");

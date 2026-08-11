@@ -19,7 +19,7 @@ afterEach(async () => {
 
 describe("P06/U06 extension load failure", () => {
   it("keeps the runtime alive, reports a diagnostic, and preserves other resources", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-pkg-extension-load-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-pkg-extension-load-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -33,7 +33,7 @@ describe("P06/U06 extension load failure", () => {
     await Promise.all([
       writeFile(
         join(agentDir, "extensions", "broken.ts"),
-        'throw new Error("pix-pkg-extension-load-failure");\nexport default () => undefined;\n',
+        'throw new Error("zeno-pkg-extension-load-failure");\nexport default () => undefined;\n',
       ),
       writeFile(join(agentDir, "prompts", "still-available.md"), "Still available.\n"),
     ]);

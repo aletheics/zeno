@@ -338,11 +338,11 @@ function savePref(key: string, value: string): void {
 }
 
 function loadLocale(): Locale {
-  return loadPref("pix.locale", (raw) => (isLocale(raw) ? raw : undefined), DEFAULT_LOCALE);
+  return loadPref("zeno.locale", (raw) => (isLocale(raw) ? raw : undefined), DEFAULT_LOCALE);
 }
 
 function loadThemePreference(): ThemePreference {
-  return loadPref("pix.colorMode", (raw) => (isThemePreference(raw) ? raw : undefined), "system");
+  return loadPref("zeno.colorMode", (raw) => (isThemePreference(raw) ? raw : undefined), "system");
 }
 
 function themeState(preference: ThemePreference): {
@@ -360,7 +360,7 @@ function themeState(preference: ThemePreference): {
 
 function loadSidebarCollapsed(): boolean {
   return loadPref(
-    "pix.sidebarCollapsed",
+    "zeno.sidebarCollapsed",
     (raw) => (raw === "1" ? true : raw === "0" ? false : undefined),
     false,
   );
@@ -368,7 +368,7 @@ function loadSidebarCollapsed(): boolean {
 
 function loadSidebarWidth(): number {
   return loadPref(
-    "pix.sidebarWidth",
+    "zeno.sidebarWidth",
     (raw) => {
       const n = Number(raw);
       return Number.isFinite(n) ? clampSidebarWidth(n) : undefined;
@@ -379,7 +379,7 @@ function loadSidebarWidth(): number {
 
 function loadSidebarTranslucent(): boolean {
   return loadPref(
-    "pix.sidebarTranslucent",
+    "zeno.sidebarTranslucent",
     (raw) => (raw === "0" ? false : raw === "1" ? true : undefined),
     SIDEBAR_DEFAULT_TRANSLUCENT,
   );
@@ -666,7 +666,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
       sidebarOpen: typeof open === "function" ? open(state.sidebarOpen) : open,
     })),
   setSidebarCollapsed: (sidebarCollapsed) => {
-    savePref("pix.sidebarCollapsed", sidebarCollapsed ? "1" : "0");
+    savePref("zeno.sidebarCollapsed", sidebarCollapsed ? "1" : "0");
     set({ sidebarCollapsed });
   },
   toggleSidebarCollapsed: () => {
@@ -675,15 +675,15 @@ export const useShellStore = create<ShellState>((set, get) => ({
   },
   setSidebarWidthPx: (px) => {
     const sidebarWidthPx = clampSidebarWidth(px);
-    savePref("pix.sidebarWidth", String(sidebarWidthPx));
+    savePref("zeno.sidebarWidth", String(sidebarWidthPx));
     set({ sidebarWidthPx });
   },
   setSidebarTranslucent: (sidebarTranslucent) => {
-    savePref("pix.sidebarTranslucent", sidebarTranslucent ? "1" : "0");
+    savePref("zeno.sidebarTranslucent", sidebarTranslucent ? "1" : "0");
     set({ sidebarTranslucent });
   },
   setLocale: (locale) => {
-    savePref("pix.locale", locale);
+    savePref("zeno.locale", locale);
     set({ locale });
   },
   setSettingsSection: (settingsSection) => set({ settingsSection }),
@@ -719,7 +719,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   setResources: (resources) => set({ resources }),
   setEcoLoading: (ecoLoading) => set({ ecoLoading }),
   setThemePreference: (preference) => {
-    savePref("pix.colorMode", preference);
+    savePref("zeno.colorMode", preference);
     set(themeState(preference));
   },
   setThemeSelection: (selection) => {

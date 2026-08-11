@@ -24,7 +24,7 @@ export function createPortableTheme() {
   const pass = (text: string) => text;
   const wrap = (_color: string, text: string) => text;
   return {
-    name: "pix-portable",
+    name: "zeno-portable",
     fg: wrap,
     bg: wrap,
     bold: pass,

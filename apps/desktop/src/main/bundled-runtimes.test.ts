@@ -36,7 +36,7 @@ function makeRuntimeTree(): {
   nodeBinDir: string;
   pyBinDir: string;
 } {
-  const root = mkdtempSync(join(tmpdir(), "pix-bundled-rt-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-bundled-rt-"));
   const nodeBinDir = join(root, "node", "bin");
   const pyBinDir = join(root, "python", "bin");
   mkdirSync(nodeBinDir, { recursive: true });
@@ -109,12 +109,12 @@ describe("bundled runtime path helpers", () => {
   });
 
   it("returns undefined roots when neither node nor python dir exists", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-bundled-empty-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-bundled-empty-"));
     expect(resolveBundledRuntimeRoots({ explicitRoot: root })).toBeUndefined();
   });
 
   it("accepts node-only layout", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-bundled-node-only-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-bundled-node-only-"));
     const nodeBinDir = join(root, "node", "bin");
     mkdirSync(nodeBinDir, { recursive: true });
     const nodePath = join(nodeBinDir, process.platform === "win32" ? "node.exe" : "node");
@@ -181,14 +181,14 @@ describe("configureBundledRuntimes process-wide active config", () => {
 describe("prefs gate isolation env and process apply", () => {
   it("isolationEnvForPrefs only includes keys for enabled runtimes", () => {
     const isolation = {
-      npmPrefix: "/tmp/pix-npm-prefix",
-      pythonVenv: "/tmp/pix-py-venv",
+      npmPrefix: "/tmp/zeno-npm-prefix",
+      pythonVenv: "/tmp/zeno-py-venv",
     };
     expect(
       isolationEnvForPrefs(isolation, { useBundledNode: true, useBundledPython: false }),
     ).toEqual({
-      NPM_CONFIG_PREFIX: "/tmp/pix-npm-prefix",
-      npm_config_prefix: "/tmp/pix-npm-prefix",
+      NPM_CONFIG_PREFIX: "/tmp/zeno-npm-prefix",
+      npm_config_prefix: "/tmp/zeno-npm-prefix",
     });
     expect(
       isolationEnvForPrefs(isolation, { useBundledNode: false, useBundledPython: false }),

@@ -87,7 +87,7 @@ describe("U03 Extension UI reload cleanup", () => {
   });
 
   it("clears pending UI through session.reload without killing the runtime", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-ext-reload-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-ext-reload-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -218,7 +218,7 @@ describe("U05 generic custom renderers", () => {
   });
 
   it("projects custom messages from a live extension without executing renderers", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-ext-render-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-ext-render-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -233,26 +233,26 @@ describe("U05 generic custom renderers", () => {
       `export default function (pi: any) {
   let messageRendererCalls = 0;
   let entryRendererCalls = 0;
-  pi.registerMessageRenderer("pix-u05", () => {
+  pi.registerMessageRenderer("zeno-u05", () => {
     messageRendererCalls += 1;
     throw new Error("message renderer must not run");
   });
-  pi.registerEntryRenderer("pix-ext-entry", () => {
+  pi.registerEntryRenderer("zeno-ext-entry", () => {
     entryRendererCalls += 1;
     throw new Error("entry renderer must not run");
   });
   pi.registerCommand("probe-emit", {
     description: "Emit custom message/entry for generic fallback",
     handler: async () => {
-      pi.appendEntry("pix-ext-entry", { note: "entry-data" });
+      pi.appendEntry("zeno-ext-entry", { note: "entry-data" });
       pi.sendMessage({
-        customType: "pix-u05",
+        customType: "zeno-u05",
         content: "visible custom message",
         display: true,
         details: { level: "info" },
       });
       pi.sendMessage({
-        customType: "pix-ext-hidden",
+        customType: "zeno-ext-hidden",
         content: "hidden",
         display: false,
       });
@@ -280,14 +280,14 @@ describe("U05 generic custom renderers", () => {
     expect(stderr).toBe("");
     expect(result.visible).toMatchObject({
       kind: "custom.message",
-      customType: "pix-u05",
+      customType: "zeno-u05",
       content: "visible custom message",
       display: true,
     });
     expect(result.hidden).toBeNull();
     expect(result.entry).toMatchObject({
       kind: "custom.entry",
-      customType: "pix-ext-entry",
+      customType: "zeno-ext-entry",
       data: { note: "entry-data" },
     });
     expect(result.rendererCounts.messageRendererCalls).toBe(0);
@@ -298,7 +298,7 @@ describe("U05 generic custom renderers", () => {
 
 describe("U06 Extension runtime errors", () => {
   it("records event/tool/command/UI callback errors without terminating the runtime", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-ext-errors-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-ext-errors-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -316,13 +316,13 @@ describe("U06 Extension runtime errors", () => {
 export default function (pi: any) {
   pi.on("session_start", async (event: any) => {
     if (event?.reason === "startup") {
-      throw new Error("pix-ext-event-handler-error");
+      throw new Error("zeno-ext-event-handler-error");
     }
   });
   pi.registerCommand("probe-boom", {
     description: "Throw from command handler",
     handler: async () => {
-      throw new Error("pix-ext-command-error");
+      throw new Error("zeno-ext-command-error");
     },
   });
   pi.registerTool({
@@ -331,7 +331,7 @@ export default function (pi: any) {
     description: "Throw from tool execute",
     parameters: Type.Object({}),
     async execute() {
-      throw new Error("pix-ext-tool-error");
+      throw new Error("zeno-ext-tool-error");
     },
   });
   pi.on("agent_start", async (_event: unknown, ctx: any) => {
@@ -365,10 +365,10 @@ export default function (pi: any) {
     expect(result.alive).toBe(true);
     expect(result.snapshot.runtimeId).toBeTruthy();
     const messages = result.diagnostics.map((item) => item.message).join("\n");
-    expect(messages).toContain("pix-ext-event-handler-error");
-    expect(messages).toContain("pix-ext-command-error");
+    expect(messages).toContain("zeno-ext-event-handler-error");
+    expect(messages).toContain("zeno-ext-command-error");
     expect(result.toolIsError).toBe(true);
-    expect(result.toolOutput.toLowerCase()).toContain("pix-ext-tool-error");
+    expect(result.toolOutput.toLowerCase()).toContain("zeno-ext-tool-error");
     expect(result.uiCallbackError).toBe(true);
     expect(JSON.stringify(result.diagnostics)).not.toContain(home);
   }, 50_000);

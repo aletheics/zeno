@@ -14,27 +14,27 @@ describe("shouldAutoInstallPiCli", () => {
   });
 
   it("stays off for isolated / fixture / explicit skip", () => {
-    expect(shouldAutoInstallPiCli({ PIX_ISOLATED: "1" })).toBe(false);
-    expect(shouldAutoInstallPiCli({ PIX_SKIP_PI_INSTALL: "1" })).toBe(false);
-    expect(shouldAutoInstallPiCli({ PIX_WORKSPACE: "D:/tmp/fixture" })).toBe(false);
+    expect(shouldAutoInstallPiCli({ ZENO_ISOLATED: "1" })).toBe(false);
+    expect(shouldAutoInstallPiCli({ ZENO_SKIP_PI_INSTALL: "1" })).toBe(false);
+    expect(shouldAutoInstallPiCli({ ZENO_WORKSPACE: "D:/tmp/fixture" })).toBe(false);
     expect(
       shouldAutoInstallPiCli({
         PI_CODING_AGENT_DIR: "D:/tmp/agent",
-        PIX_ENABLE_TEST_COMMANDS: "1",
+        ZENO_ENABLE_TEST_COMMANDS: "1",
       }),
     ).toBe(false);
   });
 
-  it("only enables when PIX_FORCE_PI_INSTALL is set", () => {
-    expect(shouldAutoInstallPiCli({ PIX_FORCE_PI_INSTALL: "1" })).toBe(true);
-    expect(shouldAutoInstallPiCli({ PIX_FORCE_PI_INSTALL: "true" })).toBe(true);
+  it("only enables when ZENO_FORCE_PI_INSTALL is set", () => {
+    expect(shouldAutoInstallPiCli({ ZENO_FORCE_PI_INSTALL: "1" })).toBe(true);
+    expect(shouldAutoInstallPiCli({ ZENO_FORCE_PI_INSTALL: "true" })).toBe(true);
   });
 
   it("FORCE does not override explicit skip", () => {
     expect(
       shouldAutoInstallPiCli({
-        PIX_FORCE_PI_INSTALL: "1",
-        PIX_SKIP_PI_INSTALL: "1",
+        ZENO_FORCE_PI_INSTALL: "1",
+        ZENO_SKIP_PI_INSTALL: "1",
       }),
     ).toBe(false);
   });
@@ -43,11 +43,11 @@ describe("shouldAutoInstallPiCli", () => {
 describe("isProjectLocalPiPath", () => {
   it("rejects monorepo node_modules/.bin and .pnpm package paths", () => {
     expect(
-      isProjectLocalPiPath("/Users/c/Documents/github/pix/apps/desktop/node_modules/.bin/pi"),
+      isProjectLocalPiPath("/Users/c/Documents/github/zeno/apps/desktop/node_modules/.bin/pi"),
     ).toBe(true);
     expect(
       isProjectLocalPiPath(
-        "/Users/c/Documents/github/pix/node_modules/.pnpm/@earendil-works+pi-coding-agent@0.80.10/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+        "/Users/c/Documents/github/zeno/node_modules/.pnpm/@earendil-works+pi-coding-agent@0.80.10/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
       ),
     ).toBe(true);
   });
@@ -70,7 +70,7 @@ describe("isProjectLocalPiPath", () => {
 
 describe("detectPiCli", () => {
   it("finds pi under ~/.vite-plus/bin even when PATH is GUI-minimal", async () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-detect-pi-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-detect-pi-"));
     const bin = join(root, ".vite-plus", "bin");
     mkdirSync(bin, { recursive: true });
     const piPath = join(bin, "pi");
@@ -86,7 +86,7 @@ describe("detectPiCli", () => {
 
   it("finds pi under /opt/homebrew-style path via candidate scan when present", async () => {
     // Use a fake home with .local/bin (always scannable); avoid depending on real /opt/homebrew.
-    const root = mkdtempSync(join(tmpdir(), "pix-detect-local-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-detect-local-"));
     const bin = join(root, ".local", "bin");
     mkdirSync(bin, { recursive: true });
     const piPath = join(bin, "pi");
@@ -101,7 +101,7 @@ describe("detectPiCli", () => {
   });
 
   it("ignores project node_modules/.bin even when first on PATH", async () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-detect-proj-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-detect-proj-"));
     const projBin = join(root, "apps", "desktop", "node_modules", ".bin");
     mkdirSync(projBin, { recursive: true });
     const localPi = join(projBin, "pi");

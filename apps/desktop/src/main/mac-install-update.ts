@@ -57,8 +57,8 @@ export function findAppBundleInDir(extractDir: string): string | null {
   if (apps.length === 1) return apps[0]!;
   if (apps.length > 1) {
     // Prefer the product name when multiple helpers exist at top level (unlikely in our zips).
-    const pix = apps.find((path) => basename(path).toLowerCase() === "pix.app");
-    return pix ?? apps[0]!;
+    const zeno = apps.find((path) => basename(path).toLowerCase() === "zeno.app");
+    return zeno ?? apps[0]!;
   }
   // One more level (some tools wrap in a folder).
   for (const name of entries) {
@@ -73,8 +73,8 @@ export function findAppBundleInDir(extractDir: string): string | null {
       .filter((path) => isAppBundlePath(path));
     if (nested.length === 1) return nested[0]!;
     if (nested.length > 1) {
-      const pix = nested.find((path) => basename(path).toLowerCase() === "pix.app");
-      return pix ?? nested[0]!;
+      const zeno = nested.find((path) => basename(path).toLowerCase() === "zeno.app");
+      return zeno ?? nested[0]!;
     }
   }
   return null;
@@ -104,8 +104,8 @@ export async function installMacUpdateFromZip(options: MacInstallUpdateOptions):
   }
 
   const parentDir = dirname(appBundlePath);
-  const extractDir = mkdtempSync(join(tmpdir(), "pix-update-extract-"));
-  const backupDir = mkdtempSync(join(tmpdir(), "pix-update-backup-"));
+  const extractDir = mkdtempSync(join(tmpdir(), "zeno-update-extract-"));
+  const backupDir = mkdtempSync(join(tmpdir(), "zeno-update-backup-"));
   const backupPath = join(backupDir, basename(appBundlePath));
 
   try {

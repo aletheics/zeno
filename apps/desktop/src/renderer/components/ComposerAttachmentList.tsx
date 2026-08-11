@@ -63,7 +63,7 @@ function useAttachmentPreviews(paths: string[]): Record<string, string> {
       const entries = await Promise.all(
         imagePaths.map(async (path) => {
           try {
-            const url = await window.pix.workspace.readAttachmentPreview(path);
+            const url = await window.zeno.workspace.readAttachmentPreview(path);
             return url ? ([path, url] as const) : undefined;
           } catch {
             return undefined;

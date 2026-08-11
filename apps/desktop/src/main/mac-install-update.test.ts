@@ -19,7 +19,7 @@ describe("resolveMacAppBundlePath", () => {
 
 describe("findAppBundleInDir", () => {
   it("finds a root-level .app", () => {
-    const dir = mkdtempSync(join(tmpdir(), "pix-find-app-"));
+    const dir = mkdtempSync(join(tmpdir(), "zeno-find-app-"));
     try {
       const app = join(dir, "Zeno.app");
       mkdirSync(join(app, "Contents"), { recursive: true });
@@ -31,7 +31,7 @@ describe("findAppBundleInDir", () => {
   });
 
   it("finds a nested .app one level down", () => {
-    const dir = mkdtempSync(join(tmpdir(), "pix-find-app-nested-"));
+    const dir = mkdtempSync(join(tmpdir(), "zeno-find-app-nested-"));
     try {
       const wrap = join(dir, "wrap");
       const app = join(wrap, "Zeno.app");
@@ -45,7 +45,7 @@ describe("findAppBundleInDir", () => {
 
 describe("installMacUpdateFromZip", () => {
   it("swaps the app bundle via ditto extract + rename", async () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-mac-install-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-mac-install-"));
     try {
       const zipPath = join(root, "update.zip");
       writeFileSync(zipPath, "fake-zip");
@@ -86,7 +86,7 @@ describe("installMacUpdateFromZip", () => {
   it("rejects missing zip", async () => {
     await expect(
       installMacUpdateFromZip({
-        zipPath: "/tmp/pix-missing-update.zip",
+        zipPath: "/tmp/zeno-missing-update.zip",
         appBundlePath: "/Applications/Zeno.app",
         run: async () => undefined,
       }),

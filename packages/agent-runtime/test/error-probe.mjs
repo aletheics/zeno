@@ -18,13 +18,13 @@ await writeFile(
   join(agentDir, "models.json"),
   JSON.stringify({
     providers: {
-      "pix-fake": {
+      "zeno-fake": {
         baseUrl: server.baseUrl,
         apiKey: "test-key-not-secret",
         api: "openai-completions",
         models: [
           {
-            id: "pix-fake",
+            id: "zeno-fake",
             name: "Zeno Fake Model",
             reasoning: false,
             input: ["text"],
@@ -43,12 +43,12 @@ let uiThrew = false;
 const handle = await createPixRuntime({
   cwd: project,
   agentDir,
-  model: { provider: "pix-fake", id: "pix-fake" },
+  model: { provider: "zeno-fake", id: "zeno-fake" },
   tools: ["u06_boom_tool"],
   onExtensionUiRequest: (request) => {
     if (request.method === "notify") {
       uiThrew = true;
-      throw new Error("pix-ext-ui-callback-error");
+      throw new Error("zeno-ext-ui-callback-error");
     }
   },
 });
@@ -88,10 +88,10 @@ try {
       alive: true,
       diagnostics: snapshot.diagnostics,
       toolIsError,
-      toolOutput: toolOutput.includes("pix-ext-tool-error")
+      toolOutput: toolOutput.includes("zeno-ext-tool-error")
         ? toolOutput
         : `${toolOutput}\n${diagnosticsText}`,
-      uiCallbackError: uiThrew || diagnosticsText.includes("pix-ext-ui-callback-error"),
+      uiCallbackError: uiThrew || diagnosticsText.includes("zeno-ext-ui-callback-error"),
       snapshot,
     })}\n`,
   );

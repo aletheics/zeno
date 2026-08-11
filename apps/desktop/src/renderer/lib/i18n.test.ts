@@ -9,7 +9,7 @@ describe("i18n", () => {
   });
 
   it("interpolates variables and validates locales", () => {
-    expect(t("zh", "empty.title", { name: "pix" })).toBe("我们应该在 pix 中构建什么？");
+    expect(t("zh", "empty.title", { name: "zeno" })).toBe("我们应该在 zeno 中构建什么？");
     expect(t("zh", "empty.titleNoWorkspace")).toBe("打开工作区以开始");
     expect(isLocale("zh")).toBe(true);
     expect(isLocale("fr")).toBe(false);

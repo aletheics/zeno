@@ -469,17 +469,17 @@ export function ensureNodePtySpawnHelperExecutable(
       .replaceAll("app.asar", "app.asar.unpacked")
       .replaceAll("node_modules.asar", "node_modules.asar.unpacked");
     if (!existsSync(helperPath)) {
-      console.warn("[pix] node-pty spawn-helper missing:", helperPath);
+      console.warn("[zeno] node-pty spawn-helper missing:", helperPath);
       return undefined;
     }
     const mode = statSync(helperPath).mode;
     if ((mode & 0o111) === 0) {
       chmodSync(helperPath, mode | 0o755);
-      console.log("[pix] restored execute bit on node-pty spawn-helper:", helperPath);
+      console.log("[zeno] restored execute bit on node-pty spawn-helper:", helperPath);
     }
     return helperPath;
   } catch (error) {
-    console.warn("[pix] ensureNodePtySpawnHelperExecutable failed:", error);
+    console.warn("[zeno] ensureNodePtySpawnHelperExecutable failed:", error);
     return undefined;
   }
 }

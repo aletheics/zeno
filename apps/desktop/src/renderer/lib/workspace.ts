@@ -24,14 +24,14 @@ export function isEphemeralWorkspacePath(path: string): boolean {
   return (
     normalized.includes("/tmp/") ||
     normalized.includes("/var/folders/") ||
-    normalized.includes("/pix-e2e-") ||
-    normalized.includes("/pix-fake-") ||
-    normalized.includes("/pix-test-") ||
-    normalized.includes("/pix-p0") ||
+    normalized.includes("/zeno-e2e-") ||
+    normalized.includes("/zeno-fake-") ||
+    normalized.includes("/zeno-test-") ||
+    normalized.includes("/zeno-p0") ||
     normalized.includes("/fork-probe") ||
     normalized.includes("/recent-ws-") ||
     normalized.includes("/other-workspace") ||
-    /\/t\/pix-/.test(normalized)
+    /\/t\/zeno-/.test(normalized)
   );
 }
 

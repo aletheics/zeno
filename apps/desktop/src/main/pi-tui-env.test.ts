@@ -50,7 +50,7 @@ describe("pi-tui-env", () => {
   });
 
   it("sets NODE_BINARY and prepends bundled node bin when runtimes are active", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-tui-bundled-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-tui-bundled-"));
     const nodeBinDir = join(root, "node", "bin");
     mkdirSync(nodeBinDir, { recursive: true });
     const nodePath = join(nodeBinDir, process.platform === "win32" ? "node.exe" : "node");
@@ -74,7 +74,7 @@ describe("pi-tui-env", () => {
   });
 
   it("does not set NODE_BINARY when bundled node is disabled", () => {
-    const root = mkdtempSync(join(tmpdir(), "pix-tui-bundled-off-"));
+    const root = mkdtempSync(join(tmpdir(), "zeno-tui-bundled-off-"));
     const nodeBinDir = join(root, "node", "bin");
     mkdirSync(nodeBinDir, { recursive: true });
     writeFileSync(join(nodeBinDir, "node"), "#!/bin/sh\n", { mode: 0o755 });

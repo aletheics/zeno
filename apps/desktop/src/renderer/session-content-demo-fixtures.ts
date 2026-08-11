@@ -17,7 +17,7 @@ import type { TimelineItem } from "./lib/timeline.ts";
 const iso = (sec: number) => new Date(Date.UTC(2026, 6, 27, 10, 0, sec)).toISOString();
 
 /** Workspace for file-link / media path resolution (demo stub + product workspacePath). */
-export const DEMO_WORKSPACE = "/work/pix-demo-project";
+export const DEMO_WORKSPACE = "/work/zeno-demo-project";
 
 /** Every recognized extension plus folder and unknown-file fallbacks. */
 export const DEMO_USER_ATTACHMENT_PATHS = [

@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
-import { PIX_SESSION_DIR_ENV, createPixRuntime, resolvePixSessionDir } from "../src/index.ts";
+import { ZENO_SESSION_DIR_ENV, createPixRuntime, resolvePixSessionDir } from "../src/index.ts";
 import { SessionManager, SettingsManager } from "@earendil-works/pi-coding-agent";
 
 const temporaryDirectories: string[] = [];
@@ -40,7 +40,7 @@ afterEach(async () => {
 
 describe("C04 invalid settings/models/auth", () => {
   it("keeps host alive, preserves broken file bytes, and recovers after repair", async () => {
-    const paths = await fixture("pix-test-");
+    const paths = await fixture("zeno-test-");
     const settingsPath = join(paths.agentDir, "settings.json");
     const modelsPath = join(paths.agentDir, "models.json");
     const authPath = join(paths.agentDir, "auth.json");
@@ -86,13 +86,13 @@ describe("C04 invalid settings/models/auth", () => {
         modelsPath,
         `${JSON.stringify({
           providers: {
-            "pix-fake": {
+            "zeno-fake": {
               baseUrl: "http://127.0.0.1:9/v1",
               apiKey: "test",
               api: "openai-completions",
               models: [
                 {
-                  id: "pix-fake",
+                  id: "zeno-fake",
                   name: "Zeno",
                   reasoning: false,
                   input: ["text"],
@@ -111,7 +111,7 @@ describe("C04 invalid settings/models/auth", () => {
     const recovered = await createPixRuntime({
       cwd: paths.cwd,
       agentDir: paths.agentDir,
-      model: { provider: "pix-fake", id: "pix-fake" },
+      model: { provider: "zeno-fake", id: "zeno-fake" },
     });
     try {
       const snapshot = recovered.snapshot();
@@ -119,8 +119,8 @@ describe("C04 invalid settings/models/auth", () => {
       expect(messages.toLowerCase()).not.toMatch(/settings .*failed/);
       expect(messages.toLowerCase()).not.toMatch(/models failed/);
       expect(snapshot.model).toEqual({
-        provider: "pix-fake",
-        id: "pix-fake",
+        provider: "zeno-fake",
+        id: "zeno-fake",
         api: "openai-completions",
         reasoning: false,
       });
@@ -133,7 +133,7 @@ describe("C04 invalid settings/models/auth", () => {
 
 describe("C05 external settings changes", () => {
   it("reloads atomic rename and in-place writes without rewriting the file", async () => {
-    const paths = await fixture("pix-test-");
+    const paths = await fixture("zeno-test-");
     const settingsPath = join(paths.agentDir, "settings.json");
     await writeFile(settingsPath, `${JSON.stringify({ theme: "light", keep: true }, null, 2)}\n`);
 
@@ -176,7 +176,7 @@ describe("C05 external settings changes", () => {
 
 describe("C06 desktop state deletion isolation", () => {
   it("does not store agent config in userData and survives userData deletion", async () => {
-    const paths = await fixture("pix-test-");
+    const paths = await fixture("zeno-test-");
     const settingsPath = join(paths.agentDir, "settings.json");
     await writeFile(
       settingsPath,
@@ -206,7 +206,7 @@ describe("C06 desktop state deletion isolation", () => {
 
 describe("C07 session dir precedence", () => {
   it("resolves explicit > env > settings > default and persists under the winner", async () => {
-    const paths = await fixture("pix-test-");
+    const paths = await fixture("zeno-test-");
     const settingsDir = join(paths.root, "from-settings");
     const envDir = join(paths.root, "from-env");
     const explicitDir = join(paths.root, "from-explicit");
@@ -230,7 +230,7 @@ describe("C07 session dir precedence", () => {
       resolvePixSessionDir({
         cwd: paths.cwd,
         agentDir: paths.agentDir,
-        env: { [PIX_SESSION_DIR_ENV]: envDir },
+        env: { [ZENO_SESSION_DIR_ENV]: envDir },
       }),
     ).toMatchObject({ source: "env", sessionDir: envDir });
 
@@ -239,7 +239,7 @@ describe("C07 session dir precedence", () => {
         cwd: paths.cwd,
         agentDir: paths.agentDir,
         explicit: explicitDir,
-        env: { [PIX_SESSION_DIR_ENV]: envDir },
+        env: { [ZENO_SESSION_DIR_ENV]: envDir },
       }),
     ).toMatchObject({ source: "explicit", sessionDir: explicitDir });
 
@@ -250,8 +250,8 @@ describe("C07 session dir precedence", () => {
       persistSession: true,
     });
     // Temporarily inject env by resolving with process.env — set then restore.
-    const previous = process.env[PIX_SESSION_DIR_ENV];
-    process.env[PIX_SESSION_DIR_ENV] = envDir;
+    const previous = process.env[ZENO_SESSION_DIR_ENV];
+    process.env[ZENO_SESSION_DIR_ENV] = envDir;
     try {
       await envHandle.dispose();
       const handle = await createPixRuntime({
@@ -267,8 +267,8 @@ describe("C07 session dir precedence", () => {
         await handle.dispose();
       }
     } finally {
-      if (previous === undefined) delete process.env[PIX_SESSION_DIR_ENV];
-      else process.env[PIX_SESSION_DIR_ENV] = previous;
+      if (previous === undefined) delete process.env[ZENO_SESSION_DIR_ENV];
+      else process.env[ZENO_SESSION_DIR_ENV] = previous;
     }
 
     // Explicit test option (must not be used by product normal path).

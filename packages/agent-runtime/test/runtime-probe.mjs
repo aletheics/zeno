@@ -14,13 +14,13 @@ await writeFile(
   join(agentDir, "models.json"),
   JSON.stringify({
     providers: {
-      "pix-fake": {
+      "zeno-fake": {
         baseUrl: server.baseUrl,
         apiKey: "test-key-not-secret",
         api: "openai-completions",
         models: [
           {
-            id: "pix-fake",
+            id: "zeno-fake",
             name: "Zeno Fake Model",
             reasoning: false,
             input: ["text"],
@@ -38,7 +38,7 @@ await writeFile(
 const handle = await createPixRuntime({
   cwd: project,
   agentDir,
-  model: { provider: "pix-fake", id: "pix-fake" },
+  model: { provider: "zeno-fake", id: "zeno-fake" },
   tools: ["read"],
 });
 

@@ -111,8 +111,8 @@ export function ThreadHeader(props: {
       setPinnedIds(loadPinnedThreads());
       setAliases(loadThreadAliases());
     };
-    window.addEventListener("pix-thread-prefs", sync);
-    return () => window.removeEventListener("pix-thread-prefs", sync);
+    window.addEventListener("zeno-thread-prefs", sync);
+    return () => window.removeEventListener("zeno-thread-prefs", sync);
   }, []);
 
   function closeMenu() {

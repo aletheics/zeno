@@ -99,7 +99,7 @@ export {
 } from "./models-json.ts";
 export { normalizeProviderBaseUrl } from "./provider-base-url.ts";
 export {
-  PIX_SESSION_DIR_ENV,
+  ZENO_SESSION_DIR_ENV,
   resolvePixSessionDir,
   type ResolvedPixSessionDir,
   type ResolvePixSessionDirOptions,
@@ -208,7 +208,7 @@ export function resolveGitHubCliCommand(
   return "gh";
 }
 
-export interface CreatePixRuntimeOptions {
+export interface CreateZenoRuntimeOptions {
   cwd: string;
   /**
    * Defaults to pi `getAgentDir()` (`~/.pi/agent` or `PI_CODING_AGENT_DIR`).
@@ -245,7 +245,7 @@ export interface CreatePixRuntimeOptions {
   onExtensionUiRequest?: (request: ExtensionUiRequestEvent) => void;
 }
 
-export interface PixRuntimeHandle {
+export interface ZenoRuntimeHandle {
   readonly runtimeId: string;
   readonly runtime: AgentSessionRuntime;
   readonly sessionDirSource: ReturnType<typeof resolvePixSessionDir>["source"];
@@ -1485,8 +1485,8 @@ function createSnapshot(
 }
 
 export async function createPixRuntime(
-  options: CreatePixRuntimeOptions,
-): Promise<PixRuntimeHandle> {
+  options: CreateZenoRuntimeOptions,
+): Promise<ZenoRuntimeHandle> {
   const agentDir = options.agentDir ?? getAgentDir();
   const projectTrusted =
     options.projectTrusted ?? resolvePixProjectTrust(options.cwd, agentDir).trusted;
@@ -2039,7 +2039,7 @@ export async function createPixRuntime(
     },
     async shareSession() {
       // Same strategy as pi interactive `/share`: export HTML → `gh gist create --public=false`.
-      const dir = await mkdtemp(join(tmpdir(), "pix-share-"));
+      const dir = await mkdtemp(join(tmpdir(), "zeno-share-"));
       const htmlPath = join(dir, "session.html");
       try {
         await runtime.session.exportToHtml(htmlPath);
@@ -2184,14 +2184,14 @@ export async function createPixRuntime(
 }
 
 /** Zeno product default: 60 minutes (pi upstream default is 5 minutes / 300_000). */
-export const PIX_DEFAULT_HTTP_IDLE_TIMEOUT_MS = 3_600_000;
+export const ZENO_DEFAULT_HTTP_IDLE_TIMEOUT_MS = 3_600_000;
 
 /**
  * Zeno product defaults for network/telemetry when the user never set them.
  * pi defaults enableInstallTelemetry to true; Zeno keeps both reporting switches off.
  */
-export const PIX_DEFAULT_ENABLE_INSTALL_TELEMETRY = false;
-export const PIX_DEFAULT_ENABLE_ANALYTICS = false;
+export const ZENO_DEFAULT_ENABLE_INSTALL_TELEMETRY = false;
+export const ZENO_DEFAULT_ENABLE_ANALYTICS = false;
 
 function resolveSettingsModel(
   services: AgentSessionServices,
@@ -2221,21 +2221,21 @@ function projectPiSettings(
   };
   if (globalSnap.httpIdleTimeoutMs === undefined || globalSnap.httpIdleTimeoutMs === null) {
     try {
-      sm.setHttpIdleTimeoutMs(PIX_DEFAULT_HTTP_IDLE_TIMEOUT_MS);
+      sm.setHttpIdleTimeoutMs(ZENO_DEFAULT_HTTP_IDLE_TIMEOUT_MS);
     } catch {
       // Ignore if SettingsManager rejects (should not for a valid ms value).
     }
   }
   if (globalSnap.enableInstallTelemetry === undefined) {
     try {
-      sm.setEnableInstallTelemetry(PIX_DEFAULT_ENABLE_INSTALL_TELEMETRY);
+      sm.setEnableInstallTelemetry(ZENO_DEFAULT_ENABLE_INSTALL_TELEMETRY);
     } catch {
       // Ignore write failures (settings may be read-only in tests).
     }
   }
   if (globalSnap.enableAnalytics === undefined) {
     try {
-      sm.setEnableAnalytics(PIX_DEFAULT_ENABLE_ANALYTICS);
+      sm.setEnableAnalytics(ZENO_DEFAULT_ENABLE_ANALYTICS);
     } catch {
       // Ignore write failures (settings may be read-only in tests).
     }

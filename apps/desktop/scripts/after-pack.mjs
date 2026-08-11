@@ -78,27 +78,27 @@ export function writeAppUpdateYml(context) {
   const publishRaw = context.packager?.config?.publish;
   const publish = Array.isArray(publishRaw) ? publishRaw[0] : publishRaw;
   if (publish == null || typeof publish !== "object") {
-    console.warn("[pix afterPack] skip app-update.yml: no publish config");
+    console.warn("[zeno afterPack] skip app-update.yml: no publish config");
     return false;
   }
   if (typeof publish.provider !== "string" || publish.provider.length === 0) {
-    console.warn("[pix afterPack] skip app-update.yml: publish.provider missing");
+    console.warn("[zeno afterPack] skip app-update.yml: publish.provider missing");
     return false;
   }
 
   const resourcesDir = resolveResourcesDir(context);
   if (!existsSync(resourcesDir)) {
-    console.warn(`[pix afterPack] skip app-update.yml: resources dir missing (${resourcesDir})`);
+    console.warn(`[zeno afterPack] skip app-update.yml: resources dir missing (${resourcesDir})`);
     return false;
   }
 
   const updaterCacheDirName =
     context.packager?.appInfo?.updaterCacheDirName ??
-    `${context.packager?.appInfo?.name ?? "pix"}-updater`;
+    `${context.packager?.appInfo?.name ?? "zeno"}-updater`;
 
   const dest = join(resourcesDir, "app-update.yml");
   writeFileSync(dest, serializeAppUpdateYml(publish, updaterCacheDirName), "utf8");
-  console.log(`[pix afterPack] wrote ${dest}`);
+  console.log(`[zeno afterPack] wrote ${dest}`);
   return true;
 }
 
@@ -123,10 +123,10 @@ export default async function afterPack(context) {
     runtimeFixed += chmodRuntimeBins(join(root, "runtimes"));
   }
   if (fixed > 0) {
-    console.log(`[pix afterPack] chmod +x on ${fixed} spawn-helper file(s)`);
+    console.log(`[zeno afterPack] chmod +x on ${fixed} spawn-helper file(s)`);
   }
   if (runtimeFixed > 0) {
-    console.log(`[pix afterPack] chmod +x on ${runtimeFixed} bundled runtime bin(s)`);
+    console.log(`[zeno afterPack] chmod +x on ${runtimeFixed} bundled runtime bin(s)`);
   }
 
   // Clear quarantine on mac so Gatekeeper does not block first terminal spawn.
@@ -137,7 +137,7 @@ export default async function afterPack(context) {
       try {
         const { execFileSync } = await import("node:child_process");
         execFileSync("xattr", ["-cr", runtimes], { stdio: "ignore" });
-        console.log(`[pix afterPack] xattr -cr ${runtimes}`);
+        console.log(`[zeno afterPack] xattr -cr ${runtimes}`);
       } catch {
         // xattr may be missing in some CI images; non-fatal.
       }

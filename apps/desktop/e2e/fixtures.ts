@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const electronBinary = require("electron") as string;
 const appDirectory = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-interface LaunchedPix {
+interface LaunchedZeno {
   app: ElectronApplication;
   page: Page;
   root: string;
@@ -22,13 +22,13 @@ interface LaunchedPix {
   fakeModel: FakeOpenAiServer;
 }
 
-export interface PixE2EFixtures {
-  pix: LaunchedPix;
+export interface ZenoE2EFixtures {
+  zeno: LaunchedZeno;
   page: Page;
 }
 
-async function launchPixApp(): Promise<LaunchedPix> {
-  const root = await mkdtemp(join(tmpdir(), "pix-e2e-"));
+async function launchZenoApp(): Promise<LaunchedZeno> {
+  const root = await mkdtemp(join(tmpdir(), "zeno-e2e-"));
   const home = join(root, "home");
   const agentDir = join(home, ".pi", "agent");
   const workspace = join(root, "workspace");
@@ -85,7 +85,7 @@ async function launchPixApp(): Promise<LaunchedPix> {
     writeFile(
       join(localPackage, "package.json"),
       JSON.stringify({
-        name: "pix-e2e-local-package",
+        name: "zeno-e2e-local-package",
         version: "1.0.0",
         keywords: ["pi-package"],
         pi: { prompts: ["prompts/*.md"] },
@@ -100,13 +100,13 @@ async function launchPixApp(): Promise<LaunchedPix> {
     join(agentDir, "models.json"),
     JSON.stringify({
       providers: {
-        "pix-fake": {
+        "zeno-fake": {
           baseUrl: fakeModel.baseUrl,
           apiKey: "test-key-not-secret",
           api: "openai-completions",
           models: [
             {
-              id: "pix-fake",
+              id: "zeno-fake",
               name: "Zeno Fake Model",
               reasoning: false,
               input: ["text"],
@@ -130,13 +130,13 @@ async function launchPixApp(): Promise<LaunchedPix> {
     USERPROFILE: home,
     XDG_CONFIG_HOME: join(home, ".config"),
     PI_CODING_AGENT_DIR: agentDir,
-    PIX_WORKSPACE: workspace,
-    PIX_MODEL_PROVIDER: "pix-fake",
-    PIX_MODEL_ID: "pix-fake",
-    PIX_TOOLS: "read",
-    PIX_ENABLE_TEST_COMMANDS: "1",
-    PIX_TEST_PROVIDER_OAUTH: "openai-codex",
-    PIX_TEST_PROVIDER_USAGE: JSON.stringify([
+    ZENO_WORKSPACE: workspace,
+    ZENO_MODEL_PROVIDER: "zeno-fake",
+    ZENO_MODEL_ID: "zeno-fake",
+    ZENO_TOOLS: "read",
+    ZENO_ENABLE_TEST_COMMANDS: "1",
+    ZENO_TEST_PROVIDER_OAUTH: "openai-codex",
+    ZENO_TEST_PROVIDER_USAGE: JSON.stringify([
       {
         provider: "zai",
         displayName: "Z.AI",
@@ -160,11 +160,11 @@ async function launchPixApp(): Promise<LaunchedPix> {
         usageLines: [{ label: "Web searches", value: "37 / 100" }],
       },
     ]),
-    PIX_PERSIST_SESSION: "1",
+    ZENO_PERSIST_SESSION: "1",
     // Product cold-start auto-resume is off so each test drives Host start via UI.
-    PIX_NO_AUTO_RESUME: "1",
+    ZENO_NO_AUTO_RESUME: "1",
   });
-  // Interactive E2E: product cold-start auto-resume is already off via PIX_NO_AUTO_RESUME.
+  // Interactive E2E: product cold-start auto-resume is already off via ZENO_NO_AUTO_RESUME.
   delete env.ELECTRON_RUN_AS_NODE;
 
   // Isolate Electron userData so recent workspaces / prefs do not leak across runs.
@@ -180,19 +180,19 @@ async function launchPixApp(): Promise<LaunchedPix> {
   });
 
   const page = await app.firstWindow({ timeout: 60_000 });
-  await page.waitForSelector('[data-testid="pix-app"]', { timeout: 30_000 });
+  await page.waitForSelector('[data-testid="zeno-app"]', { timeout: 30_000 });
   // Cold-start overlay (pi ensure + host config) must finish before UI clicks.
-  await page.waitForSelector('[data-testid="pix-app"][data-bootstrap-ready="true"]', {
+  await page.waitForSelector('[data-testid="zeno-app"][data-bootstrap-ready="true"]', {
     timeout: 120_000,
   });
 
   return { app, page, root, agentDir, workspace, attachmentPaths, fakeModel };
 }
 
-export const test = base.extend<PixE2EFixtures>({
+export const test = base.extend<ZenoE2EFixtures>({
   // eslint-disable-next-line no-empty-pattern
-  pix: async ({}, use) => {
-    const launched = await launchPixApp();
+  zeno: async ({}, use) => {
+    const launched = await launchZenoApp();
     try {
       await use(launched);
     } finally {
@@ -201,8 +201,8 @@ export const test = base.extend<PixE2EFixtures>({
       await rm(launched.root, { recursive: true, force: true }).catch(() => undefined);
     }
   },
-  page: async ({ pix }, use) => {
-    await use(pix.page);
+  page: async ({ zeno }, use) => {
+    await use(zeno.page);
   },
 });
 
@@ -210,10 +210,10 @@ export { expect };
 
 /** Start host via 新建会话 and wait until the shell reports ready. */
 export async function startHost(page: Page): Promise<void> {
-  await page.getByTestId("pix-app").waitFor({ state: "visible" });
+  await page.getByTestId("zeno-app").waitFor({ state: "visible" });
   // Cold-start overlay must finish (pi ensure + optional host warm-up).
   await page
-    .waitForSelector('[data-testid="pix-app"][data-bootstrap-ready="true"]', {
+    .waitForSelector('[data-testid="zeno-app"][data-bootstrap-ready="true"]', {
       timeout: 120_000,
     })
     .catch(() => undefined);

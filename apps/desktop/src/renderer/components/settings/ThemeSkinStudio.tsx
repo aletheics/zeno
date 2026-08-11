@@ -528,7 +528,7 @@ function themeExportFileName(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return `${slug || "pix-skin"}.json`;
+  return `${slug || "zeno-skin"}.json`;
 }
 
 function downloadBuiltin(config: ThemeSkinConfig): void {
@@ -830,7 +830,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
     setBusy(true);
     setMessage(undefined);
     try {
-      const library = await window.pix.themes.activate(id);
+      const library = await window.zeno.themes.activate(id);
       props.onLibrary(library);
       props.onSelection({ id: library.activeId });
     } catch {
@@ -845,7 +845,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
     setBusy(true);
     setMessage(undefined);
     try {
-      const library = await window.pix.themes.importPick();
+      const library = await window.zeno.themes.importPick();
       if (!library) return;
       props.onLibrary(library);
       props.onSelection({ id: library.activeId });
@@ -865,7 +865,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
     setBusy(true);
     setMessage(undefined);
     try {
-      await window.pix.themes.exportPick(activeRecord.id);
+      await window.zeno.themes.exportPick(activeRecord.id);
     } catch {
       setMessage(tr("appearance.themeSkinError"));
     } finally {
@@ -878,7 +878,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
     setBusy(true);
     setMessage(undefined);
     try {
-      const library = await window.pix.themes.remove(activeRecord.id);
+      const library = await window.zeno.themes.remove(activeRecord.id);
       props.onLibrary(library);
       props.onSelection({ id: library.activeId });
     } catch {
@@ -909,7 +909,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
         !activeRecord?.backgroundUrl
           ? props.selection.id
           : undefined);
-      const library = await window.pix.themes.save({
+      const library = await window.zeno.themes.save({
         ...(saveId ? { id: saveId } : {}),
         config: editable,
         ...(backgroundPath ? { backgroundPath } : {}),
@@ -936,7 +936,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file || !editable) return;
-    const path = window.pix.workspace.pathForFile(file);
+    const path = window.zeno.workspace.pathForFile(file);
     if (!path) {
       setMessage(tr("appearance.themeSkinError"));
       return;

@@ -4,8 +4,8 @@ import {
   projectCustomEntry,
   projectCustomMessage,
   projectToolPresentation,
-  type CreatePixRuntimeOptions,
-  type PixRuntimeHandle,
+  type CreateZenoRuntimeOptions,
+  type ZenoRuntimeHandle,
 } from "@zeno/agent-runtime";
 import {
   IPC_PROTOCOL_VERSION,
@@ -29,7 +29,7 @@ interface ElectronParentPort {
 const parentPort = (process as NodeJS.Process & { parentPort?: ElectronParentPort }).parentPort;
 if (!parentPort) throw new Error("Zeno Agent Host must run as an Electron utility process");
 
-let handle: PixRuntimeHandle | undefined;
+let handle: ZenoRuntimeHandle | undefined;
 let unsubscribe: (() => void) | undefined;
 let sequence = 0;
 
@@ -61,8 +61,8 @@ async function loadPromptImages(paths: string[]) {
 }
 
 function testOAuthRuntime(provider: string): OAuthModelRuntime | undefined {
-  if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") return undefined;
-  if (process.env.PIX_TEST_PROVIDER_OAUTH !== provider) return undefined;
+  if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") return undefined;
+  if (process.env.ZENO_TEST_PROVIDER_OAUTH !== provider) return undefined;
   return {
     getProvider: (providerId) =>
       providerId === provider ? { auth: { oauth: { testOnly: true } } } : undefined,
@@ -78,7 +78,7 @@ function testOAuthRuntime(provider: string): OAuthModelRuntime | undefined {
       if (method === "browser") {
         interaction.notify({
           type: "auth_url",
-          url: "https://example.com/pix-oauth-test",
+          url: "https://example.com/zeno-oauth-test",
           instructions: "Complete the test authorization in your browser",
         });
       } else {
@@ -101,8 +101,8 @@ function testOAuthRuntime(provider: string): OAuthModelRuntime | undefined {
 function listProvidersForHost(): ReturnType<NonNullable<typeof handle>["listProviders"]> {
   if (!handle) return [];
   const providers = handle.listProviders();
-  const fixtureProvider = process.env.PIX_TEST_PROVIDER_OAUTH;
-  if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1" || !fixtureProvider) return providers;
+  const fixtureProvider = process.env.ZENO_TEST_PROVIDER_OAUTH;
+  if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1" || !fixtureProvider) return providers;
   const active = testOAuthProviders.has(fixtureProvider);
   const index = providers.findIndex((entry) => entry.provider === fixtureProvider);
   const existing = index >= 0 ? providers[index] : undefined;
@@ -129,8 +129,8 @@ function listProvidersForHost(): ReturnType<NonNullable<typeof handle>["listProv
 }
 
 function testProviderUsageEvent(requestId: string): HostEvent | undefined {
-  if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") return undefined;
-  const fixture = process.env.PIX_TEST_PROVIDER_USAGE;
+  if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") return undefined;
+  const fixture = process.env.ZENO_TEST_PROVIDER_USAGE;
   if (!fixture) return undefined;
   try {
     const event: unknown = {
@@ -334,7 +334,7 @@ function projectRuntimeEvent(event: AgentSessionEvent): RuntimeEvent | undefined
   }
 }
 
-function bindRuntimeEvents(runtimeHandle: PixRuntimeHandle): void {
+function bindRuntimeEvents(runtimeHandle: ZenoRuntimeHandle): void {
   unsubscribe?.();
   unsubscribe = runtimeHandle.runtime.session.subscribe((event) => {
     const projected = projectRuntimeEvent(event);
@@ -358,7 +358,7 @@ async function handleCommand(command: HostCommand): Promise<void> {
         unsubscribe?.();
         unsubscribe = undefined;
         await handle?.dispose();
-        const options: CreatePixRuntimeOptions = { cwd: command.cwd };
+        const options: CreateZenoRuntimeOptions = { cwd: command.cwd };
         if (command.agentDir) options.agentDir = command.agentDir;
         if (command.model) options.model = command.model;
         if (command.tools) options.tools = command.tools;
@@ -1069,7 +1069,7 @@ async function handleCommand(command: HostCommand): Promise<void> {
       }
       case "test.photonProbe": {
         if (!handle) throw new Error("Agent Host is not ready");
-        if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+        if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
           throw new Error("Photon probe command is disabled");
         }
         const photon = await import("@silvia-odwyer/photon-node");
@@ -1100,7 +1100,7 @@ async function handleCommand(command: HostCommand): Promise<void> {
       }
       case "test.sequenceGap": {
         if (!handle) throw new Error("Agent Host is not ready");
-        if (process.env.PIX_ENABLE_TEST_COMMANDS !== "1") {
+        if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
           throw new Error("Sequence gap command is disabled");
         }
         sequence += 1;

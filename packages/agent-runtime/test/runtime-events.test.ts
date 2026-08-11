@@ -40,7 +40,7 @@ afterEach(async () => {
 
 describe("Runtime streaming", () => {
   it("streams text, executes a core tool, aborts, and settles without real credentials", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pix-runtime-"));
+    const root = await mkdtemp(join(tmpdir(), "zeno-runtime-"));
     temporaryDirectories.push(root);
     const home = join(root, "home");
     const agentDir = join(home, ".pi", "agent");
@@ -73,8 +73,8 @@ describe("Runtime streaming", () => {
     expect(result.eventTypes).toContain("tool_execution_end");
     expect(result.eventTypes).toContain("agent_settled");
     expect(result.snapshot.model).toEqual({
-      provider: "pix-fake",
-      id: "pix-fake",
+      provider: "zeno-fake",
+      id: "zeno-fake",
       api: "openai-completions",
       reasoning: false,
     });

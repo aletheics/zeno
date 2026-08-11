@@ -12,7 +12,7 @@ import {
 } from "../src/models-json.ts";
 
 async function tempAgentDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), "pix-models-json-"));
+  return mkdtemp(join(tmpdir(), "zeno-models-json-"));
 }
 
 describe("models.json helpers", () => {

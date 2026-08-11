@@ -43,17 +43,20 @@ async function createLocalGitFixture(root: string) {
 }
 
 test.describe("Desktop Git E2E", () => {
-  test("manages isolated local branches, remotes, status, and worktrees", async ({ page, pix }) => {
-    const { repo, remote } = await createLocalGitFixture(pix.root);
-    const worktreeRoot = join(pix.root, "managed-worktrees");
+  test("manages isolated local branches, remotes, status, and worktrees", async ({
+    page,
+    zeno,
+  }) => {
+    const { repo, remote } = await createLocalGitFixture(zeno.root);
+    const worktreeRoot = join(zeno.root, "managed-worktrees");
 
     await startHost(page);
     const initial = await page.evaluate(async (cwd) => {
-      await window.pix.workspace.openPath(cwd, { resumeRecent: false });
+      await window.zeno.workspace.openPath(cwd, { resumeRecent: false });
       const [context, branches, prefs] = await Promise.all([
-        window.pix.workspace.getGitContext(cwd),
-        window.pix.workspace.listGitBranches(cwd),
-        window.pix.workspace.setGitPrefs({
+        window.zeno.workspace.getGitContext(cwd),
+        window.zeno.workspace.listGitBranches(cwd),
+        window.zeno.workspace.setGitPrefs({
           branchPrefix: "zeno/",
           pullMode: "squash",
           forcePush: true,
@@ -84,10 +87,10 @@ test.describe("Desktop Git E2E", () => {
     });
 
     const branch = await page.evaluate(async (cwd) => {
-      await window.pix.workspace.createGitBranch("release", { checkout: false, cwd });
-      const afterCreate = await window.pix.workspace.getGitContext(cwd);
-      const checkedOut = await window.pix.workspace.checkoutGitBranch("zeno/release", cwd);
-      const branches = await window.pix.workspace.listGitBranches(cwd);
+      await window.zeno.workspace.createGitBranch("release", { checkout: false, cwd });
+      const afterCreate = await window.zeno.workspace.getGitContext(cwd);
+      const checkedOut = await window.zeno.workspace.checkoutGitBranch("zeno/release", cwd);
+      const branches = await window.zeno.workspace.listGitBranches(cwd);
       return { afterCreate, checkedOut, branches };
     }, repo);
     expect(branch.afterCreate.branch).toBe("main");
@@ -98,9 +101,9 @@ test.describe("Desktop Git E2E", () => {
 
     await writeFile(join(repo, "local-change.txt"), "first local change\n");
     const afterCommit = await page.evaluate(async (cwd) => {
-      const before = await window.pix.workspace.gitStatus(cwd);
-      const committed = await window.pix.workspace.gitCommit("test: commit through Zeno", cwd);
-      const pushed = await window.pix.workspace.gitPush(cwd);
+      const before = await window.zeno.workspace.gitStatus(cwd);
+      const committed = await window.zeno.workspace.gitCommit("test: commit through Zeno", cwd);
+      const pushed = await window.zeno.workspace.gitPush(cwd);
       return { before, committed, pushed };
     }, repo);
     expect(afterCommit.before).toMatchObject({ clean: false, branch: "zeno/release" });
@@ -113,8 +116,8 @@ test.describe("Desktop Git E2E", () => {
       .poll(() => git(repo, "--git-dir", remote, "rev-parse", "refs/heads/zeno/release"))
       .toMatch(/^[0-9a-f]{40}$/);
 
-    const clone = join(pix.root, "remote-writer");
-    await git(pix.root, "clone", "--branch", "zeno/release", remote, clone);
+    const clone = join(zeno.root, "remote-writer");
+    await git(zeno.root, "clone", "--branch", "zeno/release", remote, clone);
     await git(clone, "config", "user.name", "Zeno Remote E2E");
     await git(clone, "config", "user.email", "zeno-remote@example.invalid");
     await writeFile(join(clone, "remote-change.txt"), "change from local bare remote\n");
@@ -123,22 +126,22 @@ test.describe("Desktop Git E2E", () => {
     await git(clone, "push", "origin", "zeno/release");
 
     const pulled = await page.evaluate(async (cwd) => {
-      await window.pix.workspace.setGitPrefs({ pullMode: "merge", forcePush: false });
-      return window.pix.workspace.gitPull(cwd);
+      await window.zeno.workspace.setGitPrefs({ pullMode: "merge", forcePush: false });
+      return window.zeno.workspace.gitPull(cwd);
     }, repo);
     expect(pulled).toMatchObject({ clean: true, branch: "zeno/release", ahead: 1, behind: 0 });
     expect(await exists(join(repo, "remote-change.txt"))).toBe(true);
 
     await writeFile(join(repo, "combined-change.txt"), "commit and push from Zeno\n");
     const combined = await page.evaluate(async (cwd) => {
-      const generated = await window.pix.workspace.gitGenerateCommitMessage(cwd);
-      const result = await window.pix.workspace.gitCommitAndPush(generated, cwd);
+      const generated = await window.zeno.workspace.gitGenerateCommitMessage(cwd);
+      const result = await window.zeno.workspace.gitCommitAndPush(generated, cwd);
       return { generated, result };
     }, repo);
     expect(combined.generated).toContain("Zeno fake model response");
     expect(combined.result).toMatchObject({ clean: true, upstream: "origin/zeno/release" });
 
-    await pix.app.evaluate(({ shell }) => {
+    await zeno.app.evaluate(({ shell }) => {
       const state = globalThis as typeof globalThis & { __pixGitPrUrl?: string };
       Object.defineProperty(shell, "openExternal", {
         configurable: true,
@@ -149,9 +152,9 @@ test.describe("Desktop Git E2E", () => {
     });
     await git(repo, "remote", "set-url", "origin", "git@github.com:zeno/e2e.git");
     await page.evaluate(async (cwd) => {
-      await window.pix.workspace.openCreatePullRequest(cwd);
+      await window.zeno.workspace.openCreatePullRequest(cwd);
     }, repo);
-    const pullRequestUrl = await pix.app.evaluate(
+    const pullRequestUrl = await zeno.app.evaluate(
       () => (globalThis as typeof globalThis & { __pixGitPrUrl?: string }).__pixGitPrUrl,
     );
     expect(pullRequestUrl).toBe(
@@ -160,33 +163,33 @@ test.describe("Desktop Git E2E", () => {
 
     const worktrees = await page.evaluate(
       async ({ cwd, root }) => {
-        const prefs = await window.pix.workspace.setWorktreePrefs({
+        const prefs = await window.zeno.workspace.setWorktreePrefs({
           rootConfigured: root,
           autoDelete: false,
           autoDeleteLimit: 1,
         });
-        const first = await window.pix.workspace.createGitWorktree({
+        const first = await window.zeno.workspace.createGitWorktree({
           cwd,
           name: "first-worktree",
           newBranch: "first-worktree",
         });
-        const listed = await window.pix.workspace.listGitWorktrees(cwd);
-        const managed = await window.pix.workspace.listManagedWorktrees();
+        const listed = await window.zeno.workspace.listGitWorktrees(cwd);
+        const managed = await window.zeno.workspace.listManagedWorktrees();
         let mainRemovalError = "";
         try {
-          await window.pix.workspace.removeGitWorktree(cwd, cwd);
+          await window.zeno.workspace.removeGitWorktree(cwd, cwd);
         } catch (error) {
           mainRemovalError = error instanceof Error ? error.message : String(error);
         }
-        await window.pix.workspace.setWorktreePrefs({ autoDelete: true, autoDeleteLimit: 1 });
-        const second = await window.pix.workspace.createGitWorktree({
+        await window.zeno.workspace.setWorktreePrefs({ autoDelete: true, autoDeleteLimit: 1 });
+        const second = await window.zeno.workspace.createGitWorktree({
           cwd,
           name: "second-worktree",
           newBranch: "second-worktree",
           branch: "zeno/release",
         });
-        const afterPrune = await window.pix.workspace.listManagedWorktrees();
-        const removed = await window.pix.workspace.removeGitWorktree(second.path, cwd);
+        const afterPrune = await window.zeno.workspace.listManagedWorktrees();
+        const removed = await window.zeno.workspace.removeGitWorktree(second.path, cwd);
         return { prefs, first, second, listed, managed, mainRemovalError, afterPrune, removed };
       },
       { cwd: repo, root: worktreeRoot },

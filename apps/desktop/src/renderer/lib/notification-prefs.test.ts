@@ -6,7 +6,7 @@ import {
   saveNotificationPrefs,
 } from "./notification-prefs.ts";
 
-const KEY = "pix.notifications.prefs.v2";
+const KEY = "zeno.notifications.prefs.v2";
 
 const memory = new Map<string, string>();
 

@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { conversationSessionButtons, expect, sendPrompt, startHost, test } from "./fixtures.ts";
 
 async function terminalStatus(page: Page) {
-  return page.evaluate(() => window.pix.terminal.status());
+  return page.evaluate(() => window.zeno.terminal.status());
 }
 
 /** Inspect real Ghostty paint health — not just "surface-ready" attribute. */
@@ -208,7 +208,7 @@ test.describe("Embedded pi TUI", () => {
   test("keeps equal content margins and a floating right-edge scrollbar", async ({ page }) => {
     await startHost(page);
     await sendPrompt(page, "terminal layout margins");
-    const session = await page.evaluate(() => window.pix.host.snapshot());
+    const session = await page.evaluate(() => window.zeno.host.snapshot());
     expect(session.sessionFile).toBeTruthy();
 
     await page.getByTestId("thread-content-mode-toggle").click();
@@ -277,7 +277,7 @@ test.describe("Embedded pi TUI", () => {
   test("paints correctly across terminal/chat and multi-session hops", async ({ page }) => {
     await startHost(page);
     await sendPrompt(page, "terminal session A");
-    const sessionA = await page.evaluate(() => window.pix.host.snapshot());
+    const sessionA = await page.evaluate(() => window.zeno.host.snapshot());
     expect(sessionA.sessionFile).toBeTruthy();
 
     // A: chat → terminal (cold open) must paint a real grid/canvas.
@@ -340,7 +340,7 @@ test.describe("Embedded pi TUI", () => {
     await startHost(page);
     await expect(page.getByTestId("composer-dock")).toBeVisible({ timeout: 30_000 });
     await sendPrompt(page, "terminal session B");
-    const sessionB = await page.evaluate(() => window.pix.host.snapshot());
+    const sessionB = await page.evaluate(() => window.zeno.host.snapshot());
     expect(sessionB.sessionFile).toBeTruthy();
     expect(sessionB.sessionFile).not.toBe(sessionA.sessionFile);
     await expect(conversationSessionButtons(page)).toHaveCount(2, { timeout: 15_000 });
