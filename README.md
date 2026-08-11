@@ -6,7 +6,7 @@ Zeno is a desktop shell for the [pi](https://pi.dev) coding agent: a Codex-style
 
 Zeno desktop shell — sidebar, session workspace, and composer:
 
-![Zeno desktop](./assets/screenshots/pix-desktop.png)
+![Zeno desktop](./assets/screenshots/zeno-desktop.png)
 
 ## Requirements
 
