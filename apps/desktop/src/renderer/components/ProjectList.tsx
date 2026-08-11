@@ -1324,7 +1324,7 @@ export function ProjectList(props: ProjectListProps) {
               <button
                 type="button"
                 data-testid="workspace-open"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)] cursor-pointer"
                 title={tr("workspace.open")}
                 aria-label={tr("workspace.open")}
                 onClick={props.onOpenWorkspace}
@@ -1693,7 +1693,7 @@ function MenuItem(props: {
       role="menuitem"
       data-testid={props.testId}
       className={cn(
-        "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] transition-colors",
+        "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left text-[13px] transition-colors",
         props.danger
           ? "text-red-400 hover:bg-red-500/10"
           : "text-[var(--popover-foreground)] hover:bg-[var(--hover-fill)]",

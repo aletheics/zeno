@@ -78,7 +78,7 @@ export function SettingsDocsLink(props: { href: string; children: ReactNode; tes
     <button
       type="button"
       data-testid={props.testId}
-      className="mt-1.5 inline-flex items-center gap-1 text-left text-[12px] font-medium text-[var(--link)] underline-offset-2 hover:underline"
+      className="mt-1.5 inline-flex cursor-pointer items-center gap-1 text-left text-[12px] font-medium text-[var(--link)] underline-offset-2 hover:underline"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();

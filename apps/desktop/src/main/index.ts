@@ -4274,9 +4274,9 @@ function resolveAppIconPath(): string | undefined {
 }
 
 /** Windows AppUserModelID — must match electron-builder appId for packaged installs. */
-const WINDOWS_APP_USER_MODEL_ID = "dev.pix.app";
+const WINDOWS_APP_USER_MODEL_ID = "dev.zeno.app";
 /** Separate AUMID for unpackaged `electron .` so Start Menu Electron.lnk cannot steal the taskbar icon. */
-const WINDOWS_DEV_APP_USER_MODEL_ID = "dev.pix.app.dev";
+const WINDOWS_DEV_APP_USER_MODEL_ID = "dev.zeno.app.dev";
 
 function applyWindowsAppUserModelId(): void {
   if (process.platform !== "win32") return;

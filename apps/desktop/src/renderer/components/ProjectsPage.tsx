@@ -262,7 +262,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         <div className="page-header-actions">
           <button
             type="button"
-            className="projects-page-create"
+            className="projects-page-create cursor-pointer"
             data-testid="projects-page-create"
             onClick={props.onCreateProject}
           >

@@ -1801,7 +1801,7 @@ export function Composer(props: ComposerProps) {
                   role="menuitem"
                   data-testid="composer-project-item"
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[13px] text-[var(--foreground)] transition-colors",
+                    "flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[13px] text-[var(--foreground)] transition-colors cursor-pointer",
                     "hover:bg-[var(--hover-fill)]",
                     active && "bg-[var(--hover-fill)] font-medium",
                   )}
@@ -1825,7 +1825,7 @@ export function Composer(props: ComposerProps) {
             type="button"
             role="menuitem"
             data-testid="composer-project-add"
-            className="flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left text-[13px] text-[var(--foreground)] transition-colors hover:bg-[var(--hover-fill)]"
+            className="flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left text-[13px] text-[var(--foreground)] transition-colors hover:bg-[var(--hover-fill)] cursor-pointer"
             onClick={() => {
               closeMenu();
               props.onAddProject();

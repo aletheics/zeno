@@ -101,8 +101,11 @@ const buildProcs = [
 let electronProc = null;
 let restartTimer = null;
 let pendingRestart = false;
+/** Ignore file changes during startup — build watchers emit an initial build that must not restart. */
+let startupGraceUntil = 0;
 const DEBOUNCE_MS = 1200;
 const KILL_WAIT_MS = 1500;
+const STARTUP_GRACE_MS = 4000;
 
 /** Kill Electron and wait for it to fully exit before resolving. */
 function killElectron() {
@@ -156,9 +159,12 @@ async function launchElectron() {
     console.error("[watch] Electron failed to start:", err.message);
     electronProc = null;
   });
+  // Block restarts for a grace period so build-watcher initial builds don't trigger a second window.
+  startupGraceUntil = Date.now() + STARTUP_GRACE_MS;
 }
 
 async function scheduleRestart() {
+  if (Date.now() < startupGraceUntil) return;
   pendingRestart = true;
   if (restartTimer) clearTimeout(restartTimer);
   restartTimer = setTimeout(async () => {

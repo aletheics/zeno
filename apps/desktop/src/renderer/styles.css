@@ -4477,6 +4477,11 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
   /* Opaque panel surface — all model groups (custom + builtin) share this exact fill. */
   background: var(--surface-panel);
 }
+
+/* All shadcn/ui buttons in settings should show a pointer cursor. */
+[data-slot="button"] {
+  cursor: pointer;
+}
 /* Theme Studio intentionally previews a complete mini-shell, not a color swatch. */
 .theme-skin-library {
   overflow: hidden;
@@ -4514,6 +4519,7 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
   border-radius: 0.65rem;
   background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
   color: var(--foreground);
+  cursor: pointer;
   box-shadow: 0 8px 18px rgb(0 0 0 / 0.08);
   transition:
     opacity 160ms ease,
@@ -4549,6 +4555,7 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
   padding: 0.55rem;
   color: var(--foreground);
   text-align: left;
+  cursor: pointer;
   scroll-snap-align: start;
   transition: border-color 160ms ease;
 }
@@ -4873,6 +4880,7 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
   color: var(--theme-dialog-muted);
   font-size: 10px;
   font-weight: 620;
+  cursor: pointer;
   transition:
     color 140ms ease,
     background 140ms ease,
@@ -6186,7 +6194,7 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
 
 /* Settings rail (left) — Codex hierarchy */
 .settings-rail-back {
-  @apply flex h-8 w-full min-w-0 items-center gap-2.5 px-2.5 text-left font-normal text-[var(--sidebar-foreground)] transition-colors;
+  @apply flex h-8 w-full min-w-0 cursor-pointer items-center gap-2.5 px-2.5 text-left font-normal text-[var(--sidebar-foreground)] transition-colors;
   border-radius: var(--radius-control);
   /* Same type scale as .settings-rail-item (not a hard-coded 13px). */
   font-size: var(--ui-font-size, 14px);
@@ -6200,7 +6208,7 @@ textarea.models-scoped-patterns-input[data-slot="textarea"] {
   /* type from .group-label — same size as rail items / regular UI text */
 }
 .settings-rail-item {
-  @apply flex h-[32px] w-full min-w-0 items-center gap-2.5 px-2.5 text-left font-normal transition-colors;
+  @apply flex h-[32px] w-full min-w-0 cursor-pointer items-center gap-2.5 px-2.5 text-left font-normal transition-colors;
   border-radius: var(--radius-control);
   color: var(--sidebar-foreground);
   font-size: var(--ui-font-size, 14px);

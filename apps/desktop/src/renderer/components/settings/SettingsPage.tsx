@@ -1464,7 +1464,7 @@ function WorktreeSection(
           <h2 className="settings-section-label m-0 min-w-0 flex-1 truncate">{listLabel}</h2>
           <button
             type="button"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)] disabled:opacity-50"
+            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)] disabled:opacity-50"
             title={tr("worktree.listRefresh")}
             aria-label={tr("worktree.listRefresh")}
             data-testid="worktree-list-refresh"
@@ -1511,7 +1511,7 @@ function WorktreeSection(
                     <button
                       type="button"
                       className={cn(
-                        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+                        "inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg",
                         "text-[var(--muted-foreground)] transition-colors",
                         "hover:bg-red-500/15 hover:text-red-400",
                         "disabled:pointer-events-none disabled:opacity-50",

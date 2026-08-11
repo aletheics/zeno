@@ -71,7 +71,7 @@ function RadioItem(props: {
       aria-checked={props.checked}
       data-testid={props.testId}
       className={cn(
-        "flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors",
+        "flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left transition-colors",
         "text-[length:var(--ui-font-size,14px)] text-[var(--popover-foreground)]",
         "hover:bg-[var(--hover-fill)]",
         props.checked && "font-medium",
