@@ -767,7 +767,7 @@ function hostPillClass(state: string): string {
   return "bg-[var(--accent)] text-[var(--muted-foreground)]";
 }
 
-const GITHUB_REPO_URL = "https://github.com/num-scope/zeno";
+const GITHUB_REPO_URL = "https://github.com/aletheics/zeno";
 
 /** GitHub mark (lucide has no brand icons). */
 function GitHubMark(props: { className?: string }) {
@@ -952,7 +952,7 @@ function SidebarUpdateButton(props: {
                 ? "bg-blue-500 text-white shadow-sm shadow-blue-500/25 opacity-95"
                 : phase === "downloaded"
                   ? "bg-blue-500 text-white shadow-sm shadow-blue-500/25 hover:bg-blue-600 hover:text-white active:scale-95"
-                  : "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)] active:scale-95",
+                  : "cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)] active:scale-95",
       )}
       onClick={(event) => {
         event.preventDefault();
