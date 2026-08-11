@@ -7,7 +7,7 @@
  * - Interactive: real HOME. Isolated: `PIX_ISOLATED=1` (temp HOME, fake model).
  */
 import { spawn, execSync } from "node:child_process";
-import { watch } from "node:fs";
+import { watchFile, unwatchFile } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -101,20 +101,44 @@ const buildProcs = [
 let electronProc = null;
 let restartTimer = null;
 let pendingRestart = false;
-const DEBOUNCE_MS = 800;
+const DEBOUNCE_MS = 1200;
+const KILL_WAIT_MS = 1500;
 
+/** Kill Electron and wait for it to fully exit before resolving. */
 function killElectron() {
-  if (!electronProc) return;
-  try {
-    electronProc.kill("SIGTERM");
-  } catch {
-    // already dead
-  }
-  electronProc = null;
+  return new Promise((resolve) => {
+    if (!electronProc) return resolve();
+    const proc = electronProc;
+    electronProc = null;
+
+    // On Windows SIGTERM is unreliable; use taskkill for forceful cleanup.
+    if (isWin) {
+      try {
+        const { execSync: exec } = require("node:child_process");
+        exec(`taskkill /pid ${proc.pid} /T /F 2>nul`, { stdio: "ignore" });
+      } catch {
+        // process may already be gone
+      }
+    }
+
+    proc.once("exit", () => resolve());
+    proc.once("error", () => resolve());
+
+    // Timeout: resolve even if the process hangs.
+    setTimeout(resolve, KILL_WAIT_MS);
+
+    try {
+      proc.kill("SIGTERM");
+    } catch {
+      resolve();
+    }
+  });
 }
 
-function launchElectron() {
-  killElectron();
+async function launchElectron() {
+  await killElectron();
+  // Brief pause so OS releases file locks (disk cache, GPU cache).
+  await new Promise((r) => setTimeout(r, 400));
   console.log("[watch] Launching Electron ...");
   electronProc = run(electron, [desktopDir], {
     env: {
@@ -134,33 +158,35 @@ function launchElectron() {
   });
 }
 
-function scheduleRestart() {
+async function scheduleRestart() {
   pendingRestart = true;
   if (restartTimer) clearTimeout(restartTimer);
-  restartTimer = setTimeout(() => {
+  restartTimer = setTimeout(async () => {
     restartTimer = null;
     pendingRestart = false;
     console.log("[watch] Backend rebuilt — restarting Electron ...");
-    launchElectron();
+    await launchElectron();
   }, DEBOUNCE_MS);
 }
 
-// Watch source directories (not dist — more reliable cross-platform).
-const srcMain = resolve(desktopDir, "src", "main");
-const srcPreload = resolve(desktopDir, "src", "preload");
-const srcAgent = resolve(desktopDir, "src", "agent-host");
+// Watch dist output files — only restart when backend build actually produces new output.
+// `watchFile` uses stat polling, which is reliable on all platforms (unlike `watch` on dirs).
+const distOutputs = [
+  resolve(desktopDir, "dist", "main", "main.mjs"),
+  resolve(desktopDir, "dist", "preload", "preload.cjs"),
+  resolve(desktopDir, "dist", "agent-host", "agent-host.mjs"),
+];
 
-for (const dir of [srcMain, srcPreload, srcAgent]) {
+for (const file of distOutputs) {
   try {
-    watch(dir, { recursive: true }, (_event, filename) => {
-      if (filename && /\.(ts|tsx|mjs|js)$/.test(filename)) {
-        // Source changed — build watchers will rebuild; restart after debounce.
+    watchFile(file, { interval: 600 }, (curr, prev) => {
+      if (curr.mtimeMs !== prev.mtimeMs) {
         scheduleRestart();
       }
     });
-    console.log(`[watch] Watching ${dir}`);
+    console.log(`[watch] Watching ${file}`);
   } catch (err) {
-    console.warn(`[watch] Cannot watch ${dir}:`, err.message);
+    console.warn(`[watch] Cannot watch ${file}:`, err.message);
   }
 }
 
@@ -169,12 +195,15 @@ launchElectron();
 
 // ── 6. Cleanup ──
 let cleaning = false;
-function cleanup() {
+async function cleanup() {
   if (cleaning) return;
   cleaning = true;
   console.log("\n[watch] Shutting down ...");
   if (restartTimer) clearTimeout(restartTimer);
-  killElectron();
+  for (const file of distOutputs) {
+    try { unwatchFile(file); } catch { /* ignore */ }
+  }
+  await killElectron();
   for (const proc of [rendererDev, ...buildProcs]) {
     try {
       proc.kill("SIGTERM");
