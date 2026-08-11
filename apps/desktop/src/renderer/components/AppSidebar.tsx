@@ -347,7 +347,7 @@ function ProductRail(
           type="button"
           data-testid="brand-menu"
           title={tr("app.name")}
-          className="flex min-w-0 flex-1 items-center rounded-md px-2.5 py-0.5 text-left transition-colors hover:bg-[var(--hover-fill)]"
+          className="flex min-w-0 flex-1 cursor-pointer items-center rounded-md px-2.5 py-0.5 text-left transition-colors hover:bg-[var(--hover-fill)]"
           onClick={props.onOpenPalette}
         >
           <span className="truncate text-[18px] leading-none font-semibold tracking-tight text-[var(--sidebar-foreground)]">
@@ -998,7 +998,7 @@ function IconBtn(props: {
       data-testid={props.testId}
       title={props.title}
       aria-label={props.title}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
       onClick={props.onClick}
     >
       {props.children}

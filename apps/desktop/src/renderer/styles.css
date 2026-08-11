@@ -857,7 +857,7 @@ html[data-custom-window-controls="true"] .page-header {
 }
 
 .nav-item {
-  @apply flex h-8 w-full items-center gap-2.5 px-2.5 text-left font-normal;
+  @apply flex h-8 w-full cursor-pointer items-center gap-2.5 px-2.5 text-left font-normal;
   border-radius: var(--radius-control);
   color: var(--sidebar-foreground);
   font-size: var(--ui-font-size, 14px);
@@ -875,7 +875,7 @@ html[data-custom-window-controls="true"] .page-header {
 
 /* Unified rail list row — compact h-8, same fill for hover + active selection. */
 .sidebar-list-row {
-  @apply relative flex h-8 w-full min-w-0 items-center px-2.5 font-normal transition-colors;
+  @apply relative flex h-8 w-full min-w-0 cursor-pointer items-center px-2.5 font-normal transition-colors;
   border-radius: var(--radius-control);
   color: var(--sidebar-foreground);
   font-size: var(--ui-font-size, 14px);
