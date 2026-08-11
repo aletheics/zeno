@@ -1422,7 +1422,7 @@ export function Composer(props: ComposerProps) {
             <button
               type="button"
               data-testid="composer-attach"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
+              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
               title={tr("composer.attach")}
               aria-label={tr("composer.attach")}
               onClick={(e) => openMenu("attach", e)}
