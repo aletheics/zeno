@@ -42,7 +42,7 @@ artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 # app-update.yml is embedded by electron-builder and always by scripts/after-pack.mjs.
 publish:
   provider: github
-  owner: num-scope
+  owner: aletheics
   repo: zeno
   releaseType: release
 mac:
@@ -81,7 +81,7 @@ nsis:
 linux:
   icon: icon.png
   executableName: Zeno
-  maintainer: num-scope <noreply@users.noreply.github.com>
+  maintainer: aletheics <noreply@users.noreply.github.com>
   # AppImage writes latest-linux.yml; deb is manual install convenience.
   target:
     - AppImage

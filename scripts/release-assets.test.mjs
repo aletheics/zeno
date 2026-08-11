@@ -35,7 +35,7 @@ assert(!isUsefulReleaseAsset("builder-debug.yml"), "drop builder-debug");
 // --- collect: windows happy path -----------------------------------------------
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-rel-win-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-rel-win-"));
   const out = join(root, "out");
   const art = join(root, "art");
   mkdirSync(out);
@@ -59,7 +59,7 @@ assert(!isUsefulReleaseAsset("builder-debug.yml"), "drop builder-debug");
 // --- collect: mac requires zip + renames feed ----------------------------------
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-rel-mac-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-rel-mac-"));
   const out = join(root, "out");
   const art = join(root, "art");
   mkdirSync(out);
@@ -84,7 +84,7 @@ assert(!isUsefulReleaseAsset("builder-debug.yml"), "drop builder-debug");
 // --- collect: mac without zip fails --------------------------------------------
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-rel-mac-bad-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-rel-mac-bad-"));
   const out = join(root, "out");
   const art = join(root, "art");
   mkdirSync(out);
@@ -106,7 +106,7 @@ assert(!isUsefulReleaseAsset("builder-debug.yml"), "drop builder-debug");
 // --- validate-publish happy path -----------------------------------------------
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-rel-pub-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-rel-pub-"));
   writeFileSync(join(root, "Zeno-0.5.0-win-x64.exe"), "exe");
   writeFileSync(join(root, "latest.yml"), "version: 0.5.0\n");
   writeFileSync(join(root, "Zeno-0.5.0-mac-arm64.dmg"), "dmg");
@@ -128,7 +128,7 @@ assert(!isUsefulReleaseAsset("builder-debug.yml"), "drop builder-debug");
 // --- validate-publish: dmg-only feed fails -------------------------------------
 
 {
-  const root = mkdtempSync(join(tmpdir(), "pix-rel-pub-bad-"));
+  const root = mkdtempSync(join(tmpdir(), "zeno-rel-pub-bad-"));
   writeFileSync(join(root, "Zeno-0.5.0-win-x64.exe"), "exe");
   writeFileSync(join(root, "latest.yml"), "v\n");
   writeFileSync(join(root, "Zeno-0.5.0-mac-arm64.dmg"), "dmg");

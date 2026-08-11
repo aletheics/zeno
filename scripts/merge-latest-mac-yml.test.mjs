@@ -12,7 +12,7 @@ import { dirname } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(root, "scripts/merge-latest-mac-yml.mjs");
-const dir = mkdtempSync(join(tmpdir(), "pix-merge-mac-yml-"));
+const dir = mkdtempSync(join(tmpdir(), "zeno-merge-mac-yml-"));
 
 try {
   writeFileSync(

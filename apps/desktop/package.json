@@ -1,10 +1,10 @@
 {
   "name": "@zeno/desktop",
-  "version": "0.7.2",
+  "version": "0.1.0",
   "private": true,
   "description": "Desktop shell for the pi coding agent",
-  "homepage": "https://github.com/num-scope/pix",
-  "author": "num-scope <noreply@users.noreply.github.com>",
+  "homepage": "https://github.com/aletheics/zeno",
+  "author": "aletheics <noreply@users.noreply.github.com>",
   "type": "module",
   "main": "dist/main/main.mjs",
   "scripts": {

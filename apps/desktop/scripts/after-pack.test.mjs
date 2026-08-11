@@ -16,17 +16,17 @@ function assert(condition, message) {
   const yml = serializeAppUpdateYml(
     {
       provider: "github",
-      owner: "num-scope",
+      owner: "aletheics",
       repo: "zeno",
       releaseType: "release",
     },
-    "@pixdesktop-updater",
+    "@zenodesktop-updater",
   );
   assert(yml.includes("provider: github"), "provider line");
   assert(yml.includes("owner: num-scope"), "owner line");
   assert(yml.includes("repo: zeno"), "repo line");
   assert(yml.includes("releaseType: release"), "releaseType line");
-  assert(yml.includes('updaterCacheDirName: "@pixdesktop-updater"'), "quoted cache dir");
+  assert(yml.includes('updaterCacheDirName: "@zenodesktop-updater"'), "quoted cache dir");
 }
 
 {
@@ -44,7 +44,7 @@ function assert(condition, message) {
         config: {
           publish: {
             provider: "github",
-            owner: "num-scope",
+            owner: "aletheics",
             repo: "zeno",
             releaseType: "release",
           },
@@ -52,7 +52,7 @@ function assert(condition, message) {
         appInfo: {
           productFilename: "Zeno",
           name: "@zeno/desktop",
-          updaterCacheDirName: "@pixdesktop-updater",
+          updaterCacheDirName: "@zenodesktop-updater",
         },
       },
     });
@@ -61,7 +61,7 @@ function assert(condition, message) {
     const body = readFileSync(dest, "utf8");
     assert(body.includes("provider: github"), "written provider");
     assert(body.includes("owner: num-scope"), "written owner");
-    assert(body.includes('updaterCacheDirName: "@pixdesktop-updater"'), "written cache dir");
+    assert(body.includes('updaterCacheDirName: "@zenodesktop-updater"'), "written cache dir");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -81,13 +81,13 @@ function assert(condition, message) {
         config: {
           publish: {
             provider: "github",
-            owner: "num-scope",
+            owner: "aletheics",
             repo: "zeno",
           },
         },
         appInfo: {
           productFilename: "Zeno",
-          updaterCacheDirName: "@pixdesktop-updater",
+          updaterCacheDirName: "@zenodesktop-updater",
         },
       },
     });

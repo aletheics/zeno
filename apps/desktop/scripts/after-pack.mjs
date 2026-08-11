@@ -47,7 +47,7 @@ export function serializeAppUpdateYml(publish, updaterCacheDirName) {
 function yamlScalar(value) {
   if (typeof value === "boolean" || typeof value === "number") return String(value);
   const text = String(value);
-  // Quote when needed (e.g. @pixdesktop-updater).
+  // Quote when needed (e.g. @zenodesktop-updater).
   if (/[:#{}[\],&*?|>!%@`'"]/.test(text) || text === "" || /^\s|\s$/.test(text)) {
     return JSON.stringify(text);
   }

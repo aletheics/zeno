@@ -30,7 +30,7 @@ export type AutoUpdateController = {
 /** GitHub Releases feed — must match electron-builder.yml `publish`. */
 export const DEFAULT_UPDATE_FEED = {
   provider: "github" as const,
-  owner: "num-scope",
+  owner: "aletheics",
   repo: "zeno",
   releaseType: "release" as const,
 };
