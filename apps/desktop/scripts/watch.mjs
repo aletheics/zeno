@@ -2,8 +2,8 @@
  * Desktop watch launcher — hot reload for development.
  *
  * - Starts Vite dev server for renderer (HMR for React components).
- * - Watches main / preload / agent builds; restarts Electron on backend changes.
- * - `pnpm watch` (root) or `pnpm run watch` (apps/desktop).
+ * - Watches main / preload / agent source files; restarts Electron on changes.
+ * - `pnpm dev` (root) or `pnpm run dev` (apps/desktop).
  * - Interactive: real HOME. Isolated: `PIX_ISOLATED=1` (temp HOME, fake model).
  */
 import { spawn, execSync } from "node:child_process";
@@ -31,45 +31,41 @@ const isWin = process.platform === "win32";
 
 /**
  * Find the vp binary in the workspace node_modules.
- * pnpm hoists vite-plus to the root, so we search upwards.
  */
 function resolveVpBin() {
-  // Try desktop-local first, then walk up to workspace root.
   const candidates = [desktopDir];
   let dir = desktopDir;
-  while (true) {
+  for (let i = 0; i < 8; i++) {
     const parent = resolve(dir, "..");
     if (parent === dir) break;
     dir = parent;
     candidates.push(dir);
-    if (candidates.length > 8) break; // safety
   }
   for (const base of candidates) {
     const bin = resolve(base, "node_modules", ".bin", isWin ? "vp.cmd" : "vp");
     try {
-      // Use statSync to check existence — require.resolve won't find bin entries.
       const { statSync } = require("node:fs");
       if (statSync(bin).isFile()) return bin;
     } catch {
       // keep searching
     }
   }
-  // Fallback: trust that vp is on PATH (e.g. when run via pnpm run watch).
   return isWin ? "vp.cmd" : "vp";
 }
 
 const vpBin = resolveVpBin();
 
-/** Spawn a child with stdio inherited. Returns the ChildProcess. */
+/** Spawn a child with stdio inherited. On Windows uses shell for .cmd compatibility. */
 function run(cmd, args, opts = {}) {
   return spawn(cmd, args, {
     cwd: desktopDir,
     stdio: "inherit",
+    shell: isWin,
     ...opts,
   });
 }
 
-// ── 1. Initial build of main / preload / agent (needed before first Electron launch) ──
+// ── 1. Initial build ──
 console.log("[watch] Building main / preload / agent ...");
 execSync(
   [
@@ -90,29 +86,35 @@ const rendererDev = run(
   },
 );
 
-// Give the dev server a moment to start before launching Electron.
-await new Promise((r) => setTimeout(r, 1500));
+// Wait for dev server to be ready.
+await new Promise((r) => setTimeout(r, 2000));
 
-// ── 3. Start build watchers for main / preload / agent ──
-console.log("[watch] Starting build watchers ...");
-const mainWatch = run(vpBin, ["build", "--watch", "--config", "vite.main.config.ts"]);
-const preloadWatch = run(vpBin, ["build", "--watch", "--config", "vite.preload.config.ts"]);
-const agentWatch = run(vpBin, ["build", "--watch", "--config", "vite.agent.config.ts"]);
+// ── 3. Start build watchers ──
+console.log("[watch] Starting build watchers for main / preload / agent ...");
+const buildProcs = [
+  run(vpBin, ["build", "--watch", "--config", "vite.main.config.ts"]),
+  run(vpBin, ["build", "--watch", "--config", "vite.preload.config.ts"]),
+  run(vpBin, ["build", "--watch", "--config", "vite.agent.config.ts"]),
+];
 
-// ── 4. Electron lifecycle (restart on backend dist changes) ──
+// ── 4. Electron lifecycle ──
 let electronProc = null;
 let restartTimer = null;
-const DEBOUNCE_MS = 500;
+let pendingRestart = false;
+const DEBOUNCE_MS = 800;
+
+function killElectron() {
+  if (!electronProc) return;
+  try {
+    electronProc.kill("SIGTERM");
+  } catch {
+    // already dead
+  }
+  electronProc = null;
+}
 
 function launchElectron() {
-  if (electronProc) {
-    try {
-      electronProc.kill("SIGTERM");
-    } catch {
-      // process already dead
-    }
-    electronProc = null;
-  }
+  killElectron();
   console.log("[watch] Launching Electron ...");
   electronProc = run(electron, [desktopDir], {
     env: {
@@ -121,8 +123,7 @@ function launchElectron() {
     },
   });
   electronProc.on("exit", (code, signal) => {
-    // If we scheduled a restart, don't log — the restart will log instead.
-    if (!restartTimer) {
+    if (!pendingRestart) {
       console.log(`[watch] Electron exited (code ${code ?? signal})`);
     }
     electronProc = null;
@@ -134,50 +135,47 @@ function launchElectron() {
 }
 
 function scheduleRestart() {
+  pendingRestart = true;
   if (restartTimer) clearTimeout(restartTimer);
   restartTimer = setTimeout(() => {
     restartTimer = null;
+    pendingRestart = false;
     console.log("[watch] Backend rebuilt — restarting Electron ...");
     launchElectron();
   }, DEBOUNCE_MS);
 }
 
-// Watch dist output directories for builds completing.
-const distMain = resolve(desktopDir, "dist", "main");
-const distPreload = resolve(desktopDir, "dist", "preload");
-const distAgent = resolve(desktopDir, "dist", "agent-host");
+// Watch source directories (not dist — more reliable cross-platform).
+const srcMain = resolve(desktopDir, "src", "main");
+const srcPreload = resolve(desktopDir, "src", "preload");
+const srcAgent = resolve(desktopDir, "src", "agent-host");
 
-for (const dir of [distMain, distPreload, distAgent]) {
+for (const dir of [srcMain, srcPreload, srcAgent]) {
   try {
     watch(dir, { recursive: true }, (_event, filename) => {
-      // Filter out sourcemaps and temp files so only real output triggers restart.
-      if (filename && !filename.endsWith(".map") && !filename.endsWith(".tmp")) {
+      if (filename && /\.(ts|tsx|mjs|js)$/.test(filename)) {
+        // Source changed — build watchers will rebuild; restart after debounce.
         scheduleRestart();
       }
     });
-  } catch {
-    console.warn(`[watch] Cannot watch ${dir} (will be created after first build)`);
+    console.log(`[watch] Watching ${dir}`);
+  } catch (err) {
+    console.warn(`[watch] Cannot watch ${dir}:`, err.message);
   }
 }
 
-// ── 5. Initial Electron launch ──
+// ── 5. Launch Electron ──
 launchElectron();
 
-// ── 6. Cleanup on exit ──
+// ── 6. Cleanup ──
 let cleaning = false;
 function cleanup() {
   if (cleaning) return;
   cleaning = true;
   console.log("\n[watch] Shutting down ...");
   if (restartTimer) clearTimeout(restartTimer);
-  if (electronProc) {
-    try {
-      electronProc.kill("SIGTERM");
-    } catch {
-      // ignore
-    }
-  }
-  for (const proc of [rendererDev, mainWatch, preloadWatch, agentWatch]) {
+  killElectron();
+  for (const proc of [rendererDev, ...buildProcs]) {
     try {
       proc.kill("SIGTERM");
     } catch {
@@ -185,8 +183,7 @@ function cleanup() {
     }
   }
   prepared.cleanup().catch(() => {});
-  // Give processes a moment to exit.
-  setTimeout(() => process.exit(0), 300);
+  setTimeout(() => process.exit(0), 500);
 }
 
 process.on("SIGINT", cleanup);

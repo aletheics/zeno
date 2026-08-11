@@ -9,7 +9,8 @@
   "main": "dist/main/main.mjs",
   "scripts": {
     "build": "vp build --config vite.renderer.config.ts && vp build --config vite.preload.config.ts && vp build --config vite.main.config.ts && vp build --config vite.agent.config.ts",
-    "dev": "pnpm run build && node scripts/launch.mjs",
+    "dev": "node scripts/watch.mjs",
+    "dev:once": "pnpm run build && node scripts/launch.mjs",
     "watch": "node scripts/watch.mjs",
     "e2e": "pnpm run build && playwright test",
     "e2e:ui": "pnpm run build && playwright test --ui",
