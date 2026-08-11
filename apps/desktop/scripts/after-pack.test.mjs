@@ -23,7 +23,7 @@ function assert(condition, message) {
     "@zenodesktop-updater",
   );
   assert(yml.includes("provider: github"), "provider line");
-  assert(yml.includes("owner: num-scope"), "owner line");
+  assert(yml.includes("owner: aletheics"), "owner line");
   assert(yml.includes("repo: zeno"), "repo line");
   assert(yml.includes("releaseType: release"), "releaseType line");
   assert(yml.includes('updaterCacheDirName: "@zenodesktop-updater"'), "quoted cache dir");
@@ -60,7 +60,7 @@ function assert(condition, message) {
     const dest = join(resources, "app-update.yml");
     const body = readFileSync(dest, "utf8");
     assert(body.includes("provider: github"), "written provider");
-    assert(body.includes("owner: num-scope"), "written owner");
+    assert(body.includes("owner: aletheics"), "written owner");
     assert(body.includes('updaterCacheDirName: "@zenodesktop-updater"'), "written cache dir");
   } finally {
     rmSync(root, { recursive: true, force: true });
