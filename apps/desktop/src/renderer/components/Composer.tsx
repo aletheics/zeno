@@ -197,7 +197,7 @@ function MenuRow(props: {
       role="menuitem"
       data-testid={props.testId}
       className={cn(
-        "flex w-full items-start gap-2 px-2.5 py-2 text-left transition-colors",
+        "flex w-full cursor-pointer items-start gap-2 px-2.5 py-2 text-left transition-colors",
         props.muted
           ? "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)]"
           : "text-[var(--popover-foreground,var(--foreground))] hover:bg-[var(--hover-fill)]",
@@ -271,7 +271,7 @@ function AccessOption(props: {
       role="menuitem"
       data-testid={props.testId}
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left transition-colors",
+        "flex w-full cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left transition-colors",
         // Match session list: transparent default, hover-fill on hover/active.
         props.active ? "bg-[var(--hover-fill)]" : "bg-transparent hover:bg-[var(--hover-fill)]",
         props.caution && !props.active && ACCESS_FULL_ORANGE_HOVER,
