@@ -4977,7 +4977,11 @@ void app
     });
     ipcMain.handle("zeno:workspace:list-git-branches", async (_event, cwd?: string) => {
       const path = resolveWorkspaceCwd(cwd, supervisor?.getWorkspaceCwd());
-      return listGitBranches(path);
+      try {
+        return await listGitBranches(path);
+      } catch {
+        return [] as GitBranchInfo[];
+      }
     });
     ipcMain.handle(
       "zeno:workspace:checkout-git-branch",

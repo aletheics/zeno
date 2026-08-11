@@ -1,5 +1,5 @@
 import { Glass } from "./Glass.tsx";
-import { PixMark } from "./PixMark.tsx";
+import { ZenoMark } from "./ZenoMark.tsx";
 import { SkyCanvas } from "./SkyCanvas.tsx";
 
 const footLink = "text-muted-foreground transition-colors duration-150 hover:text-foreground";
@@ -23,7 +23,7 @@ export function SiteFooter() {
           <div className="flex flex-col gap-10 px-6 py-12 sm:flex-row sm:items-start sm:justify-between sm:gap-12 sm:py-14">
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5">
-                <PixMark className="size-7" />
+                <ZenoMark className="size-7" />
                 <span className="text-[15px] font-semibold tracking-tight">Zeno</span>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -57,7 +57,7 @@ export function SiteFooter() {
                   pi coding agent
                 </a>
                 <a
-                  href="https://github.com/num-scope/pix"
+                  href="https://github.com/aletheics/zeno"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footLink}
@@ -65,7 +65,7 @@ export function SiteFooter() {
                   GitHub
                 </a>
                 <a
-                  href="https://github.com/num-scope/pix/releases"
+                  href="https://github.com/aletheics/zeno/releases"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footLink}
@@ -76,7 +76,7 @@ export function SiteFooter() {
               <div className="flex flex-col gap-2.5">
                 <span className="text-sm font-semibold text-foreground">Legal</span>
                 <a
-                  href="https://github.com/num-scope/pix/blob/main/LICENSE"
+                  href="https://github.com/aletheics/zeno/blob/main/LICENSE"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={footLink}

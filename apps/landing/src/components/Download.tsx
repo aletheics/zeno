@@ -1,7 +1,7 @@
 import { Glass } from "./Glass.tsx";
 
-const DOWNLOAD_HREF = "https://github.com/num-scope/pix/releases/latest";
-const REPO_HREF = "https://github.com/num-scope/pix";
+const DOWNLOAD_HREF = "https://github.com/aletheics/zeno/releases/latest";
+const REPO_HREF = "https://github.com/aletheics/zeno";
 
 export function Download() {
   return (

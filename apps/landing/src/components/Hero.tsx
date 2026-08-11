@@ -1,6 +1,6 @@
 import { Glass } from "./Glass.tsx";
 
-const DOWNLOAD_HREF = "https://github.com/num-scope/pix/releases/latest";
+const DOWNLOAD_HREF = "https://github.com/aletheics/zeno/releases/latest";
 
 /** Product screenshot — raw capture only, no fake window chrome. */
 function Shot({ src, alt }: { src: string; alt: string }) {
@@ -59,7 +59,7 @@ export function Hero() {
               aria-hidden="true"
               className="pointer-events-none absolute -inset-x-16 -top-10 bottom-0 -z-10 rounded-[3rem] bg-[radial-gradient(60%_60%_at_50%_0%,oklch(0.7_0_0/0.14),transparent_70%)] blur-2xl"
             />
-            <Shot src="/pix-desktop.png" alt="Zeno desktop app — sidebar, session, and composer" />
+            <Shot src="/zeno-desktop.png" alt="Zeno desktop app — sidebar, session, and composer" />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Glass } from "./Glass.tsx";
-import { PixMark } from "./PixMark.tsx";
+import { ZenoMark } from "./ZenoMark.tsx";
 
-const DOWNLOAD_HREF = "https://github.com/num-scope/pix/releases/latest";
+const DOWNLOAD_HREF = "https://github.com/aletheics/zeno/releases/latest";
 
 const navLink =
   "rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors duration-150 hover:bg-muted/40 hover:text-foreground";
@@ -19,7 +19,7 @@ export function SiteHeader() {
             aria-label="Zeno — home"
             className="flex shrink-0 items-center gap-2.5 text-foreground transition-opacity duration-150 hover:opacity-80"
           >
-            <PixMark className="size-7" />
+            <ZenoMark className="size-7" />
             <span className="text-[15px] font-semibold tracking-tight">Zeno</span>
           </a>
           <nav className="ml-auto hidden items-center gap-0.5 sm:flex">
@@ -30,7 +30,7 @@ export function SiteHeader() {
               Why Zeno
             </a>
             <a
-              href="https://github.com/num-scope/pix"
+              href="https://github.com/aletheics/zeno"
               target="_blank"
               rel="noopener noreferrer"
               className={navLink}

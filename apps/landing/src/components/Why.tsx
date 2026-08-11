@@ -35,7 +35,7 @@ export function Why() {
           />
           <div className="overflow-hidden rounded-2xl border border-white/[0.10] shadow-[0_28px_56px_-18px_rgba(0,0,0,0.58)] ring-1 ring-inset ring-white/[0.05]">
             <img
-              src="/pix-desktop.png"
+              src="/zeno-desktop.png"
               alt="Zeno desktop shell with sidebar navigation and composer"
               className="block h-auto w-full object-cover object-top"
               decoding="async"

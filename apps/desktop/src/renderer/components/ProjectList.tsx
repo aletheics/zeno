@@ -1165,7 +1165,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid="project-menu-btn"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={tr("project.more")}
               aria-label={tr("project.more")}
               onClick={(e) => openItemMenu(projectMenuId, e)}
@@ -1175,7 +1175,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid="project-edit-btn"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={tr("project.newSession")}
               aria-label={tr("project.newSession")}
               onClick={(e) => handleNewThread(path, e)}
@@ -1312,7 +1312,7 @@ export function ProjectList(props: ProjectListProps) {
               <button
                 type="button"
                 data-testid="projects-organize-btn"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
                 title={tr("organize.title")}
                 aria-label={tr("organize.title")}
                 aria-haspopup="menu"
@@ -1383,7 +1383,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid="threads-organize-btn"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={tr("organize.title")}
               aria-label={tr("organize.title")}
               aria-haspopup="menu"
@@ -1395,7 +1395,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid="threads-new-btn"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={tr("nav.newThread")}
               aria-label={tr("nav.newThread")}
               onClick={() => handleNewThread(undefined)}

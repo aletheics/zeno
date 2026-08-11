@@ -1,7 +1,7 @@
 import { cn } from "../lib/utils.ts";
 
 /** Zeno brand mark — same geometry as desktop app icon. */
-export function PixMark(props: { className?: string; title?: string }) {
+export function ZenoMark(props: { className?: string; title?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
