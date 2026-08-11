@@ -26,27 +26,30 @@ pnpm electron:install
 
 Apps have **independent** `dev` / `build` entry points at the repo root:
 
-| App                          | Dev                | Build                | Notes                                  |
-| ---------------------------- | ------------------ | -------------------- | -------------------------------------- |
-| **Desktop** (`apps/desktop`) | `pnpm dev:desktop` | `pnpm build:desktop` | `pnpm dev` is an alias for desktop     |
-| **Landing** (`apps/landing`) | `pnpm dev:landing` | `pnpm build:landing` | Preview: `pnpm preview:landing`        |
-| **All packages**             | —                  | `pnpm build`         | Recursive `build` across the workspace |
+| App                          | Dev                | Build                | Notes                                                          |
+| ---------------------------- | ------------------ | -------------------- | -------------------------------------------------------------- |
+| **Desktop** (`apps/desktop`) | `pnpm dev`         | `pnpm build:desktop` | Hot reload (HMR + auto-restart). One-shot: `pnpm run dev:once` |
+| **Landing** (`apps/landing`) | `pnpm dev:landing` | `pnpm build:landing` | Preview: `pnpm preview:landing`                                |
+| **All packages**             | —                  | `pnpm build`         | Recursive `build` across the workspace                         |
 
 ### Desktop
 
 ```bash
-pnpm dev:desktop   # or: pnpm dev
+pnpm dev           # hot reload: Vite HMR for renderer + auto-restart for main process
+pnpm run dev:once  # one-shot build + launch (no watch)
 pnpm build:desktop # compile only (no Electron launch)
 ```
 
-Builds renderer / preload / main / agent-host, then launches Electron. Restart after source changes.
+`pnpm dev` starts a Vite dev server on `http://localhost:5173` for the renderer (React HMR — component changes appear instantly without restart) and runs build watchers for main / preload / agent-host. When backend source code changes, Electron restarts automatically.
+
+Use `dev:once` for CI or when you need a single cold launch without file watching.
 
 Product launch uses your real `HOME` and the same agent dir as the CLI (`~/.pi/agent` / `PI_CODING_AGENT_DIR`). Models, API keys, settings, packages, and tools match interactive `pi`. The last workspace is restored from desktop prefs; no temp workspace is created on every start.
 
 Optional isolated launch (temp home + fixture workspace + fake model):
 
 ```bash
-PIX_ISOLATED=1 pnpm dev:desktop
+PIX_ISOLATED=1 pnpm dev
 ```
 
 Browser-only chat timeline preview (no Electron), for iterating on session content rendering:
