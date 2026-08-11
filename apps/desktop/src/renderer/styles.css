@@ -1706,6 +1706,7 @@ html[data-custom-window-controls="true"] .page-header {
   font-size: 13px;
   line-height: 1.25;
   color: var(--foreground);
+  cursor: pointer;
   transition: background 0.1s ease;
 }
 .composer-suggest-item:hover,
