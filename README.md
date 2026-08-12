@@ -143,6 +143,33 @@ on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
 
 > **macOS note:** first open of an unsigned download may need `xattr -cr /Applications/Zeno.app` (Gatekeeper quarantine). Auto-update does **not** require an Apple Developer ID — Zeno verifies the release zip (`sha512` via electron-updater) and replaces the `.app` itself (same model as Tauri updater + minisign). Optional `CSC_LINK` / `CSC_KEY_PASSWORD` still improve Gatekeeper UX and notifications when present.
 
+## Contributing
+
+Contributions are welcome — bug fixes, docs, and small features are the easiest
+to get in. No CLA required.
+
+1. **Start from an issue.** For anything non-trivial, open an issue first so the
+   direction is agreed before you write code. Bug reports should include steps to
+   reproduce, expected vs. actual behavior, and your OS (`win32` / `darwin` /
+   `linux`).
+2. **Fork, branch, PR.** Fork the repo, branch off `main`, and open a pull
+   request against `main` when ready.
+3. **Keep it green.** CI runs `pnpm check` (lint + types + format) and `pnpm test`.
+   Run them locally before pushing:
+   ```bash
+   pnpm check
+   pnpm test
+   ```
+   Use `pnpm fmt` to auto-fix formatting.
+4. **Match the surrounding code.** Follow the existing comment density, naming,
+   and file layout. TypeScript is strict — avoid `any` and unused imports.
+5. **Scope your PR.** One change per PR, with a clear title and a short
+   description of what and why. Link the issue it closes.
+
+Maintainers merge to `main`; releases are cut from tags (see
+[Cut a release](#cut-a-release)). For questions and discussion, see
+[Community Outreach](#community-outreach).
+
 ## Architecture
 
 ```text
