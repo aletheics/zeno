@@ -72,8 +72,6 @@ nsis:
   allowToChangeInstallationDirectory: true
   perMachine: false
   deleteAppDataOnUninstall: false
-  # Non-solid LZMA: ~10% larger installer but much faster extraction (no single compressed block).
-  solid: false
   installerIcon: icon.ico
   uninstallerIcon: icon.ico
   installerHeaderIcon: icon.ico
