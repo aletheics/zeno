@@ -474,6 +474,24 @@ export interface ResourceSummary {
   source?: string;
 }
 
+/** One MCP server entry in mcp.json. */
+export interface McpServerConfig {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  /** When true the adapter skips this server (soft remove). */
+  disabled?: boolean;
+  /** npm package name this server was installed from (for updates). */
+  packageName?: string;
+  /** Working directory for the MCP server process (package root). */
+  cwd?: string;
+}
+
+/** Full mcp.json shape. */
+export interface McpConfig {
+  mcpServers: Record<string, McpServerConfig>;
+}
+
 /** Composer chrome: current git branch / worktree summary. */
 export interface GitContextInfo {
   branch?: string;
@@ -2058,6 +2076,15 @@ export interface ZenoDesktopApi {
   };
   resources: {
     list(): Promise<ResourceSummary[]>;
+  };
+  mcp: {
+    getConfig(): Promise<McpConfig>;
+    installServer(name: string, packageName: string): Promise<void>;
+    removeServer(name: string): Promise<void>;
+    setEnabled(name: string, enabled: boolean): Promise<void>;
+    updateServer(name: string): Promise<void>;
+    getPath(): Promise<string>;
+    searchCatalog(query?: string, size?: number, from?: number): Promise<CatalogSearchResult>;
   };
   extensionUi: {
     respond(response: ExtensionUiResponse): Promise<void>;

@@ -249,6 +249,18 @@ const api: ZenoDesktopApi = {
   resources: {
     list: () => ipcRenderer.invoke("zeno:resources:list"),
   },
+  mcp: {
+    getConfig: () => ipcRenderer.invoke("zeno:mcp:get-config"),
+    installServer: (name, packageName) =>
+      ipcRenderer.invoke("zeno:mcp:install-server", name, packageName),
+    removeServer: (name) => ipcRenderer.invoke("zeno:mcp:remove-server", name),
+    setEnabled: (name, enabled) =>
+      ipcRenderer.invoke("zeno:mcp:set-enabled", name, enabled),
+    updateServer: (name) => ipcRenderer.invoke("zeno:mcp:update-server", name),
+    getPath: () => ipcRenderer.invoke("zeno:mcp:get-path"),
+    searchCatalog: (query, size, from) =>
+      ipcRenderer.invoke("zeno:mcp:search-catalog", query, size, from),
+  },
   extensionUi: {
     respond: (response) => ipcRenderer.invoke("zeno:extension-ui:respond", response),
   },

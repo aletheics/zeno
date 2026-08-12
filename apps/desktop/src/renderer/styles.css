@@ -3102,26 +3102,34 @@ html[data-custom-window-controls="true"] .page-header {
   justify-content: center;
 }
 /*
- * Lightbox close — fixed to the viewport top-right (not the table card).
- * Empty <button>: full border-box is one hit target; X via ::after only.
+ * Card wrapper — shrink-wraps the content so the close button aligns with
+ * the table / image edge, not the viewport.
+ */
+.content-preview-dialog-card {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  max-height: 100%;
+}
+/*
+ * Lightbox close — small, subtle X at the table top-right.
+ * Blends into the table background; no border-radius circle, no shadow.
  */
 .content-preview-dialog-close {
-  position: fixed;
-  top: max(14px, env(safe-area-inset-top, 0px));
-  right: max(14px, env(safe-area-inset-right, 0px));
+  position: absolute;
+  top: 0;
+  right: 0;
   z-index: 30;
   box-sizing: border-box;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: 24px;
+  height: 24px;
   margin: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0;
-  background: color-mix(in srgb, var(--surface-panel, #2d2d2d) 94%, #000 6%);
+  background: transparent;
   color: var(--foreground);
-  box-shadow: 0 4px 18px rgb(0 0 0 / 0.32);
+  opacity: 0.36;
   cursor: pointer;
   pointer-events: auto !important;
   touch-action: manipulation;
@@ -3131,7 +3139,7 @@ html[data-custom-window-controls="true"] .page-header {
   /* Critical in Electron: top chrome is often a window-drag region. */
   -webkit-app-region: no-drag !important;
   app-region: no-drag !important;
-  transition: background 0.12s ease;
+  transition: opacity 0.12s ease, background 0.12s ease;
 }
 /* Decorative X only — must never be a hit target. */
 .content-preview-dialog-close::after {
@@ -3139,8 +3147,8 @@ html[data-custom-window-controls="true"] .page-header {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   transform: translate(-50%, -50%);
   pointer-events: none !important;
   background:
@@ -3160,14 +3168,17 @@ html[data-custom-window-controls="true"] .page-header {
     );
 }
 .content-preview-dialog-close:hover {
-  background: color-mix(in srgb, var(--hover-fill, #383838) 100%, transparent);
+  opacity: 0.72;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 .content-preview-dialog-close:active {
-  background: color-mix(in srgb, var(--hover-fill, #383838) 100%, #000 8%);
+  opacity: 0.88;
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
 }
 .content-preview-dialog-close:focus-visible {
+  opacity: 0.72;
   outline: 2px solid var(--ring, #379cfc);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .content-table-expanded {
   display: flex;
@@ -3193,12 +3204,8 @@ html[data-custom-window-controls="true"] .page-header {
     padding: 56px 10px 14px;
   }
   .content-preview-dialog-close {
-    top: max(10px, env(safe-area-inset-top, 0px));
-    right: max(10px, env(safe-area-inset-right, 0px));
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
+    width: 30px;
+    height: 30px;
   }
   .content-table-expanded {
     max-height: calc(100dvh - 70px);

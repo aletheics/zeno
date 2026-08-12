@@ -6,9 +6,8 @@ import { cn } from "../lib/utils.ts";
 /**
  * Full-screen content preview (expanded table / image).
  *
- * Close is a viewport-fixed empty <button> (no SVG / child hit targets) at the
- * top-right of the overlay — standard lightbox placement, clear of the card and
- * of Electron titlebar drag when given no-drag.
+ * Close button sits at the top-right of the content card (not the viewport),
+ * so it moves with the table and is always within reach.
  */
 export function ContentPreviewDialog(props: {
   open: boolean;
@@ -33,19 +32,19 @@ export function ContentPreviewDialog(props: {
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DialogTitle className="sr-only">{props.title}</DialogTitle>
-        <div className="content-preview-dialog-stage">{props.children}</div>
-        {/*
-          Sibling of the stage (not inside the card): fixed to the viewport corner.
-          Empty button — full border-box is the hit target; X via ::after only.
-        */}
-        <button
-          type="button"
-          className="content-preview-dialog-close"
-          aria-label={props.closeLabel}
-          title={props.closeLabel}
-          data-testid="content-preview-close"
-          onClick={() => props.onOpenChange(false)}
-        />
+        <div className="content-preview-dialog-stage">
+          <div className="content-preview-dialog-card">
+            {props.children}
+            <button
+              type="button"
+              className="content-preview-dialog-close"
+              aria-label={props.closeLabel}
+              title={props.closeLabel}
+              data-testid="content-preview-close"
+              onClick={() => props.onOpenChange(false)}
+            />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -3,6 +3,7 @@ import type {
   CatalogPackage,
   HostEvent,
   HostSnapshot,
+  McpConfig,
   PackageSummary,
   ResourceSummary,
   SessionInfoView,
@@ -311,6 +312,7 @@ function App() {
   );
   const extensionUiStateRef = useRef(extensionUiState);
   extensionUiStateRef.current = extensionUiState;
+  const [mcpServerCount, setMcpServerCount] = useState(0);
   /** Session file the mounted terminal is waiting for (normed path). */
   const transitionSessionRef = useRef<string | null>(null);
   /** Match main-process session keys (macOS /private/var collapse). */
@@ -1429,12 +1431,14 @@ function App() {
     try {
       if (ensure) await ensureHost();
       else if (!useShellStore.getState().runtimeId) return;
-      const [pkgs, res] = await Promise.all([
+      const [pkgs, res, mcpCfg] = await Promise.all([
         window.zeno.packages.list(),
         window.zeno.resources.list(),
+        window.zeno.mcp.getConfig().catch(() => ({ mcpServers: {} as Record<string, unknown> })),
       ]);
       setPackages(pkgs);
       setResources(res);
+      setMcpServerCount(Object.keys(mcpCfg.mcpServers ?? {}).length);
     } catch {
       // Pi/agent host unavailable — keep previous counts.
     }
@@ -1588,6 +1592,9 @@ function App() {
       case "hotkeys":
         setSettingsSection("shortcuts");
         setView("settings");
+        return true;
+      case "mcp":
+        setView("packages");
         return true;
       case "upcoming":
         reportAppError(
@@ -3142,10 +3149,10 @@ function App() {
         threadsByCwd={threadsByCwd}
         threadTitle={threadTitle}
         packageCount={
-          packages.length > 0
+          (packages.length > 0
             ? packages.length
             : (snapshot?.configuredPackages.global ?? 0) +
-              (snapshot?.configuredPackages.project ?? 0)
+              (snapshot?.configuredPackages.project ?? 0)) + mcpServerCount
         }
         {...(mcpNavBadge ? { mcpBadge: mcpNavBadge.badge, mcpDetail: mcpNavBadge.detail } : {})}
         resourceCount={
@@ -3800,6 +3807,12 @@ function PackagesPage(props: {
   const [catalogError, setCatalogError] = useState<string>();
   const [installingSource, setInstallingSource] = useState<string>();
   const [discoverScope, setDiscoverScope] = useState<"global" | "project">("global");
+  /** Discover tab: plugin packages vs MCP servers. */
+  const [discoverType, setDiscoverType] = useState<"plugin" | "mcp">("plugin");
+  /** Installed MCP servers from mcp.json. */
+  const [mcpServers, setMcpServers] = useState<McpConfig>({ mcpServers: {} });
+  /** True when MCP config was modified and needs a host restart to take effect. */
+  const [mcpDirty, setMcpDirty] = useState(false);
   const catalogLoadGen = useRef(0);
   const catalogLoadingMoreRef = useRef(false);
   const catalogEndRef = useRef<HTMLDivElement | null>(null);
@@ -3823,11 +3836,10 @@ function PackagesPage(props: {
     setCatalogLoadingMore(false);
     catalogLoadingMoreRef.current = false;
     try {
-      const result = await window.zeno.packages.searchCatalog(
-        query.trim() || undefined,
-        CATALOG_PAGE,
-        0,
-      );
+      const result =
+        discoverType === "mcp"
+          ? await window.zeno.mcp.searchCatalog(query.trim() || undefined, CATALOG_PAGE, 0)
+          : await window.zeno.packages.searchCatalog(query.trim() || undefined, CATALOG_PAGE, 0);
       if (gen !== catalogLoadGen.current) return;
       setCatalog(result.packages);
       setCatalogTotal(result.total);
@@ -3848,11 +3860,14 @@ function PackagesPage(props: {
     const gen = catalogLoadGen.current;
     const from = catalog.length;
     try {
-      const result = await window.zeno.packages.searchCatalog(
-        catalogQuery.trim() || undefined,
-        CATALOG_PAGE,
-        from,
-      );
+      const result =
+        discoverType === "mcp"
+          ? await window.zeno.mcp.searchCatalog(catalogQuery.trim() || undefined, CATALOG_PAGE, from)
+          : await window.zeno.packages.searchCatalog(
+              catalogQuery.trim() || undefined,
+              CATALOG_PAGE,
+              from,
+            );
       if (gen !== catalogLoadGen.current) return;
       if (result.packages.length === 0) {
         // Registry has no more pages — clamp total so we stop requesting.
@@ -3884,6 +3899,12 @@ function PackagesPage(props: {
   useEffect(() => {
     if (tab !== "discover") return;
     void loadCatalog();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, discoverType]);
+
+  // Load MCP config when viewing installed tab
+  useEffect(() => {
+    if (tab === "installed") void loadMcpConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -3926,6 +3947,81 @@ function PackagesPage(props: {
     } finally {
       setInstallingSource(undefined);
       setBusy(false);
+    }
+  }
+
+  async function installMcpFromCatalog(item: CatalogPackage) {
+    setInstallingSource(item.source);
+    setBusy(true);
+    try {
+      // Derive a short server name from the package name
+      const name = item.name.startsWith("@") ? item.name.split("/").pop()! : item.name;
+      await window.zeno.mcp.installServer(name, item.name);
+      await loadMcpConfig();
+      setMcpDirty(true);
+    } catch {
+      // parent reports error
+    } finally {
+      setInstallingSource(undefined);
+      setBusy(false);
+    }
+  }
+
+  async function removeMcp(name: string) {
+    setBusy(true);
+    try {
+      await window.zeno.mcp.removeServer(name);
+      await loadMcpConfig();
+      // Reload the agent host so pi-mcp-adapter re-reads mcp.json and
+      // disconnects from the removed server immediately.  Removal is safe
+      // to reload — we are removing a server, not adding one, so a crash
+      // loop from a broken server is impossible.
+      try {
+        await window.zeno.runtime.reload();
+        setMcpDirty(false);
+      } catch {
+        // Host may not be running yet; config is already saved.  Show the
+        // pending hint so the user knows to restart manually.
+        setMcpDirty(true);
+      }
+    } catch {
+      // parent reports error
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setMcpEnabled(name: string, enabled: boolean) {
+    setBusy(true);
+    try {
+      await window.zeno.mcp.setEnabled(name, enabled);
+      await loadMcpConfig();
+      setMcpDirty(true);
+    } catch {
+      // parent reports error
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateMcp(name: string) {
+    setBusy(true);
+    try {
+      await window.zeno.mcp.updateServer(name);
+      setMcpDirty(true);
+    } catch {
+      // parent reports error
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadMcpConfig() {
+    try {
+      const cfg = await window.zeno.mcp.getConfig();
+      setMcpServers(cfg);
+    } catch {
+      // keep previous state
     }
   }
 
@@ -4051,42 +4147,60 @@ function PackagesPage(props: {
                   className="min-w-0 flex-1"
                 />
                 <SettingsSelect
-                  testId="packages-discover-scope"
+                  testId="packages-discover-type"
                   size="md"
                   className="h-9 shrink-0"
-                  value={discoverScope}
-                  onChange={(v) => setDiscoverScope(v as "global" | "project")}
+                  value={discoverType}
+                  onChange={(v) => setDiscoverType(v as "plugin" | "mcp")}
                   disabled={busy || Boolean(installingSource)}
                   options={[
-                    { value: "global", label: tr("packages.scopeGlobal") },
-                    { value: "project", label: tr("packages.scopeProject") },
+                    { value: "plugin", label: tr("packages.installedSection") },
+                    { value: "mcp", label: tr("mcp.scopeLabel") },
                   ]}
                 />
-                <a
-                  className="btn-secondary inline-flex h-9 shrink-0 items-center whitespace-nowrap no-underline"
-                  href="https://pi.dev/packages"
-                  target="_blank"
-                  rel="noreferrer"
-                  data-testid="packages-catalog-link"
-                >
-                  {tr("packages.discoverOpenWeb")}
-                </a>
-                <div
-                  className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-[var(--border)] px-2.5"
-                  data-testid="package-temporary-label"
-                  title={tr("packages.temporary")}
-                >
-                  <span className="whitespace-nowrap text-[12px] text-[var(--muted-foreground)]">
-                    {tr("packages.installTemp")}
-                  </span>
-                  <SettingsToggle
-                    checked={temporary}
-                    onChange={setTemporary}
-                    disabled={props.loading || busy}
-                    testId="package-temporary"
-                    aria-label={tr("packages.temporary")}
+                {discoverType === "plugin" ? (
+                  <SettingsSelect
+                    testId="packages-discover-scope"
+                    size="md"
+                    className="h-9 shrink-0"
+                    value={discoverScope}
+                    onChange={(v) => setDiscoverScope(v as "global" | "project")}
+                    disabled={busy || Boolean(installingSource)}
+                    options={[
+                      { value: "global", label: tr("packages.scopeGlobal") },
+                      { value: "project", label: tr("packages.scopeProject") },
+                    ]}
                   />
-                </div>
+                ) : null}
+                {discoverType === "plugin" ? (
+                  <a
+                    className="btn-secondary inline-flex h-9 shrink-0 items-center whitespace-nowrap no-underline"
+                    href="https://pi.dev/packages"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="packages-catalog-link"
+                  >
+                    {tr("packages.discoverOpenWeb")}
+                  </a>
+                ) : null}
+                {discoverType === "plugin" ? (
+                  <div
+                    className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-[var(--border)] px-2.5"
+                    data-testid="package-temporary-label"
+                    title={tr("packages.temporary")}
+                  >
+                    <span className="whitespace-nowrap text-[12px] text-[var(--muted-foreground)]">
+                      {tr("packages.installTemp")}
+                    </span>
+                    <SettingsToggle
+                      checked={temporary}
+                      onChange={setTemporary}
+                      disabled={props.loading || busy}
+                      testId="package-temporary"
+                      aria-label={tr("packages.temporary")}
+                    />
+                  </div>
+                ) : null}
               </div>
               {catalogError ? (
                 <p className="form-error" data-testid="packages-discover-error">
@@ -4104,8 +4218,13 @@ function PackagesPage(props: {
               ) : (
                 <div className="item-list" data-testid="packages-discover-list">
                   {catalog.map((item) => {
+                    const mcpName = item.name.startsWith("@")
+                      ? item.name.split("/").pop()!
+                      : item.name;
                     const installed =
-                      installedSources.has(item.source) || installedSources.has(item.name);
+                      discoverType === "mcp"
+                        ? mcpName in (mcpServers.mcpServers ?? {})
+                        : installedSources.has(item.source) || installedSources.has(item.name);
                     const installing = installingSource === item.source;
                     return (
                       <article
@@ -4114,7 +4233,15 @@ function PackagesPage(props: {
                         data-testid={`catalog-package-${item.name}`}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="title">{item.name}</div>
+                          <a
+                            className="title cursor-pointer no-underline hover:underline"
+                            href={`https://www.npmjs.com/package/${item.name}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={`${tr("packages.discoverOpenWeb")} → ${item.name}`}
+                          >
+                            {item.name}
+                          </a>
                           <div className="meta">
                             v{item.version}
                             {item.publisher ? ` · ${item.publisher}` : ""}
@@ -4133,7 +4260,7 @@ function PackagesPage(props: {
                         </div>
                         <div className="badges">
                           {item.keywords
-                            ?.filter((k) => k !== "pi-package")
+                            ?.filter((k) => k !== "pi-package" && k !== "mcp-server")
                             .slice(0, 3)
                             .map((k) => (
                               <span key={k} className="chip">
@@ -4145,18 +4272,28 @@ function PackagesPage(props: {
                             className="btn-primary btn-sm"
                             data-testid={`catalog-install-${item.name}`}
                             disabled={installed || installing || busy || props.loading}
-                            onClick={() => void installFromCatalog(item)}
+                            onClick={() =>
+                              discoverType === "mcp"
+                                ? void installMcpFromCatalog(item)
+                                : void installFromCatalog(item)
+                            }
                             title={
-                              temporary ? tr("packages.temporary") : tr("packages.discoverInstall")
+                              discoverType === "mcp"
+                                ? tr("mcp.install")
+                                : temporary
+                                  ? tr("packages.temporary")
+                                  : tr("packages.discoverInstall")
                             }
                           >
                             {installed
-                              ? tr("packages.discoverInstalled")
+                              ? tr(discoverType === "mcp" ? "mcp.installed" : "packages.discoverInstalled")
                               : installing
-                                ? tr("packages.discoverInstalling")
-                                : temporary
-                                  ? tr("packages.installTemp")
-                                  : tr("packages.discoverInstall")}
+                                ? tr("mcp.installing")
+                                : discoverType === "mcp"
+                                  ? tr("mcp.install")
+                                  : temporary
+                                    ? tr("packages.installTemp")
+                                    : tr("packages.discoverInstall")}
                           </button>
                         </div>
                       </article>
@@ -4186,7 +4323,11 @@ function PackagesPage(props: {
                   <p>{tr("packages.emptyBody")}</p>
                 </div>
               ) : (
-                <div className="item-list" data-testid="packages-list">
+                <>
+                  <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+                    {tr("packages.installedSection")}
+                  </h3>
+                  <div className="item-list" data-testid="packages-list">
                   {updatesChecked ? (
                     <p className="form-hint m-0" data-testid="packages-update-summary">
                       {updateSources.size === 0
@@ -4273,7 +4414,90 @@ function PackagesPage(props: {
                     );
                   })}
                 </div>
+                </>
               )}
+
+              {/* MCP Servers section in installed tab */}
+              <div className="mt-4" data-testid="mcp-installed">
+                {Object.keys(mcpServers.mcpServers ?? {}).length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+                        {tr("mcp.installedTitle")}
+                      </h3>
+                      {mcpDirty && (
+                        <span className="chip-status" data-tone="update">
+                          {tr("mcp.restartHint")}
+                        </span>
+                      )}
+                    </div>
+                    {mcpDirty && (
+                      <p className="form-hint m-0 mt-1">{tr("mcp.restartHintDetail")}</p>
+                    )}
+                    <div className="item-list mt-2">
+                      {Object.entries(mcpServers.mcpServers).map(([name, cfg]) => (
+                        <article
+                          key={name}
+                          className="item-card"
+                          data-enabled={cfg.disabled ? "false" : "true"}
+                          data-testid={`mcp-card-${name}`}
+                        >
+                          <div className="min-w-0">
+                            <div className="title">{name}</div>
+                            <div className="meta">
+                              {cfg.packageName ?? `${cfg.command} ${cfg.args?.join(" ") ?? ""}`}
+                            </div>
+                          </div>
+                          <div className="badges">
+                            <span
+                              className="chip-status"
+                              data-tone={cfg.disabled ? "off" : "on"}
+                              data-testid={`mcp-status-${name}`}
+                            >
+                              {cfg.disabled ? tr("packages.disabled") : tr("packages.enabled")}
+                            </span>
+                            <span className="chip">global</span>
+                            <span className="chip">npm</span>
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              data-testid={`mcp-enable-${name}`}
+                              disabled={busy}
+                              onClick={() => void setMcpEnabled(name, !!cfg.disabled)}
+                            >
+                              {cfg.disabled ? tr("packages.enable") : tr("packages.disable")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              data-testid={`mcp-update-${name}`}
+                              disabled={busy}
+                              title={tr("packages.update")}
+                              onClick={() => void updateMcp(name)}
+                            >
+                              {tr("packages.update")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-ghost btn-sm danger"
+                              data-testid={`mcp-remove-${name}`}
+                              disabled={busy}
+                              onClick={() => void removeMcp(name)}
+                            >
+                              {tr("mcp.remove")}
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-panel" data-testid="mcp-empty">
+                    <h2>{tr("mcp.emptyTitle")}</h2>
+                    <p>{tr("mcp.emptyBody")}</p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

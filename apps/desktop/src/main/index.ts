@@ -20,6 +20,8 @@ import {
   type PiSettingsPatchResult,
   type PiSettingsView,
   type ProjectTrustSummary,
+  type McpConfig,
+  type McpServerConfig,
   type ProviderAuthSummary,
   type ProviderUsageSnapshot,
   type ResourceSummary,
@@ -62,6 +64,7 @@ import {
   lstatSync,
   readdirSync,
   unlinkSync,
+  rmSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
@@ -1655,6 +1658,133 @@ async function searchPiPackageCatalog(
   return { packages: items, total };
 }
 
+/** MCP server catalog: npm registry search for MCP servers (name/description/keywords). */
+async function searchMcpCatalog(
+  query?: string,
+  size = 20,
+  from = 0,
+): Promise<{ packages: CatalogPackage[]; total: number }> {
+  const q = query?.trim() ?? "";
+  // Broad search: match "mcp" + "server" in name/description/keywords, plus user query
+  const text = q ? `mcp server ${q}` : "mcp server";
+  const limit = Math.min(100, Math.max(1, Math.floor(size)));
+  const offset = Math.max(0, Math.floor(from));
+  const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "zeno-desktop" },
+  });
+  if (!res.ok) {
+    throw new Error(`MCP catalog request failed (${res.status})`);
+  }
+  const data = (await res.json()) as {
+    total?: number;
+    objects?: Array<{
+      package?: {
+        name?: string;
+        description?: string;
+        version?: string;
+        date?: string;
+        keywords?: string[];
+        publisher?: { username?: string };
+      };
+      downloads?: { weekly?: number };
+    }>;
+  };
+  const items: CatalogPackage[] = [];
+  for (const obj of data.objects ?? []) {
+    const pkg = obj.package;
+    if (!pkg?.name) continue;
+    const entry: CatalogPackage = {
+      name: pkg.name,
+      description: pkg.description?.trim() || "",
+      version: pkg.version || "latest",
+      source: `npm:${pkg.name}`,
+    };
+    if (pkg.publisher?.username) entry.publisher = pkg.publisher.username;
+    if (typeof obj.downloads?.weekly === "number") entry.weeklyDownloads = obj.downloads.weekly;
+    if (pkg.date) entry.updatedAt = pkg.date;
+    if (Array.isArray(pkg.keywords))
+      entry.keywords = pkg.keywords.filter((k) => typeof k === "string");
+    items.push(entry);
+  }
+  const total =
+    typeof data.total === "number" && Number.isFinite(data.total)
+      ? Math.max(data.total, items.length + offset)
+      : offset + items.length;
+  return { packages: items, total };
+}
+
+/** Read mcp.json from the pi agent directory. */
+async function readMcpConfig(): Promise<McpConfig> {
+  const mcpPath = join(defaultAgentDir(), "mcp.json");
+  try {
+    if (!existsSync(mcpPath)) return { mcpServers: {} };
+    const raw = readFileSync(mcpPath, "utf8");
+    if (!raw.trim()) return { mcpServers: {} };
+    return JSON.parse(raw) as McpConfig;
+  } catch {
+    return { mcpServers: {} };
+  }
+}
+
+/** Write mcp.json to the pi agent directory. */
+async function writeMcpConfig(config: McpConfig): Promise<void> {
+  const agentDir = defaultAgentDir();
+  if (!existsSync(agentDir)) mkdirSync(agentDir, { recursive: true });
+  const mcpPath = join(agentDir, "mcp.json");
+  writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n", "utf8");
+}
+
+/**
+ * On Windows, npx-resolver in pi-mcp-adapter misidentifies Unix shell scripts
+ * in .bin/ as binaries, causing cmd.exe chain breaks that kill stdio pipes.
+ *
+ * Work around by installing the package locally and resolving the real entry
+ * point from package.json.  Strategy:
+ *   - If the bin entry is a .exe → native binary, use it directly with cwd set.
+ *   - If the bin entry is a .js  → spawn `node <jsPath>` with cwd set.
+ *   - If no bin entry            → fall back to npx (return null).
+ *
+ * Most MCP servers are pure JS.  Only packages that bundle native binaries
+ * (e.g. officecli ships vendor/officecli.exe) get the .exe fast path.
+ */
+async function resolveMcpNodeEntry(
+  packageName: string,
+): Promise<{ command: string; args: string[]; cwd: string } | null> {
+  if (process.platform !== "win32") return null;
+  const agentDir = defaultAgentDir();
+  const mcpPackagesDir = join(agentDir, "mcp-packages");
+  try {
+    // Local install so we can inspect package.json for the bin entry at a
+    // known path.  --no-save avoids writing a lockfile; the directory acts as
+    // a simple cache — future installs of the same package are fast upgrades.
+    await execFileAsync(
+      "npm",
+      ["install", "--no-fund", "--no-audit", "--no-save", "--prefix", mcpPackagesDir, packageName],
+      { windowsHide: true, timeout: 120_000 },
+    );
+    const pkgPath = join(mcpPackagesDir, "node_modules", ...packageName.split("/"), "package.json");
+    if (!existsSync(pkgPath)) return null;
+    const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
+    const pkgDir = dirname(pkgPath);
+    const bin = pkgJson.bin;
+    if (!bin) return null;
+    const binRelative: string = typeof bin === "string" ? bin : (Object.values(bin as Record<string, string>)[0] ?? "");
+    if (!binRelative) return null;
+    const binPath = resolve(pkgDir, binRelative);
+    const isExe = binRelative.toLowerCase().endsWith(".exe");
+    // Native binary: spawn directly with cwd set to package root.
+    // JS entry:    spawn via node with cwd set to package root.
+    // Use "node" (resolved via PATH) — the agent-host utility process has its
+    // own Node.js runtime, so process.execPath here is the Electron binary.
+    return isExe
+      ? { command: binPath, args: [], cwd: pkgDir }
+      : { command: "node", args: [binPath], cwd: pkgDir };
+  } catch {
+    return null;
+  }
+}
+
 async function openInApp(appId: string, cwd: string): Promise<void> {
   const apps = await listOpenTargets(cwd);
   const found = apps.find((a) => a.id === appId);
@@ -2296,6 +2426,9 @@ function pendingHasPrompt(pending: Map<string, PendingWaiter>): boolean {
   return false;
 }
 
+/** Packages installed automatically on first host start so every user has MCP support. */
+const BUILTIN_PACKAGES = ["npm:pi-mcp-adapter"];
+
 class HostSupervisor {
   #host: ActiveHost | undefined;
   #snapshot: HostSnapshot | undefined;
@@ -2317,6 +2450,8 @@ class HostSupervisor {
   #crashOnEvent: string | undefined;
   #eventCounts = new Map<string, number>();
   #pending = new Map<string, PendingWaiter>();
+  /** Built-in packages already installed (dedup — only install once per supervisor lifetime). */
+  #builtinInstalled = false;
   /**
    * Detached live hosts keyed by session file / session id.
    * Busy hosts are always parked; idle hosts are also parked (up to MAX_PARKED_HOSTS)
@@ -2879,6 +3014,9 @@ class HostSupervisor {
       throw new Error("Agent Host returned an unexpected start response");
     this.#acceptSnapshot(event.snapshot);
     this.#resumeRecent = false;
+
+    // Auto-install built-in packages (e.g. pi-mcp-adapter) so MCP works out of the box.
+    void this.#ensureBuiltinPackages();
 
     if (this.#previousRuntimeId) {
       const restarted: HostEvent = {
@@ -3456,6 +3594,22 @@ class HostSupervisor {
     if (event.type !== "packages.list")
       throw new Error("Agent Host returned an unexpected packages.list response");
     return event.packages;
+  }
+
+  /** Auto-install built-in packages on first host start (best-effort, fire-and-forget). */
+  async #ensureBuiltinPackages(): Promise<void> {
+    if (this.#builtinInstalled) return;
+    this.#builtinInstalled = true;
+    try {
+      const installed = await this.listPackages();
+      const sources = new Set(installed.map((p) => p.source));
+      for (const pkg of BUILTIN_PACKAGES) {
+        if (sources.has(pkg)) continue;
+        await this.installPackage(pkg, "global");
+      }
+    } catch {
+      // Don't block startup if auto-install fails — user can install manually.
+    }
   }
 
   async installPackage(
@@ -5484,6 +5638,96 @@ void app
         searchPiPackageCatalog(query, size, from),
     );
     ipcMain.handle("zeno:resources:list", () => supervisor?.listResources());
+
+    // MCP server management — read/write mcp.json in the pi agent dir
+    ipcMain.handle("zeno:mcp:get-config", () => readMcpConfig());
+
+    ipcMain.handle(
+      "zeno:mcp:install-server",
+      async (_event, name: string, packageName: string) => {
+        const config = await readMcpConfig();
+        // On Windows, resolve the JS entry to avoid npx-resolver's shell-script
+        // detection bug.  Fall back to plain npx if resolution fails.
+        const resolved = await resolveMcpNodeEntry(packageName);
+        config.mcpServers[name] = resolved
+          ? { command: resolved.command, args: resolved.args, packageName, cwd: resolved.cwd }
+          : { command: "npx", args: ["-y", packageName], packageName };
+        await writeMcpConfig(config);
+      },
+    );
+
+    ipcMain.handle("zeno:mcp:remove-server", async (_event, name: string) => {
+      const config = await readMcpConfig();
+      const server = config.mcpServers[name];
+      if (server) {
+        // Clean up locally installed package files so disk doesn't leak.
+        try {
+          if (server.packageName) {
+            const agentDir = defaultAgentDir();
+            const pkgDir = join(agentDir, "mcp-packages", "node_modules", ...server.packageName.split("/"));
+            if (existsSync(pkgDir)) {
+              rmSync(pkgDir, { recursive: true, force: true });
+            }
+          }
+        } catch {
+          // best-effort cleanup — the config entry is the source of truth
+        }
+        delete config.mcpServers[name];
+      }
+      await writeMcpConfig(config);
+    });
+
+    ipcMain.handle(
+      "zeno:mcp:set-enabled",
+      async (_event, name: string, enabled: boolean) => {
+        const config = await readMcpConfig();
+        const server = config.mcpServers[name];
+        if (!server) return;
+        if (enabled) {
+          delete server.disabled;
+        } else {
+          server.disabled = true;
+        }
+        await writeMcpConfig(config);
+      },
+    );
+
+    ipcMain.handle("zeno:mcp:update-server", async (_event, name: string) => {
+      const config = await readMcpConfig();
+      const server = config.mcpServers[name];
+      if (!server || !server.packageName) return;
+      try {
+        if (server.command === "node") {
+          // Locally installed via resolveMcpNodeEntry — upgrade in place.
+          const mcpPackagesDir = join(defaultAgentDir(), "mcp-packages");
+          await execFileAsync(
+            "npm",
+            ["install", "--no-fund", "--no-audit", "--no-save", "--prefix", mcpPackagesDir, `${server.packageName}@latest`],
+            { windowsHide: true, timeout: 120_000 },
+          );
+        } else {
+          // npx-based — clear cache so next launch pulls the latest.
+          await execFileAsync(
+            process.platform === "win32" ? "cmd.exe" : "sh",
+            process.platform === "win32"
+              ? ["/c", `npm cache clean --force ${server.packageName} 2>nul & npx -y ${server.packageName} --version 2>nul`]
+              : ["-c", `npm cache clean --force ${server.packageName} 2>/dev/null; npx -y ${server.packageName} --version 2>/dev/null`],
+            { timeout: 60_000 },
+          );
+        }
+      } catch {
+        // Best-effort — the package is fetched via npx on next runtime start anyway.
+      }
+    });
+
+    ipcMain.handle("zeno:mcp:get-path", () => join(defaultAgentDir(), "mcp.json"));
+
+    ipcMain.handle(
+      "zeno:mcp:search-catalog",
+      (_event, query?: string, size?: number, from?: number) =>
+        searchMcpCatalog(query, size, from),
+    );
+
     ipcMain.handle("zeno:extension-ui:respond", (_event, response: ExtensionUiResponse) =>
       supervisor?.extensionUiRespond(response),
     );

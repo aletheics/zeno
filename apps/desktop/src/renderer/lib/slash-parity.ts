@@ -29,6 +29,7 @@ const BUILTIN_DESC_KEYS: Record<string, MessageKey> = {
   copy: "slash.builtin.copy",
   reload: "slash.builtin.reload",
   hotkeys: "slash.builtin.hotkeys",
+  mcp: "slash.builtin.mcp",
 };
 
 export function listDesktopBuiltinSlashCommands(locale: Locale = "zh"): BuiltinSlashCommand[] {
@@ -73,6 +74,7 @@ export function listDesktopBuiltinSlashCommands(locale: Locale = "zh"): BuiltinS
     { name: "copy", description: tr("slash.builtin.copy"), source: "builtin" },
     { name: "reload", description: tr("slash.builtin.reload"), source: "builtin" },
     { name: "hotkeys", description: tr("slash.builtin.hotkeys"), source: "builtin" },
+    { name: "mcp", description: tr("slash.builtin.mcp"), source: "builtin" },
   ];
 }
 
@@ -177,6 +179,7 @@ export type BuiltinSlashAction =
   | { type: "reload" }
   | { type: "hotkeys" }
   | { type: "upcoming"; name: string }
+  | { type: "mcp" }
   | { type: "runtime"; command: string; args: string }
   | { type: "unknown"; name: string };
 
@@ -185,6 +188,9 @@ export function resolveBuiltinSlash(
   args: string,
   source?: string,
 ): BuiltinSlashAction {
+  // Desktop built-ins that always win over extension/prompt/skill handlers
+  // so the UI responds instantly without hitting the AI model.
+  if (name === "mcp") return { type: "mcp" };
   if (source && source !== "builtin") return { type: "runtime", command: name, args };
   switch (name) {
     case "new":
@@ -221,6 +227,8 @@ export function resolveBuiltinSlash(
     case "hotkeys":
     case "keybindings":
       return { type: "hotkeys" };
+    case "mcp":
+      return { type: "mcp" };
     default:
       return { type: "runtime", command: name, args };
   }
