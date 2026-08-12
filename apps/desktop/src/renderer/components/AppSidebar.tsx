@@ -946,15 +946,15 @@ function SidebarUpdateButton(props: {
         "relative inline-flex size-8 min-w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-[color,background-color,box-shadow,transform,opacity] duration-200",
         locked && "pointer-events-none cursor-not-allowed",
         phase === "error"
-          ? "bg-red-500/[0.08] text-red-500 ring-1 ring-inset ring-red-500/15 hover:bg-red-500/15 hover:text-red-600 active:scale-95"
+          ? "cursor-pointer bg-red-500/[0.08] text-red-500 ring-1 ring-inset ring-red-500/15 hover:bg-red-500/15 hover:text-red-600 active:scale-95"
           : phase === "available"
-            ? "bg-blue-500/[0.08] text-blue-500 ring-1 ring-inset ring-blue-500/15 hover:bg-blue-500/15 hover:text-blue-600 active:scale-95"
+            ? "cursor-pointer bg-blue-500/[0.08] text-blue-500 ring-1 ring-inset ring-blue-500/15 hover:bg-blue-500/15 hover:text-blue-600 active:scale-95"
             : phase === "downloading"
               ? "bg-blue-500/[0.08] text-blue-500 ring-1 ring-inset ring-blue-500/15 opacity-90"
               : phase === "installing"
                 ? "bg-blue-500 text-white shadow-sm shadow-blue-500/25 opacity-95"
                 : phase === "downloaded"
-                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/25 hover:bg-blue-600 hover:text-white active:scale-95"
+                  ? "cursor-pointer bg-blue-500 text-white shadow-sm shadow-blue-500/25 hover:bg-blue-600 hover:text-white active:scale-95"
                   : "cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)] active:scale-95",
       )}
       onClick={(event) => {
