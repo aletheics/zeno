@@ -330,7 +330,7 @@ export function EnvPanel(props: {
                   "flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] transition-colors disabled:opacity-50",
                   b.current
                     ? "bg-[var(--accent)] text-[var(--foreground)]"
-                    : "text-[var(--foreground)] hover:bg-[var(--hover-fill)]",
+                    : "cursor-pointer text-[var(--foreground)] hover:bg-[var(--hover-fill)]",
                 )}
                 onClick={() => {
                   if (b.current) {
@@ -516,7 +516,7 @@ export function EnvPanel(props: {
         {props.onOpenSettings ? (
           <button
             type="button"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
             title={tr("env.openSettings")}
             aria-label={tr("env.openSettings")}
             data-testid="env-panel-settings"
@@ -714,7 +714,7 @@ function MenuRow(props: {
         "flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left text-[13px] transition-colors",
         props.muted
           ? "cursor-default text-[var(--text-subtle)]"
-          : "text-[var(--foreground)] hover:bg-[var(--hover-fill)]",
+          : "cursor-pointer text-[var(--foreground)] hover:bg-[var(--hover-fill)]",
         props.active && "bg-[var(--accent)]",
         props.disabled && "opacity-50",
       )}
@@ -740,7 +740,7 @@ function ActionRow(props: {
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[12px] text-[var(--foreground)] hover:bg-[var(--hover-fill)] disabled:opacity-40"
+      className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[12px] cursor-pointer text-[var(--foreground)] hover:bg-[var(--hover-fill)] disabled:opacity-40"
       disabled={props.disabled}
       onClick={props.onClick}
     >

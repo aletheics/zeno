@@ -466,7 +466,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-[var(--popover-foreground)] hover:bg-[var(--hover-fill)]"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-[var(--popover-foreground)] hover:bg-[var(--hover-fill)]"
               data-testid="projects-page-menu-archive"
               onClick={() => handleArchive(menuPath)}
             >
@@ -475,7 +475,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-red-500 hover:bg-red-500/10"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-red-500 hover:bg-red-500/10"
               data-testid="projects-page-menu-remove"
               onClick={() => handleRemove(menuPath)}
             >

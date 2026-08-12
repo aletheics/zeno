@@ -235,7 +235,7 @@ export function ThreadHeader(props: {
             data-testid="thread-header-menu"
             className={cn(
               "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-              "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
+              "cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
               !canAct && "pointer-events-none opacity-30",
             )}
             title={tr("thread.more")}
@@ -316,7 +316,7 @@ export function ThreadHeader(props: {
           data-testid="thread-content-mode-toggle"
           className={cn(
             "no-drag inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-            "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
+            "cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
             contentMode === "terminal" && "bg-[var(--accent)] text-[var(--foreground)]",
             props.contentModeSwitchLocked && "cursor-not-allowed opacity-40",
           )}
@@ -355,7 +355,7 @@ export function ThreadHeader(props: {
             data-testid="thread-header-env"
             className={cn(
               "no-drag inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-              "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
+              "cursor-pointer text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]",
               envPanelOpen && "bg-[var(--accent)] text-[var(--foreground)]",
             )}
             title={tr("env.togglePanel")}
@@ -455,7 +455,7 @@ function MenuItem(props: { icon: ReactNode; label: string; onClick: () => void; 
       type="button"
       role="menuitem"
       data-testid={props.testId}
-      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-[var(--popover-foreground)] transition-colors hover:bg-[var(--hover-fill)]"
+      className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left text-[13px] text-[var(--popover-foreground)] transition-colors hover:bg-[var(--hover-fill)]"
       onClick={props.onClick}
     >
       <span className="opacity-70">{props.icon}</span>

@@ -1858,7 +1858,7 @@ export function Composer(props: ComposerProps) {
             data-testid="composer-local-option-local"
             disabled={gitBusy}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
               "hover:bg-[var(--hover-fill)] disabled:opacity-50",
               gitContext.isMainWorktree !== false && "bg-[var(--accent)]/60",
             )}
@@ -1886,7 +1886,7 @@ export function Composer(props: ComposerProps) {
             role="menuitem"
             data-testid="composer-local-option-worktree"
             disabled={gitBusy}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--hover-fill)] disabled:opacity-50"
+            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--hover-fill)] disabled:opacity-50"
             onMouseEnter={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
               setLocalTip({

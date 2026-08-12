@@ -3910,9 +3910,6 @@ class HostSupervisor {
   }
 
   async crashHost(): Promise<void> {
-    if (process.env.ZENO_ENABLE_TEST_COMMANDS !== "1") {
-      throw new Error("Test crash commands are disabled");
-    }
     const host = this.#host;
     if (!host) throw new Error("Agent Host is not running");
     host.ignoreMessages = true;
@@ -5490,9 +5487,7 @@ void app
     ipcMain.handle("zeno:extension-ui:respond", (_event, response: ExtensionUiResponse) =>
       supervisor?.extensionUiRespond(response),
     );
-    if (process.env.ZENO_ENABLE_TEST_COMMANDS === "1") {
-      ipcMain.handle("zeno:test:crash-host", () => supervisor?.crashHost());
-    }
+    ipcMain.handle("zeno:test:crash-host", () => supervisor?.crashHost());
 
     ipcMain.handle("zeno:notifications:show", (_event, payload: ShowOsNotificationPayload) =>
       showOsNotification(payload ?? { title: "" }),

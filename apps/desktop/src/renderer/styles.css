@@ -3751,7 +3751,7 @@ html[data-custom-window-controls="true"] .page-header {
 }
 .btn-secondary,
 a.btn-secondary {
-  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg border px-3 text-xs leading-none font-medium whitespace-nowrap no-underline transition-colors;
+  @apply inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-lg border px-3 text-xs leading-none font-medium whitespace-nowrap no-underline transition-colors;
   border-color: var(--border);
   color: var(--foreground);
   background: transparent;
@@ -3770,7 +3770,7 @@ a.btn-secondary:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring, #0a84ff) 22%, transparent);
 }
 .btn-primary {
-  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg px-3.5 text-xs leading-none font-medium whitespace-nowrap text-white transition-colors;
+  @apply inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-lg px-3.5 text-xs leading-none font-medium whitespace-nowrap text-white transition-colors;
   background: #0a84ff;
   border: none;
   box-sizing: border-box;
@@ -3786,7 +3786,7 @@ a.btn-secondary:focus-visible {
   box-shadow: 0 0 0 2px color-mix(in srgb, #0a84ff 30%, transparent);
 }
 .btn-ghost {
-  @apply inline-flex h-8 items-center justify-center gap-1 rounded-lg px-2.5 text-xs leading-none font-medium whitespace-nowrap transition-colors;
+  @apply inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-lg px-2.5 text-xs leading-none font-medium whitespace-nowrap transition-colors;
   color: var(--muted-foreground);
   background: transparent;
   border: none;

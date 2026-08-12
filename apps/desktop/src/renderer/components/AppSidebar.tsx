@@ -207,6 +207,7 @@ export function AppSidebar(props: AppSidebarProps) {
           <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden">
             {/* Product: traffic lights + collapse. Settings: gutter only (Codex rail has no collapse). */}
             <TitlebarTrafficRow
+              locale={props.locale}
               leadingGutterPx={leadingGutterPx}
               showCollapse={!isSettings}
               onToggleCollapse={props.onToggleCollapse}
@@ -256,9 +257,9 @@ export function AppSidebar(props: AppSidebarProps) {
             <button
               type="button"
               data-testid="sidebar-collapse"
-              title="Expand sidebar"
-              aria-label="Expand sidebar"
-              className="sidebar-expand-btn no-drag"
+              title={tr("nav.expandSidebar")}
+              aria-label={tr("nav.expandSidebar")}
+              className="sidebar-expand-btn no-drag cursor-pointer"
               style={{
                 left: leadingGutterPx,
                 top: titlebarControlTopPx(),
@@ -286,9 +287,11 @@ export function AppSidebar(props: AppSidebarProps) {
 
 function TitlebarTrafficRow(props: {
   leadingGutterPx: number;
+  locale: Locale;
   showCollapse?: boolean;
   onToggleCollapse: () => void;
 }) {
+  const tr = (key: MessageKey) => t(props.locale, key);
   const showCollapse = props.showCollapse !== false;
   return (
     <div
@@ -305,9 +308,9 @@ function TitlebarTrafficRow(props: {
         <button
           type="button"
           data-testid="sidebar-collapse"
-          title="Collapse sidebar"
-          aria-label="Collapse sidebar"
-          className="inline-flex shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+          title={tr("nav.collapseSidebar")}
+          aria-label={tr("nav.collapseSidebar")}
+          className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
           style={{
             width: TITLEBAR_CONTROL_SIZE_PX,
             height: TITLEBAR_CONTROL_SIZE_PX,
@@ -1053,7 +1056,7 @@ function QuietBtn(props: {
       data-testid={props.testId}
       disabled={props.disabled}
       className={cn(
-        "inline-flex h-6 items-center rounded-md px-2 text-[11px] text-[var(--text-subtle)] disabled:opacity-40",
+        "inline-flex h-6 cursor-pointer items-center rounded-md px-2 text-[11px] text-[var(--text-subtle)] disabled:opacity-40",
         props.danger
           ? "hover:bg-red-500/10 hover:text-red-600"
           : "hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]",

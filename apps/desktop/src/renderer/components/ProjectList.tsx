@@ -881,7 +881,7 @@ export function ProjectList(props: ProjectListProps) {
             type="button"
             className={cn(
               // gap-2 matches project row (folder icon + name) so indented session titles align.
-              "flex h-full min-w-0 flex-1 items-center gap-2 text-left transition-[padding]",
+              "flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 text-left transition-[padding]",
               // Default: full width (fade to row end). Hover leaves room for actions.
               "pr-0 group-hover/item:pr-14",
             )}
@@ -929,7 +929,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid={`${testPrefix}-pin-btn-${thread.id}`}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={pinnedHere ? unpinLabel : pinLabel}
               aria-label={pinnedHere ? unpinLabel : pinLabel}
               onClick={(e) => {
@@ -946,7 +946,7 @@ export function ProjectList(props: ProjectListProps) {
             <button
               type="button"
               data-testid={`${testPrefix}-archive-btn-${thread.id}`}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)] hover:text-[var(--sidebar-foreground)]"
               title={archiveLabel}
               aria-label={archiveLabel}
               onClick={(e) => {
@@ -1120,7 +1120,7 @@ export function ProjectList(props: ProjectListProps) {
           <button
             type="button"
             className={cn(
-              "flex h-full min-w-0 flex-1 items-center gap-2 text-left transition-[padding]",
+              "flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 text-left transition-[padding]",
               "pr-0 group-hover/item:pr-14 group-focus-within/item:pr-14",
               showMenu && "pr-14",
             )}
