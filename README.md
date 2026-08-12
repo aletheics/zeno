@@ -114,24 +114,32 @@ CI **fails** if any required feed or mac zip is missing (`scripts/release-assets
 
 ### Versioning
 
-Product version lives only in `apps/desktop/package.json` (what electron-builder ships).
-Root and `packages/*` stay at `0.0.0` — they are private workspace packages.
+The product version is derived from the git tag at build time — the Release
+workflow strips the `v` prefix from the tag and writes it into
+`apps/desktop/package.json` before packaging, so the tag and installer version
+can never drift. The checked-in `apps/desktop/package.json` version is only a
+local-dev fallback; do not bump it manually for a release. Root and
+`packages/*` stay at `0.0.0` (private workspace packages).
 
 ```bash
-pnpm version:set 0.1.0
+pnpm version:set 0.1.0   # optional: only for local dev, never for release
 ```
 
 ### Cut a release
 
 ```bash
-pnpm version:set 0.1.0
-git add apps/desktop/package.json
-git commit -m "chore: release v0.1.0"
 git tag v0.1.0
-git push origin main --tags
+git push origin v0.1.0
 ```
 
-Tag must match desktop version (`v` + semver). That builds unsigned installers plus the three electron-updater feeds (`latest.yml` / `latest-mac.yml` / `latest-linux.yml`) and mac zip archives, then attaches them to the GitHub Release. Packaged apps check GitHub Releases once on launch (sidebar shows download / restart when an update is ready). Manual **workflow_dispatch** only uploads Actions artifacts (no Release). Daily CI is Ubuntu-only for lint/types/tests/build; multi-OS packaging stays on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
+Tag must be `v` + semver (e.g. `v0.1.2`). CI reads the version from the tag,
+builds unsigned installers plus the three electron-updater feeds
+(`latest.yml` / `latest-mac.yml` / `latest-linux.yml`) and mac zip archives,
+then attaches them to the GitHub Release. Packaged apps check GitHub Releases
+once on launch (sidebar shows download / restart when an update is ready).
+Manual **workflow_dispatch** only uploads Actions artifacts (no Release).
+Daily CI is Ubuntu-only for lint/types/tests/build; multi-OS packaging stays
+on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
 
 > **macOS note:** first open of an unsigned download may need `xattr -cr /Applications/Zeno.app` (Gatekeeper quarantine). Auto-update does **not** require an Apple Developer ID — Zeno verifies the release zip (`sha512` via electron-updater) and replaces the `.app` itself (same model as Tauri updater + minisign). Optional `CSC_LINK` / `CSC_KEY_PASSWORD` still improve Gatekeeper UX and notifications when present.
 
