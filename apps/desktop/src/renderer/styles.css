@@ -3139,7 +3139,9 @@ html[data-custom-window-controls="true"] .page-header {
   /* Critical in Electron: top chrome is often a window-drag region. */
   -webkit-app-region: no-drag !important;
   app-region: no-drag !important;
-  transition: opacity 0.12s ease, background 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease;
 }
 /* Decorative X only — must never be a hit target. */
 .content-preview-dialog-close::after {

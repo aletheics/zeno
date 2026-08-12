@@ -1238,7 +1238,8 @@ const messages = {
     "mcp.emptyBody": "在发现页面切换到 MCP 服务器，搜索并安装以扩展 AI 工具能力。",
     "mcp.emptyHint": "修改后需重启 Agent 生效",
     "mcp.restartHint": "待生效",
-    "mcp.restartHintDetail": "MCP 配置已修改，下次 Agent Host 重启后生效。可在设置页面或退出重开触发重启。",
+    "mcp.restartHintDetail":
+      "MCP 配置已修改，下次 Agent Host 重启后生效。可在设置页面或退出重开触发重启。",
     "mcp.installing": "安装中…",
     "mcp.install": "安装",
     "mcp.installed": "已安装",

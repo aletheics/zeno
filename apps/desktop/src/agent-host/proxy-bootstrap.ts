@@ -11,7 +11,9 @@ import { createRequire } from "node:module";
 // never flash a console window. Must run before @earendil-works/pi-coding-agent
 // is imported, as it uses cross-spawn → cmd.exe without windowsHide: true.
 if (process.platform === "win32") {
-  const cp = createRequire(import.meta.url)("node:child_process") as typeof import("node:child_process");
+  const cp = createRequire(import.meta.url)(
+    "node:child_process",
+  ) as typeof import("node:child_process");
   const origSpawn = cp.spawn;
   (cp as Record<string, unknown>).spawn = function (
     command: string,

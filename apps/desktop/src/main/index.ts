@@ -21,7 +21,6 @@ import {
   type PiSettingsView,
   type ProjectTrustSummary,
   type McpConfig,
-  type McpServerConfig,
   type ProviderAuthSummary,
   type ProviderUsageSnapshot,
   type ResourceSummary,
@@ -1769,7 +1768,8 @@ async function resolveMcpNodeEntry(
     const pkgDir = dirname(pkgPath);
     const bin = pkgJson.bin;
     if (!bin) return null;
-    const binRelative: string = typeof bin === "string" ? bin : (Object.values(bin as Record<string, string>)[0] ?? "");
+    const binRelative: string =
+      typeof bin === "string" ? bin : (Object.values(bin as Record<string, string>)[0] ?? "");
     if (!binRelative) return null;
     const binPath = resolve(pkgDir, binRelative);
     const isExe = binRelative.toLowerCase().endsWith(".exe");
@@ -5642,19 +5642,16 @@ void app
     // MCP server management — read/write mcp.json in the pi agent dir
     ipcMain.handle("zeno:mcp:get-config", () => readMcpConfig());
 
-    ipcMain.handle(
-      "zeno:mcp:install-server",
-      async (_event, name: string, packageName: string) => {
-        const config = await readMcpConfig();
-        // On Windows, resolve the JS entry to avoid npx-resolver's shell-script
-        // detection bug.  Fall back to plain npx if resolution fails.
-        const resolved = await resolveMcpNodeEntry(packageName);
-        config.mcpServers[name] = resolved
-          ? { command: resolved.command, args: resolved.args, packageName, cwd: resolved.cwd }
-          : { command: "npx", args: ["-y", packageName], packageName };
-        await writeMcpConfig(config);
-      },
-    );
+    ipcMain.handle("zeno:mcp:install-server", async (_event, name: string, packageName: string) => {
+      const config = await readMcpConfig();
+      // On Windows, resolve the JS entry to avoid npx-resolver's shell-script
+      // detection bug.  Fall back to plain npx if resolution fails.
+      const resolved = await resolveMcpNodeEntry(packageName);
+      config.mcpServers[name] = resolved
+        ? { command: resolved.command, args: resolved.args, packageName, cwd: resolved.cwd }
+        : { command: "npx", args: ["-y", packageName], packageName };
+      await writeMcpConfig(config);
+    });
 
     ipcMain.handle("zeno:mcp:remove-server", async (_event, name: string) => {
       const config = await readMcpConfig();
@@ -5664,7 +5661,12 @@ void app
         try {
           if (server.packageName) {
             const agentDir = defaultAgentDir();
-            const pkgDir = join(agentDir, "mcp-packages", "node_modules", ...server.packageName.split("/"));
+            const pkgDir = join(
+              agentDir,
+              "mcp-packages",
+              "node_modules",
+              ...server.packageName.split("/"),
+            );
             if (existsSync(pkgDir)) {
               rmSync(pkgDir, { recursive: true, force: true });
             }
@@ -5677,20 +5679,17 @@ void app
       await writeMcpConfig(config);
     });
 
-    ipcMain.handle(
-      "zeno:mcp:set-enabled",
-      async (_event, name: string, enabled: boolean) => {
-        const config = await readMcpConfig();
-        const server = config.mcpServers[name];
-        if (!server) return;
-        if (enabled) {
-          delete server.disabled;
-        } else {
-          server.disabled = true;
-        }
-        await writeMcpConfig(config);
-      },
-    );
+    ipcMain.handle("zeno:mcp:set-enabled", async (_event, name: string, enabled: boolean) => {
+      const config = await readMcpConfig();
+      const server = config.mcpServers[name];
+      if (!server) return;
+      if (enabled) {
+        delete server.disabled;
+      } else {
+        server.disabled = true;
+      }
+      await writeMcpConfig(config);
+    });
 
     ipcMain.handle("zeno:mcp:update-server", async (_event, name: string) => {
       const config = await readMcpConfig();
@@ -5702,7 +5701,15 @@ void app
           const mcpPackagesDir = join(defaultAgentDir(), "mcp-packages");
           await execFileAsync(
             "npm",
-            ["install", "--no-fund", "--no-audit", "--no-save", "--prefix", mcpPackagesDir, `${server.packageName}@latest`],
+            [
+              "install",
+              "--no-fund",
+              "--no-audit",
+              "--no-save",
+              "--prefix",
+              mcpPackagesDir,
+              `${server.packageName}@latest`,
+            ],
             { windowsHide: true, timeout: 120_000 },
           );
         } else {
@@ -5710,8 +5717,14 @@ void app
           await execFileAsync(
             process.platform === "win32" ? "cmd.exe" : "sh",
             process.platform === "win32"
-              ? ["/c", `npm cache clean --force ${server.packageName} 2>nul & npx -y ${server.packageName} --version 2>nul`]
-              : ["-c", `npm cache clean --force ${server.packageName} 2>/dev/null; npx -y ${server.packageName} --version 2>/dev/null`],
+              ? [
+                  "/c",
+                  `npm cache clean --force ${server.packageName} 2>nul & npx -y ${server.packageName} --version 2>nul`,
+                ]
+              : [
+                  "-c",
+                  `npm cache clean --force ${server.packageName} 2>/dev/null; npx -y ${server.packageName} --version 2>/dev/null`,
+                ],
             { timeout: 60_000 },
           );
         }
@@ -5724,8 +5737,7 @@ void app
 
     ipcMain.handle(
       "zeno:mcp:search-catalog",
-      (_event, query?: string, size?: number, from?: number) =>
-        searchMcpCatalog(query, size, from),
+      (_event, query?: string, size?: number, from?: number) => searchMcpCatalog(query, size, from),
     );
 
     ipcMain.handle("zeno:extension-ui:respond", (_event, response: ExtensionUiResponse) =>

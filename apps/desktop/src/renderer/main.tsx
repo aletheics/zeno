@@ -3862,7 +3862,11 @@ function PackagesPage(props: {
     try {
       const result =
         discoverType === "mcp"
-          ? await window.zeno.mcp.searchCatalog(catalogQuery.trim() || undefined, CATALOG_PAGE, from)
+          ? await window.zeno.mcp.searchCatalog(
+              catalogQuery.trim() || undefined,
+              CATALOG_PAGE,
+              from,
+            )
           : await window.zeno.packages.searchCatalog(
               catalogQuery.trim() || undefined,
               CATALOG_PAGE,
@@ -4286,7 +4290,11 @@ function PackagesPage(props: {
                             }
                           >
                             {installed
-                              ? tr(discoverType === "mcp" ? "mcp.installed" : "packages.discoverInstalled")
+                              ? tr(
+                                  discoverType === "mcp"
+                                    ? "mcp.installed"
+                                    : "packages.discoverInstalled",
+                                )
                               : installing
                                 ? tr("mcp.installing")
                                 : discoverType === "mcp"
@@ -4328,92 +4336,92 @@ function PackagesPage(props: {
                     {tr("packages.installedSection")}
                   </h3>
                   <div className="item-list" data-testid="packages-list">
-                  {updatesChecked ? (
-                    <p className="form-hint m-0" data-testid="packages-update-summary">
-                      {updateSources.size === 0
-                        ? tr("packages.updateCheckedNone")
-                        : tr("packages.updateAvailableCount", {
-                            n: String(updateSources.size),
-                          })}
-                    </p>
-                  ) : null}
-                  {props.packages.map((item) => {
-                    const hasUpdate = updateSources.has(item.source);
-                    return (
-                      <article
-                        key={`${item.scope}:${item.source}`}
-                        className="item-card"
-                        data-enabled={item.enabled ? "true" : "false"}
-                        data-update={hasUpdate ? "true" : "false"}
-                        data-testid={`package-card-${item.scope}-${item.source}`}
-                      >
-                        <div className="min-w-0">
-                          <div className="title">{item.source}</div>
-                          <div className="meta">
-                            {item.installedPath ? item.installedPath : tr("packages.notResolved")}
-                            {item.filtered ? ` · ${tr("packages.filtered")}` : ""}
+                    {updatesChecked ? (
+                      <p className="form-hint m-0" data-testid="packages-update-summary">
+                        {updateSources.size === 0
+                          ? tr("packages.updateCheckedNone")
+                          : tr("packages.updateAvailableCount", {
+                              n: String(updateSources.size),
+                            })}
+                      </p>
+                    ) : null}
+                    {props.packages.map((item) => {
+                      const hasUpdate = updateSources.has(item.source);
+                      return (
+                        <article
+                          key={`${item.scope}:${item.source}`}
+                          className="item-card"
+                          data-enabled={item.enabled ? "true" : "false"}
+                          data-update={hasUpdate ? "true" : "false"}
+                          data-testid={`package-card-${item.scope}-${item.source}`}
+                        >
+                          <div className="min-w-0">
+                            <div className="title">{item.source}</div>
+                            <div className="meta">
+                              {item.installedPath ? item.installedPath : tr("packages.notResolved")}
+                              {item.filtered ? ` · ${tr("packages.filtered")}` : ""}
+                            </div>
                           </div>
-                        </div>
-                        <div className="badges">
-                          <span
-                            className="chip-status"
-                            data-tone={item.enabled ? "on" : "off"}
-                            data-testid={`package-status-${item.scope}-${item.source}`}
-                          >
-                            {item.enabled ? tr("packages.enabled") : tr("packages.disabled")}
-                          </span>
-                          {hasUpdate ? (
-                            <span className="chip-status" data-tone="update">
-                              {tr("packages.updateAvailable")}
+                          <div className="badges">
+                            <span
+                              className="chip-status"
+                              data-tone={item.enabled ? "on" : "off"}
+                              data-testid={`package-status-${item.scope}-${item.source}`}
+                            >
+                              {item.enabled ? tr("packages.enabled") : tr("packages.disabled")}
                             </span>
-                          ) : null}
-                          <span className="chip">{item.scope}</span>
-                          <span className="chip">{item.kind}</span>
-                          <button
-                            type="button"
-                            className="btn-secondary btn-sm"
-                            data-testid={`package-enable-${item.scope}-${item.source}`}
-                            disabled={props.loading || busy}
-                            onClick={() =>
-                              void props.onSetEnabled(item.source, item.scope, !item.enabled)
-                            }
-                          >
-                            {item.enabled ? tr("packages.disable") : tr("packages.enable")}
-                          </button>
-                          {item.kind !== "local" ? (
+                            {hasUpdate ? (
+                              <span className="chip-status" data-tone="update">
+                                {tr("packages.updateAvailable")}
+                              </span>
+                            ) : null}
+                            <span className="chip">{item.scope}</span>
+                            <span className="chip">{item.kind}</span>
                             <button
                               type="button"
                               className="btn-secondary btn-sm"
-                              data-testid={`package-update-${item.scope}-${item.source}`}
-                              disabled={
-                                props.loading || busy || (updatesChecked ? !hasUpdate : false)
+                              data-testid={`package-enable-${item.scope}-${item.source}`}
+                              disabled={props.loading || busy}
+                              onClick={() =>
+                                void props.onSetEnabled(item.source, item.scope, !item.enabled)
                               }
-                              title={
-                                updatesChecked && !hasUpdate
-                                  ? tr("packages.upToDate")
-                                  : tr("packages.update")
-                              }
-                              onClick={() => void runUpdate(item.source)}
                             >
-                              {updatesChecked && !hasUpdate
-                                ? tr("packages.upToDate")
-                                : tr("packages.update")}
+                              {item.enabled ? tr("packages.disable") : tr("packages.enable")}
                             </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="btn-ghost btn-sm danger"
-                            data-testid={`package-remove-${item.scope}-${item.source}`}
-                            disabled={props.loading || busy}
-                            onClick={() => void props.onRemove(item.source, item.scope)}
-                          >
-                            {tr("packages.remove")}
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
+                            {item.kind !== "local" ? (
+                              <button
+                                type="button"
+                                className="btn-secondary btn-sm"
+                                data-testid={`package-update-${item.scope}-${item.source}`}
+                                disabled={
+                                  props.loading || busy || (updatesChecked ? !hasUpdate : false)
+                                }
+                                title={
+                                  updatesChecked && !hasUpdate
+                                    ? tr("packages.upToDate")
+                                    : tr("packages.update")
+                                }
+                                onClick={() => void runUpdate(item.source)}
+                              >
+                                {updatesChecked && !hasUpdate
+                                  ? tr("packages.upToDate")
+                                  : tr("packages.update")}
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="btn-ghost btn-sm danger"
+                              data-testid={`package-remove-${item.scope}-${item.source}`}
+                              disabled={props.loading || busy}
+                              onClick={() => void props.onRemove(item.source, item.scope)}
+                            >
+                              {tr("packages.remove")}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </>
               )}
 
