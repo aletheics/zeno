@@ -57,6 +57,18 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Set app version from tag
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "Setting app version to ${VERSION} (from tag ${TAG})"
+          node -e "
+            const pkg = require('./apps/desktop/package.json');
+            pkg.version = '${VERSION}';
+            require('fs').writeFileSync('./apps/desktop/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
