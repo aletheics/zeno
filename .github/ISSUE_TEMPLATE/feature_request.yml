@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the **problem** you're trying to solve first — proposals rooted in a concrete pain point are much more likely to land.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and why can't you do it today?
+      placeholder: "e.g. I want to install an MCP server from the UI, but I have to edit mcp.json by hand."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How do you think it should work? Screenshots or mockups help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else have you tried or considered?
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that helps clarify the request.

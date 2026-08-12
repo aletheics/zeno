@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Community (LinuxDo)
+    url: https://linux.do
+    about: Ask questions and discuss with the community here.
+  - name: Contributing guide
+    url: https://github.com/aletheics/zeno/blob/main/CONTRIBUTING.md
+    about: Read the contributing guide before opening a pull request.

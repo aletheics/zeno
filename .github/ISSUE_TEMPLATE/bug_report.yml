@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a defect or unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please search [existing issues](https://github.com/aletheics/zeno/issues) first to avoid duplicates.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear, concise description of the bug.
+      placeholder: "e.g. Clicking 'Download update' does nothing"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact steps that trigger the bug.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened, including any error text.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in Settings → About. `git describe --tags` if running from source.
+      placeholder: "e.g. v0.1.1"
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      options:
+        - Release installer
+        - Built from source
+        - Auto-updated from an earlier version
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: |
+        Paste any relevant logs or drag in screenshots. Logs live under the
+        pi agent dir (`%USERPROFILE%\.pi\agent` on Windows, `~/.pi/agent` on macOS/Linux).
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that might help — recent changes, related config, etc.
