@@ -168,6 +168,7 @@ const api: ZenoDesktopApi = {
     revealConfig: () => ipcRenderer.invoke("zeno:models:reveal-config"),
     listScoped: () => ipcRenderer.invoke("zeno:models:list-scoped"),
     refreshCatalog: () => ipcRenderer.invoke("zeno:models:refresh-catalog"),
+    fetchModelList: (input) => ipcRenderer.invoke("zeno:models:fetch-list", input),
   },
   thinking: {
     set: (level) => ipcRenderer.invoke("zeno:thinking:set", level),

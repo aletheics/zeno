@@ -3445,6 +3445,15 @@ const CUSTOM_MODEL_API_OPTIONS: Array<{ value: CustomModelApi; label: string }> 
 
 const CUSTOM_MODEL_API_VALUES = new Set<string>(CUSTOM_MODEL_API_OPTIONS.map((opt) => opt.value));
 const MANUAL_MODEL_CATALOG_VALUE = "__pix_manual_model__";
+/** API types whose model list is exposed via the OpenAI-compatible `GET {baseUrl}/models` endpoint. */
+function isOpenAiModelListApi(api: CustomModelApi): boolean {
+  return (
+    api === "openai-completions" ||
+    api === "openai-responses" ||
+    api === "openai-codex-responses" ||
+    api === "mistral-conversations"
+  );
+}
 /** Same rule as agent-runtime upsertCustomProviderInModelsJson. */
 const CUSTOM_PROVIDER_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
@@ -3589,6 +3598,10 @@ function ModelsSectionContent(
   const [costOutput, setCostOutput] = useState("0");
   const [costCacheRead, setCostCacheRead] = useState("0");
   const [costCacheWrite, setCostCacheWrite] = useState("0");
+  const [fetchedModelIds, setFetchedModelIds] = useState<string[]>([]);
+  const [fetchListBusy, setFetchListBusy] = useState(false);
+  const [selectedFetchedIds, setSelectedFetchedIds] = useState<Set<string>>(() => new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
   const sessionKey =
     props.snapshot?.model != null
       ? `${props.snapshot.model.provider}/${props.snapshot.model.id}`
@@ -3606,6 +3619,23 @@ function ModelsSectionContent(
     );
   }, [catalogModels, modelId]);
   const catalogMetadataLocked = selectedCatalogModel !== undefined;
+  /** Custom models already present under the current provider (for "已添加" list + batch-add exclusion). */
+  const existingProviderModels = useMemo(() => {
+    const pid = providerId.trim().toLowerCase();
+    if (!pid) return [];
+    return models.filter((m) => m.source === "custom" && m.provider.toLowerCase() === pid);
+  }, [models, providerId]);
+  const existingProviderModelIds = useMemo(
+    () => new Set(existingProviderModels.map((m) => m.id)),
+    [existingProviderModels],
+  );
+  /** Fetched server ids that are not yet added to this provider. */
+  const availableFetchedIds = useMemo(
+    () => fetchedModelIds.filter((id) => !existingProviderModelIds.has(id)),
+    [fetchedModelIds, existingProviderModelIds],
+  );
+  const allFetchedSelected =
+    availableFetchedIds.length > 0 && availableFetchedIds.every((id) => selectedFetchedIds.has(id));
 
   const showAppError = useShellStore((s) => s.showAppError);
 
@@ -3671,6 +3701,10 @@ function ModelsSectionContent(
     setCostOutput("0");
     setCostCacheRead("0");
     setCostCacheWrite("0");
+    setFetchedModelIds([]);
+    setFetchListBusy(false);
+    setSelectedFetchedIds(new Set());
+    setBatchBusy(false);
   }
 
   function applyCatalogModel(model: PiCatalogModel) {
@@ -3699,6 +3733,93 @@ function ModelsSectionContent(
     applyCatalogModel(model);
     setModelSuggestionsOpen(false);
     setActiveCatalogModelIndex(0);
+  }
+
+  function toggleFetchedId(id: string) {
+    setSelectedFetchedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllFetchedIds() {
+    if (availableFetchedIds.length === 0) return;
+    setSelectedFetchedIds(allFetchedSelected ? new Set() : new Set(availableFetchedIds));
+  }
+
+  async function fetchProviderModelList() {
+    if (fetchListBusy) return;
+    const base = baseUrl.trim();
+    if (!base) {
+      showAppError(tr("models.customFetchListNeedBaseUrl"));
+      return;
+    }
+    setFetchListBusy(true);
+    try {
+      const key = apiKey.trim();
+      const { models: list } = await window.zeno.models.fetchModelList({
+        baseUrl: base,
+        api,
+        ...(key ? { apiKey: key } : {}),
+      });
+      setFetchedModelIds(list);
+      setSelectedFetchedIds(new Set());
+      useShellStore
+        .getState()
+        .setStatus(tr("models.customFetchListCount", { count: String(list.length) }));
+    } catch (err) {
+      showError(err, tr("models.customFetchListFailed"));
+    } finally {
+      setFetchListBusy(false);
+    }
+  }
+
+  async function addSelectedModels() {
+    if (batchBusy) return;
+    if (selectedFetchedIds.size === 0) {
+      showAppError(tr("models.customBatchSelectFirst"));
+      return;
+    }
+    const pid = providerId.trim();
+    if (!pid || !baseUrl.trim()) {
+      showAppError(tr("models.customRequired"));
+      return;
+    }
+    if (!CUSTOM_PROVIDER_ID_RE.test(pid)) {
+      showAppError(tr("models.customProviderInvalid"));
+      return;
+    }
+    const ids = [...selectedFetchedIds];
+    setBatchBusy(true);
+    try {
+      await props.onEnsureHost();
+      for (const id of ids) {
+        const payload: Parameters<typeof window.zeno.models.upsertCustomProvider>[0] = {
+          provider: pid,
+          baseUrl: baseUrl.trim(),
+          api,
+          modelId: id,
+          input: inputMode,
+        };
+        if (apiKey.trim()) payload.apiKey = apiKey.trim();
+        payload.authHeader = authHeader;
+        payload.userAgent = userAgent.trim() || defaultUserAgent();
+        await window.zeno.models.upsertCustomProvider(payload);
+      }
+      const added = new Set(ids);
+      setFetchedModelIds((prev) => prev.filter((id) => !added.has(id)));
+      setSelectedFetchedIds(new Set());
+      useShellStore
+        .getState()
+        .setStatus(tr("models.customBatchAdded", { count: String(ids.length) }));
+      await Promise.all([refresh(), props.auth.refresh()]);
+    } catch (err) {
+      showError(err, tr("models.customSaveFailed"));
+    } finally {
+      setBatchBusy(false);
+    }
   }
 
   function handleModelIdKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
@@ -4466,6 +4587,128 @@ function ModelsSectionContent(
                             : tr("models.customModelManualHint")}
                         </p>
                       </label>
+                      {existingProviderModels.length > 0 ? (
+                        <div
+                          className="models-custom-field-span"
+                          data-testid="models-custom-existing-models"
+                        >
+                          <div className="mb-1.5 text-[11px] leading-none text-[var(--text-subtle)]">
+                            {tr("models.customBatchAlreadyAdded", {
+                              count: String(existingProviderModels.length),
+                            })}
+                          </div>
+                          <div className="max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-[var(--border)] p-1.5">
+                            {existingProviderModels.map((model) => (
+                              <div
+                                key={model.id}
+                                className="flex items-center justify-between gap-2 rounded px-1.5 py-1 hover:bg-[var(--hover)]"
+                              >
+                                <span className="min-w-0 truncate font-mono text-[12px] leading-none">
+                                  {model.id}
+                                </span>
+                                <SettingsIconButton
+                                  danger
+                                  disabled={loading || dialogBusy}
+                                  onClick={() => void removeCustomModel(model)}
+                                  testId={`model-remove-${providerId.trim()}-${model.id}`}
+                                  title={tr("models.customRemove")}
+                                  aria-label={tr("models.customRemove")}
+                                >
+                                  <Trash2 className="size-3.5" strokeWidth={1.75} />
+                                </SettingsIconButton>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                      {isOpenAiModelListApi(api) ? (
+                        <div className="models-custom-field-span flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <SettingsPillButton
+                              label={
+                                fetchListBusy
+                                  ? tr("models.customFetchListBusy")
+                                  : tr("models.customFetchList")
+                              }
+                              onClick={() => void fetchProviderModelList()}
+                              disabled={fetchListBusy || dialogBusy || !baseUrl.trim()}
+                              testId="models-custom-fetch-list"
+                              type="button"
+                            />
+                            {fetchedModelIds.length > 0 ? (
+                              <span className="text-[11px] leading-none text-[var(--text-subtle)]">
+                                {tr("models.customFetchListCount", {
+                                  count: String(fetchedModelIds.length),
+                                })}
+                              </span>
+                            ) : null}
+                          </div>
+                          {fetchedModelIds.length > 0 ? (
+                            <div
+                              className="rounded-md border border-[var(--border)] p-2.5"
+                              data-testid="models-custom-fetched-multi"
+                            >
+                              <div className="mb-1.5 flex items-center justify-between gap-2">
+                                <span className="text-[11px] leading-none text-[var(--text-subtle)]">
+                                  {tr("models.customFetchListGroup")}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-[11px] leading-none text-[var(--accent)] hover:underline disabled:cursor-default disabled:opacity-40"
+                                  onClick={toggleAllFetchedIds}
+                                  disabled={batchBusy || availableFetchedIds.length === 0}
+                                >
+                                  {allFetchedSelected
+                                    ? tr("models.customBatchDeselectAll")
+                                    : tr("models.customBatchSelectAll")}
+                                </button>
+                              </div>
+                              {availableFetchedIds.length > 0 ? (
+                                <div className="max-h-44 space-y-0.5 overflow-y-auto pr-1">
+                                  {availableFetchedIds.map((id) => (
+                                    <label
+                                      key={id}
+                                      className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-[var(--hover)]"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="size-3.5 shrink-0 accent-[var(--accent)]"
+                                        checked={selectedFetchedIds.has(id)}
+                                        onChange={() => toggleFetchedId(id)}
+                                        disabled={batchBusy}
+                                      />
+                                      <span className="min-w-0 truncate font-mono text-[12px] leading-none">
+                                        {id}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="m-0 text-[12px] leading-snug text-[var(--text-subtle)]">
+                                  {tr("models.customBatchAllAdded")}
+                                </p>
+                              )}
+                              <div className="mt-2">
+                                <SettingsButton
+                                  type="button"
+                                  variant="default"
+                                  size="sm"
+                                  className="w-full"
+                                  testId="models-custom-batch-add"
+                                  disabled={batchBusy || dialogBusy}
+                                  onClick={() => void addSelectedModels()}
+                                >
+                                  {batchBusy
+                                    ? tr("models.customBatchBusy")
+                                    : tr("models.customBatchAdd", {
+                                        count: String(selectedFetchedIds.size),
+                                      })}
+                                </SettingsButton>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <label className="models-custom-field">
                         <span>{tr("models.customModelName")}</span>
                         <SettingsInput

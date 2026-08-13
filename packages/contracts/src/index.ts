@@ -128,6 +128,13 @@ export interface UpsertCustomProviderInput {
   previousModelId?: string;
 }
 
+/** Request the OpenAI-compatible `GET {baseUrl}/models` list from a custom provider. */
+export interface FetchModelListInput {
+  baseUrl: string;
+  api: CustomModelApi;
+  apiKey?: string;
+}
+
 /** Non-secret provider credential status (never includes API keys or tokens). */
 export interface ProviderAuthSummary {
   provider: string;
@@ -1918,6 +1925,8 @@ export interface ZenoDesktopApi {
     listScoped(): Promise<ScopedModelView[]>;
     /** Reload model catalog from models.json + extensions. */
     refreshCatalog(): Promise<ModelSummary[]>;
+    /** Fetch the live model list from an OpenAI-compatible provider (`GET {baseUrl}/models`). */
+    fetchModelList(input: FetchModelListInput): Promise<{ models: string[] }>;
   };
   thinking: {
     set(level: string): Promise<HostSnapshot>;

@@ -3,6 +3,7 @@ import {
   type ExtensionUiResponse,
   type CatalogPackage,
   type DetectedApp,
+  type FetchModelListInput,
   type GitBranchInfo,
   type GitChangeItem,
   type GitContextInfo,
@@ -1655,6 +1656,57 @@ async function searchPiPackageCatalog(
       ? Math.max(data.total, items.length + offset)
       : offset + items.length;
   return { packages: items, total };
+}
+
+/** API types whose model list is exposed via the de-facto `GET {baseUrl}/models` endpoint. */
+const OPENAI_COMPATIBLE_MODEL_LIST_APIS = new Set<string>([
+  "openai-completions",
+  "openai-responses",
+  "openai-codex-responses",
+  "mistral-conversations",
+]);
+
+/** Normalize an OpenAI-compatible base URL so `{base}/models` is the right endpoint. */
+function normalizeOpenAiModelsBaseUrl(baseUrl: string): string {
+  const base = baseUrl.trim().replace(/\/+$/, "");
+  return /\/v1$/i.test(base) ? base : `${base}/v1`;
+}
+
+/** Fetch the OpenAI-compatible model list (`GET {baseUrl}/models`) from a custom provider. */
+async function fetchCustomModelList(input: FetchModelListInput): Promise<{ models: string[] }> {
+  if (!OPENAI_COMPATIBLE_MODEL_LIST_APIS.has(input.api)) {
+    throw new Error("该 API 类型不支持拉取模型列表");
+  }
+  const base = normalizeOpenAiModelsBaseUrl(input.baseUrl);
+  const url = `${base}/models`;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "User-Agent": "zeno-desktop",
+  };
+  const key = input.apiKey?.trim();
+  if (key) headers.Authorization = `Bearer ${key}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(url, { headers, signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`模型列表请求失败 (${res.status})`);
+    }
+    const data = (await res.json()) as { data?: Array<{ id?: string }> };
+    const models = (data.data ?? [])
+      .map((entry) => entry.id)
+      .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+      .map((id) => id.trim())
+      .sort((a, b) => a.localeCompare(b));
+    return { models };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("模型列表请求超时");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** MCP server catalog: npm registry search for MCP servers (name/description/keywords). */
@@ -5394,6 +5446,9 @@ void app
     );
     ipcMain.handle("zeno:models:open-config", () => supervisor?.openModelsJson());
     ipcMain.handle("zeno:models:reveal-config", () => supervisor?.revealModelsJson());
+    ipcMain.handle("zeno:models:fetch-list", (_event, input: FetchModelListInput) =>
+      fetchCustomModelList(input),
+    );
     ipcMain.handle("zeno:thinking:set", (_event, level: string) =>
       supervisor?.setThinkingLevel(level),
     );
