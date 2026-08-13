@@ -6,8 +6,8 @@
  * - `pnpm dev` (root) or `pnpm run dev` (apps/desktop).
  * - Interactive: real HOME. Isolated: `ZENO_ISOLATED=1` (temp HOME, fake model).
  */
-import { spawn, execSync } from "node:child_process";
-import { watchFile, unwatchFile } from "node:fs";
+import { spawn, execFileSync } from "node:child_process";
+import { statSync, watchFile, unwatchFile } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -30,9 +30,11 @@ const devServerUrl = `http://localhost:${devServerPort}`;
 const isWin = process.platform === "win32";
 
 /**
- * Find the vp binary in the workspace node_modules.
+ * Resolve the vite-plus `vp` CLI entry (a plain JS file) instead of the `.cmd` shim.
+ * Spawning `node <entry>` directly avoids an extra `cmd.exe` layer, so Ctrl+C no
+ * longer triggers a "Terminate batch job (Y/N)?" prompt per child process.
  */
-function resolveVpBin() {
+function resolveVpEntry() {
   const candidates = [desktopDir];
   let dir = desktopDir;
   for (let i = 0; i < 8; i++) {
@@ -42,44 +44,45 @@ function resolveVpBin() {
     candidates.push(dir);
   }
   for (const base of candidates) {
-    const bin = resolve(base, "node_modules", ".bin", isWin ? "vp.cmd" : "vp");
+    const entry = resolve(base, "node_modules", "vite-plus", "bin", "vp");
     try {
-      const { statSync } = require("node:fs");
-      if (statSync(bin).isFile()) return bin;
+      if (statSync(entry).isFile()) return entry;
     } catch {
       // keep searching
     }
   }
-  return isWin ? "vp.cmd" : "vp";
+  throw new Error("Unable to resolve vite-plus `vp` entry (node_modules/vite-plus/bin/vp)");
 }
 
-const vpBin = resolveVpBin();
+const vpEntry = resolveVpEntry();
+const nodeBin = process.execPath;
 
-/** Spawn a child with stdio inherited. On Windows uses shell for .cmd compatibility. */
+/** Spawn a child with stdio inherited. Never wraps in a shell — keeps Ctrl+C clean on Windows. */
 function run(cmd, args, opts = {}) {
   return spawn(cmd, args, {
     cwd: desktopDir,
     stdio: "inherit",
-    shell: isWin,
     ...opts,
   });
 }
 
+/** Spawn `vp` via `node <entry>` directly (no `.cmd` shim). */
+function runVp(args, opts = {}) {
+  return run(nodeBin, [vpEntry, ...args], opts);
+}
+
 // ── 1. Initial build ──
 console.log("[watch] Building main / preload / agent ...");
-execSync(
-  [
-    `"${vpBin}" build --config vite.main.config.ts`,
-    `"${vpBin}" build --config vite.preload.config.ts`,
-    `"${vpBin}" build --config vite.agent.config.ts`,
-  ].join(" && "),
-  { cwd: desktopDir, stdio: "inherit", shell: true },
-);
+for (const config of ["vite.main.config.ts", "vite.preload.config.ts", "vite.agent.config.ts"]) {
+  execFileSync(nodeBin, [vpEntry, "build", "--config", config], {
+    cwd: desktopDir,
+    stdio: "inherit",
+  });
+}
 
 // ── 2. Start Vite dev server for renderer (HMR) ──
 console.log(`[watch] Starting Vite dev server on ${devServerUrl} ...`);
-const rendererDev = run(
-  vpBin,
+const rendererDev = runVp(
   ["dev", "--config", "vite.renderer.config.ts", "--port", String(devServerPort)],
   {
     env: { ...process.env },
@@ -92,9 +95,9 @@ await new Promise((r) => setTimeout(r, 2000));
 // ── 3. Start build watchers ──
 console.log("[watch] Starting build watchers for main / preload / agent ...");
 const buildProcs = [
-  run(vpBin, ["build", "--watch", "--config", "vite.main.config.ts"]),
-  run(vpBin, ["build", "--watch", "--config", "vite.preload.config.ts"]),
-  run(vpBin, ["build", "--watch", "--config", "vite.agent.config.ts"]),
+  runVp(["build", "--watch", "--config", "vite.main.config.ts"]),
+  runVp(["build", "--watch", "--config", "vite.preload.config.ts"]),
+  runVp(["build", "--watch", "--config", "vite.agent.config.ts"]),
 ];
 
 // ── 4. Electron lifecycle ──
