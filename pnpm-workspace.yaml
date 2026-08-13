@@ -29,7 +29,7 @@ catalog:
   tailwind-merge: 3.3.1
   highlight.js: 11.11.1
   katex: 0.18.1
-  mermaid: 11.16.0
+  mermaid: 11.16.1
   react-markdown: ^10.1.0
   rehype-katex: 7.0.1
   remark-gfm: ^4.0.1
@@ -45,6 +45,12 @@ catalog:
 
 overrides:
   vite: "catalog:"
+  # CVE-2026-59870 修复：electron-updater 传递依赖 js-yaml 需 >=4.3.1（限 4.x，避免 5.x 破坏 API）
+  js-yaml: "~4.3.1"
+  # GHSA-55q2-fjhq-7xh7 修复：mermaid 传递依赖 dompurify 需 >=3.4.13
+  dompurify: ">=3.4.13"
+  # GHSA-mh99-v99m-4gvg / GHSA-rgw5-rvv9-x895 修复：brace-expansion 5.x DoS（仅限 5.x，避免破坏 1.x/2.x）
+  "brace-expansion@^5.0.0": ">=5.0.9"
 
 peerDependencyRules:
   allowAny:
