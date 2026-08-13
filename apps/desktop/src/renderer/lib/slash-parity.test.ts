@@ -41,7 +41,7 @@ describe("slash-parity catalog", () => {
     expect(zh.find((item) => item.name === "tree")?.description).toContain("会话树");
   });
 
-  it("keeps a colliding extension command authoritative", () => {
+  it("keeps a colliding builtin authoritative over an extension command", () => {
     const catalog = buildUnifiedSlashCatalog(
       snap({
         slashCommands: [
@@ -50,10 +50,9 @@ describe("slash-parity catalog", () => {
       }),
       "zh",
     );
-    expect(catalog.find((item) => item.name === "tree")).toMatchObject({
-      source: "extension",
-      description: "Extension tree command",
-    });
+    const matches = catalog.filter((item) => item.name === "tree");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({ source: "builtin" });
   });
 
   it("resolves builtin slash actions used by composer", () => {

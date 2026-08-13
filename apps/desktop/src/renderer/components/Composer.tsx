@@ -80,7 +80,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ComposerAttachmentList } from "./ComposerAttachmentList.tsx";
 import { ComposerQueueCard } from "./ComposerQueueCard.tsx";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog.tsx";
-import { t, thinkingLevelLabel, type Locale } from "../lib/i18n.ts";
+import { t, thinkingLevelLabel, type Locale, type MessageKey } from "../lib/i18n.ts";
 import { modelSupportsServiceTier, type ServiceTierId } from "../lib/service-tier.ts";
 import { modelSupportsThinking } from "../lib/thinking-levels.ts";
 import { groupModelsByProvider } from "../lib/model-groups.ts";
@@ -546,14 +546,23 @@ function commandSourceIcon(command: SlashCommandSummary) {
   }
 }
 
-/** `/` menu: 命令 (builtins/prompts/extensions) + 技能 (skills). */
-type SlashGroupId = "command" | "skill";
+/** `/` menu groups: builtins act locally; extension/prompt/skill route to the AI. */
+type SlashGroupId = "builtin" | "extension" | "prompt" | "skill";
 
-const SLASH_GROUP_ORDER: SlashGroupId[] = ["command", "skill"];
+const SLASH_GROUP_ORDER: SlashGroupId[] = ["builtin", "extension", "prompt", "skill"];
+
+const SLASH_GROUP_LABEL_KEY: Record<SlashGroupId, MessageKey> = {
+  builtin: "composer.slash.group.builtin",
+  extension: "composer.slash.group.extension",
+  prompt: "composer.slash.group.prompt",
+  skill: "composer.slash.group.skill",
+};
 
 function slashGroupId(command: SlashCommandSummary): SlashGroupId {
   if (command.source === "skill" || command.name.startsWith("skill:")) return "skill";
-  return "command";
+  if (command.source === "extension") return "extension";
+  if (command.source === "prompt") return "prompt";
+  return "builtin";
 }
 
 function groupSlashCommands(commands: SlashCommandSummary[]): Array<{
@@ -561,7 +570,9 @@ function groupSlashCommands(commands: SlashCommandSummary[]): Array<{
   items: Array<{ command: SlashCommandSummary; flatIndex: number }>;
 }> {
   const buckets: Record<SlashGroupId, SlashCommandSummary[]> = {
-    command: [],
+    builtin: [],
+    extension: [],
+    prompt: [],
     skill: [],
   };
   for (const command of commands) {
@@ -1603,11 +1614,7 @@ export function Composer(props: ComposerProps) {
                   data-testid={`composer-slash-group-${group.id}`}
                 >
                   <div className="composer-suggest-group-label">
-                    {tr(
-                      group.id === "skill"
-                        ? "composer.slash.group.skill"
-                        : "composer.slash.group.command",
-                    )}
+                    {tr(SLASH_GROUP_LABEL_KEY[group.id])}
                   </div>
                   {group.items.map(({ command, flatIndex }) => (
                     <button
@@ -1628,6 +1635,11 @@ export function Composer(props: ComposerProps) {
                       </span>
                       <span className="composer-suggest-item-main">
                         /{command.name}
+                        {command.source !== "builtin" ? (
+                          <span className="ml-1 inline-flex items-center rounded-[3px] border border-[var(--border)] px-1 py-px align-middle text-[10px] font-medium leading-none text-[var(--text-subtle)]">
+                            {tr("composer.slash.badge.ai")}
+                          </span>
+                        ) : null}
                         {command.argumentHint ? (
                           <span className="ml-1 font-normal text-[var(--text-subtle)]">
                             {command.argumentHint}

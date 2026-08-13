@@ -91,15 +91,20 @@ export function buildUnifiedSlashCatalog(
 ): UnifiedSlashItem[] {
   const runtime = snapshot?.slashCommands ?? [];
   const builtins = listDesktopBuiltinSlashCommands(locale);
-  const names = new Set(runtime.map((item) => item.name));
-  const merged: UnifiedSlashItem[] = runtime.map((item) => ({
-    name: item.name,
-    description: item.description,
-    source: item.source,
-    ...(item.argumentHint ? { argumentHint: item.argumentHint } : {}),
-  }));
+  // Desktop built-ins always win name collisions — a plugin command shadowing a
+  // builtin (e.g. an extension `/tree`) must not override the local desktop action.
+  const builtinNames = new Set(builtins.map((item) => item.name));
+  const merged: UnifiedSlashItem[] = [];
+  for (const item of runtime) {
+    if (builtinNames.has(item.name)) continue;
+    merged.push({
+      name: item.name,
+      description: item.description,
+      source: item.source,
+      ...(item.argumentHint ? { argumentHint: item.argumentHint } : {}),
+    });
+  }
   for (const builtin of builtins) {
-    if (names.has(builtin.name)) continue;
     merged.push({
       name: builtin.name,
       description: localizeBuiltinDescription(locale, builtin.name, builtin.description),
