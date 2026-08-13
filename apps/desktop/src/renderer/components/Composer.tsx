@@ -45,6 +45,7 @@ import {
   GitFork,
   Info,
   Keyboard,
+  LogIn,
   MessageSquareText,
   Minimize2,
   Monitor,
@@ -538,6 +539,8 @@ function commandSourceIcon(command: SlashCommandSummary) {
     case "hotkeys":
     case "keybindings":
       return <Keyboard {...ICON_SM} />;
+    case "login":
+      return <LogIn {...ICON_SM} />;
     default:
       return <Slash {...ICON_SM} />;
   }
