@@ -80,6 +80,7 @@ import {
 } from "./host-park-policy.ts";
 import { createAutoUpdateController, type AutoUpdateController } from "./auto-update.ts";
 import { ensurePiCli, type PiCliProgressEvent } from "./pi-cli-ensure.ts";
+import { ensurePiSubagentsSpawnPatch } from "./pi-subagents-patch.ts";
 import {
   buildPiSdkActivity,
   buildPiSdkStatus,
@@ -4197,6 +4198,10 @@ class HostSupervisor {
   }
 
   #spawnWithEnv(env: Record<string, string>): ActiveHost {
+    // Repair the pi-subagents foreground-spawn bug if a reinstall wiped the fix
+    // (idempotent; no-op when already patched). See pi-subagents-patch.ts.
+    ensurePiSubagentsSpawnPatch(defaultAgentDir());
+
     const hostEntry = join(currentDirectory, "..", "agent-host", "agent-host.mjs");
     const child = utilityProcess.fork(hostEntry, [], {
       env,
