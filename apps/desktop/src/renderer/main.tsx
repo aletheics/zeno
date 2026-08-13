@@ -1596,6 +1596,10 @@ function App() {
       case "mcp":
         setView("packages");
         return true;
+      case "login":
+        setSettingsSection("models");
+        setView("settings");
+        return true;
       case "upcoming":
         reportAppError(
           new Error(t(locale, "session.parity.commandUpcoming", { name: action.name })),
