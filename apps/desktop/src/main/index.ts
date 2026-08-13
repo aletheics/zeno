@@ -67,7 +67,7 @@ import {
   rmSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -1155,6 +1155,16 @@ async function openCreatePullRequest(cwd: string): Promise<void> {
     const draft = git.draftPr ? "&merge_request[draft]=true" : "";
     url = `${url}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(branch)}${draft}`;
   }
+  // 协议白名单：与 open-external 一致，防止 git remote 被篡改后触发任意协议。
+  let protocol: string;
+  try {
+    protocol = new URL(url).protocol;
+  } catch {
+    throw new Error("无效的 PR 地址");
+  }
+  if (!["http:", "https:", "mailto:"].includes(protocol)) {
+    throw new Error(`不支持的协议: ${protocol}`);
+  }
   await shell.openExternal(url);
 }
 
@@ -1785,7 +1795,33 @@ async function writeMcpConfig(config: McpConfig): Promise<void> {
   const mcpPath = join(agentDir, "mcp.json");
   writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n", "utf8");
 }
+/** npm 包名白名单：仅允许合法、URL 安全、不含 shell 元字符的包名（支持 scoped 包）。 */
+const NPM_PACKAGE_NAME_RE = /^(@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 
+function isValidNpmPackageName(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 214 &&
+    NPM_PACKAGE_NAME_RE.test(value)
+  );
+}
+
+function assertNpmPackageName(value: unknown): string {
+  if (!isValidNpmPackageName(value)) throw new Error("非法的 npm 包名");
+  return value;
+}
+
+/** 仅信任主窗口顶层 frame 发起的 IPC，拒绝子 frame / 外部内容。 */
+function assertTrustedSender(event: Electron.IpcMainInvokeEvent): void {
+  const win = mainWindow;
+  if (!win || win.isDestroyed() || event.sender !== win.webContents) {
+    throw new Error("不受信任的 IPC 发送方");
+  }
+  if (event.senderFrame !== win.webContents.mainFrame) {
+    throw new Error("不受信任的 IPC frame");
+  }
+}
 /**
  * On Windows, npx-resolver in pi-mcp-adapter misidentifies Unix shell scripts
  * in .bin/ as binaries, causing cmd.exe chain breaks that kill stdio pipes.
@@ -1803,6 +1839,7 @@ async function resolveMcpNodeEntry(
   packageName: string,
 ): Promise<{ command: string; args: string[]; cwd: string } | null> {
   if (process.platform !== "win32") return null;
+  assertNpmPackageName(packageName);
   const agentDir = defaultAgentDir();
   const mcpPackagesDir = join(agentDir, "mcp-packages");
   try {
@@ -1861,7 +1898,8 @@ async function openInApp(appId: string, cwd: string): Promise<void> {
     if (found.kind === "terminal") {
       if (found.id === "terminal") {
         // Apple Terminal via AppleScript so cwd is applied.
-        const script = `tell application "Terminal" to do script "cd ${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+        // `quoted form of` 让 shell 安全引用路径，杜绝 `$()` / 反引号 / `;` 等注入。
+        const script = `tell application "Terminal" to do script "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
         await execFileAsync("osascript", ["-e", script], { windowsHide: true });
         return;
       }
@@ -1872,13 +1910,13 @@ async function openInApp(appId: string, cwd: string): Promise<void> {
     tell current window
       create tab with default profile
       tell current session
-        write text "cd ${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
+        write text "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
       end tell
     end tell
   on error
     create window with default profile
     tell current session of current window
-      write text "cd ${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
+      write text "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
     end tell
   end try
 end tell`;
@@ -1891,25 +1929,23 @@ end tell`;
   }
   if (process.platform === "win32") {
     if (found.id === "wt") {
-      await execFileAsync("wt", ["-d", cwd], { windowsHide: true, shell: true });
+      await execFileAsync("wt", ["-d", cwd], { windowsHide: true });
       return;
     }
     if (found.id === "cmd") {
-      await execFileAsync("cmd", ["/c", "start", "cmd", "/k", `cd /d ${cwd}`], {
+      // 用 cwd 选项让新窗口继承工作目录，避免把路径拼进 shell 命令。
+      await execFileAsync("cmd", ["/c", "start", "", "cmd", "/k"], {
+        cwd,
         windowsHide: true,
-        shell: true,
       });
       return;
     }
     if (found.id === "powershell") {
-      await execFileAsync(
-        "powershell",
-        ["-NoExit", "-Command", `Set-Location -LiteralPath '${cwd.replace(/'/g, "''")}'`],
-        { windowsHide: true, shell: true },
-      );
+      // 用 cwd 选项设置工作目录，去掉 -Command + shell 拼接。
+      await execFileAsync("powershell", ["-NoExit"], { cwd, windowsHide: true });
       return;
     }
-    await execFileAsync(found.target, [cwd], { windowsHide: true, shell: true });
+    await execFileAsync(found.target, [cwd], { windowsHide: true });
     return;
   }
   if (found.kind === "terminal") {
@@ -4652,6 +4688,31 @@ async function createWindow(): Promise<void> {
       preload: join(currentDirectory, "..", "preload", "preload.cjs"),
     },
   });
+
+  // 安全：阻止主 frame 导航离开应用入口，避免 preload 暴露的 IPC 面落到外部站点。
+  const devServerOrigin = (() => {
+    const u = process.env.VITE_DEV_SERVER_URL;
+    if (!u) return undefined;
+    try {
+      return new URL(u).origin;
+    } catch {
+      return undefined;
+    }
+  })();
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const ok = devServerOrigin
+      ? (() => {
+          try {
+            return new URL(url).origin === devServerOrigin;
+          } catch {
+            return false;
+          }
+        })()
+      : url.startsWith("file:");
+    if (!ok) event.preventDefault();
+  });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
   applyAppScale(mainWindow, normalizeAppScale(desktopPrefs.appScale));
   attachWindowBoundsPersistence(mainWindow);
   const emitWindowState = () => {
@@ -5259,12 +5320,14 @@ void app
     ipcMain.handle("zeno:workspace:reveal-in-folder", (_event, cwd: string) => {
       if (typeof cwd === "string" && cwd.trim()) shell.showItemInFolder(cwd);
     });
-    ipcMain.handle("zeno:workspace:open-file", async (_event, path: string) => {
+    ipcMain.handle("zeno:workspace:open-file", async (event, path: string) => {
+      assertTrustedSender(event);
       if (typeof path !== "string" || !path.trim()) throw new Error("Invalid file path");
       const error = await shell.openPath(path);
       if (error) throw new Error(error);
     });
-    ipcMain.handle("zeno:workspace:open-external", async (_event, url: string) => {
+    ipcMain.handle("zeno:workspace:open-external", async (event, url: string) => {
+      assertTrustedSender(event);
       if (typeof url !== "string") throw new Error("Invalid external URL");
       const protocol = new URL(url).protocol;
       if (!new Set(["http:", "https:", "mailto:"]).has(protocol)) {
@@ -5363,8 +5426,12 @@ void app
         const dir = join(app.getPath("temp"), "zeno-attachments");
         mkdirSync(dir, { recursive: true });
         let buffer: Buffer | undefined;
-        let ext =
-          typeof options?.ext === "string" && options.ext.trim() ? options.ext.trim() : "png";
+        const rawExt =
+          typeof options?.ext === "string" && options.ext.trim()
+            ? options.ext.trim().replace(/^\./, "")
+            : "png";
+        // 扩展名白名单：仅字母数字，杜绝路径穿越与非法后缀。
+        let ext = /^[a-z0-9]{1,10}$/i.test(rawExt) ? rawExt.toLowerCase() : "png";
         if (Array.isArray(options?.bytes) && options.bytes.length > 0) {
           buffer = Buffer.from(options.bytes);
         } else {
@@ -5374,16 +5441,26 @@ void app
           ext = "png";
         }
         if (!buffer || buffer.length === 0) return undefined;
-        const filePath = join(dir, `paste-${Date.now()}.${ext.replace(/^\./, "")}`);
+        const filePath = join(dir, `paste-${Date.now()}.${ext}`);
         writeFileSync(filePath, buffer);
         return filePath;
       },
     );
     /** Local image → small data-URL thumbnail for AttachmentMedia variant="image". */
-    ipcMain.handle("zeno:workspace:read-attachment-preview", async (_event, filePath?: string) => {
+    ipcMain.handle("zeno:workspace:read-attachment-preview", async (event, filePath?: string) => {
+      assertTrustedSender(event);
       if (typeof filePath !== "string" || !filePath.trim()) return undefined;
-      const abs = isAbsolute(filePath) ? resolve(filePath) : resolve(filePath);
+      const abs = resolve(filePath);
       if (!existsSync(abs)) return undefined;
+      // 边界校验：仅允许工作区或剪贴板临时目录内的图片，防任意磁盘文件读取。
+      const attachmentsRoot = resolve(join(app.getPath("temp"), "zeno-attachments"));
+      const workspaceCwd = supervisor?.getWorkspaceCwd();
+      const inAttachments = abs === attachmentsRoot || abs.startsWith(attachmentsRoot + sep);
+      const inWorkspace =
+        typeof workspaceCwd === "string" && workspaceCwd.trim()
+          ? abs === resolve(workspaceCwd) || abs.startsWith(resolve(workspaceCwd) + sep)
+          : false;
+      if (!inAttachments && !inWorkspace) return undefined;
       try {
         if (!lstatSync(abs).isFile()) return undefined;
       } catch {
@@ -5504,9 +5581,10 @@ void app
     ipcMain.handle(
       "zeno:terminal:open",
       async (
-        _event,
+        event,
         options: { sessionFile: string; cwd: string; cols?: number; rows?: number },
       ) => {
+        assertTrustedSender(event);
         if (
           !options ||
           typeof options.sessionFile !== "string" ||
@@ -5661,8 +5739,10 @@ void app
     ipcMain.handle("zeno:session:import-pick", () => supervisor?.importSessionPick());
     ipcMain.handle(
       "zeno:session:bash",
-      (_event, command: string, options?: { excludeFromContext?: boolean }) =>
-        supervisor?.sessionBash(command, options),
+      (event, command: string, options?: { excludeFromContext?: boolean }) => {
+        assertTrustedSender(event);
+        return supervisor?.sessionBash(command, options);
+      },
     );
     ipcMain.handle("zeno:session:copy-last", () => supervisor?.copyLastAssistant());
     ipcMain.handle("zeno:session:share", () => supervisor?.shareSession());
@@ -5672,20 +5752,24 @@ void app
     ipcMain.handle("zeno:packages:list", () => supervisor?.listPackages());
     ipcMain.handle(
       "zeno:packages:install",
-      (_event, source: string, scope: "global" | "project", options?: { temporary?: boolean }) =>
-        supervisor?.installPackage(source, scope, options),
+      (event, source: string, scope: "global" | "project", options?: { temporary?: boolean }) => {
+        assertTrustedSender(event);
+        return supervisor?.installPackage(source, scope, options);
+      },
     );
     ipcMain.handle(
       "zeno:packages:set-enabled",
       (_event, source: string, scope: "global" | "project", enabled: boolean) =>
         supervisor?.setPackageEnabled(source, scope, enabled),
     );
-    ipcMain.handle("zeno:packages:remove", (_event, source: string, scope: "global" | "project") =>
-      supervisor?.removePackage(source, scope),
-    );
-    ipcMain.handle("zeno:packages:update", (_event, source?: string) =>
-      supervisor?.updatePackage(source),
-    );
+    ipcMain.handle("zeno:packages:remove", (event, source: string, scope: "global" | "project") => {
+      assertTrustedSender(event);
+      return supervisor?.removePackage(source, scope);
+    });
+    ipcMain.handle("zeno:packages:update", (event, source?: string) => {
+      assertTrustedSender(event);
+      return supervisor?.updatePackage(source);
+    });
     ipcMain.handle("zeno:packages:check-updates", () => supervisor?.checkPackageUpdates());
     ipcMain.handle(
       "zeno:packages:search-catalog",
@@ -5697,7 +5781,9 @@ void app
     // MCP server management — read/write mcp.json in the pi agent dir
     ipcMain.handle("zeno:mcp:get-config", () => readMcpConfig());
 
-    ipcMain.handle("zeno:mcp:install-server", async (_event, name: string, packageName: string) => {
+    ipcMain.handle("zeno:mcp:install-server", async (event, name: string, packageName: string) => {
+      assertTrustedSender(event);
+      assertNpmPackageName(packageName);
       const config = await readMcpConfig();
       // On Windows, resolve the JS entry to avoid npx-resolver's shell-script
       // detection bug.  Fall back to plain npx if resolution fails.
@@ -5708,22 +5794,22 @@ void app
       await writeMcpConfig(config);
     });
 
-    ipcMain.handle("zeno:mcp:remove-server", async (_event, name: string) => {
+    ipcMain.handle("zeno:mcp:remove-server", async (event, name: string) => {
+      assertTrustedSender(event);
       const config = await readMcpConfig();
       const server = config.mcpServers[name];
       if (server) {
         // Clean up locally installed package files so disk doesn't leak.
         try {
-          if (server.packageName) {
+          if (server.packageName && isValidNpmPackageName(server.packageName)) {
             const agentDir = defaultAgentDir();
-            const pkgDir = join(
-              agentDir,
-              "mcp-packages",
-              "node_modules",
-              ...server.packageName.split("/"),
-            );
-            if (existsSync(pkgDir)) {
-              rmSync(pkgDir, { recursive: true, force: true });
+            const mcpPackagesRoot = join(agentDir, "mcp-packages", "node_modules");
+            const pkgDir = resolve(mcpPackagesRoot, ...server.packageName.split("/"));
+            // 路径穿越防护：清理目标必须仍位于 node_modules 根目录内
+            if (pkgDir !== mcpPackagesRoot && pkgDir.startsWith(mcpPackagesRoot + sep)) {
+              if (existsSync(pkgDir)) {
+                rmSync(pkgDir, { recursive: true, force: true });
+              }
             }
           }
         } catch {
@@ -5746,10 +5832,11 @@ void app
       await writeMcpConfig(config);
     });
 
-    ipcMain.handle("zeno:mcp:update-server", async (_event, name: string) => {
+    ipcMain.handle("zeno:mcp:update-server", async (event, name: string) => {
+      assertTrustedSender(event);
       const config = await readMcpConfig();
       const server = config.mcpServers[name];
-      if (!server || !server.packageName) return;
+      if (!server || !server.packageName || !isValidNpmPackageName(server.packageName)) return;
       try {
         if (server.command === "node") {
           // Locally installed via resolveMcpNodeEntry — upgrade in place.
@@ -5768,19 +5855,11 @@ void app
             { windowsHide: true, timeout: 120_000 },
           );
         } else {
-          // npx-based — clear cache so next launch pulls the latest.
+          // npx-based — refresh to latest (pure argv, no shell interpolation).
           await execFileAsync(
-            process.platform === "win32" ? "cmd.exe" : "sh",
-            process.platform === "win32"
-              ? [
-                  "/c",
-                  `npm cache clean --force ${server.packageName} 2>nul & npx -y ${server.packageName} --version 2>nul`,
-                ]
-              : [
-                  "-c",
-                  `npm cache clean --force ${server.packageName} 2>/dev/null; npx -y ${server.packageName} --version 2>/dev/null`,
-                ],
-            { timeout: 60_000 },
+            process.platform === "win32" ? "npx.cmd" : "npx",
+            ["-y", `${server.packageName}@latest`, "--version"],
+            { windowsHide: true, timeout: 60_000 },
           );
         }
       } catch {
@@ -5798,7 +5877,10 @@ void app
     ipcMain.handle("zeno:extension-ui:respond", (_event, response: ExtensionUiResponse) =>
       supervisor?.extensionUiRespond(response),
     );
-    ipcMain.handle("zeno:test:crash-host", () => supervisor?.crashHost());
+    // 测试后门：仅开发构建暴露，生产打包不注册。
+    if (!app.isPackaged) {
+      ipcMain.handle("zeno:test:crash-host", () => supervisor?.crashHost());
+    }
 
     ipcMain.handle("zeno:notifications:show", (_event, payload: ShowOsNotificationPayload) =>
       showOsNotification(payload ?? { title: "" }),
