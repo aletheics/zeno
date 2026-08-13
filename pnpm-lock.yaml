@@ -317,6 +317,9 @@ overrides:
   dompurify: '>=3.4.13'
   brace-expansion@^5.0.0: '>=5.0.9'
 
+patchedDependencies:
+  '@earendil-works/pi-coding-agent': 21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d
+
 importers:
 
   .:
@@ -341,7 +344,7 @@ importers:
     dependencies:
       '@earendil-works/pi-coding-agent':
         specifier: 'catalog:'
-        version: 0.84.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+        version: 0.84.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@shadcn/react':
         specifier: 'catalog:'
         version: 0.2.1(@types/react@19.2.17)(react@19.2.7)
@@ -502,7 +505,7 @@ importers:
     dependencies:
       '@earendil-works/pi-coding-agent':
         specifier: 'catalog:'
-        version: 0.84.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+        version: 0.84.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@zeno/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -4932,7 +4935,7 @@ snapshots:
     dependencies:
       '@earendil-works/pi-protocol': 0.84.1
 
-  '@earendil-works/pi-coding-agent@0.84.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
+  '@earendil-works/pi-coding-agent@0.84.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
     dependencies:
       '@earendil-works/pi-agent-core': 0.84.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@earendil-works/pi-ai': 0.84.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)

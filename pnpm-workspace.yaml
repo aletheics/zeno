@@ -71,3 +71,6 @@ allowBuilds:
   electron-winstaller: false
   node-pty: true
   protobufjs: false
+
+patchedDependencies:
+  "@earendil-works/pi-coding-agent": patches/@earendil-works__pi-coding-agent.patch

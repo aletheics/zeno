@@ -1,0 +1,39 @@
+diff --git a/dist/core/auth-storage.js b/dist/core/auth-storage.js
+index 23f7b999d09af2953a542790f3dd097553420a54..3ddd8349d317106d59a6f7b37012bd2ade067f57 100644
+--- a/dist/core/auth-storage.js
++++ b/dist/core/auth-storage.js
+@@ -30,7 +30,7 @@ export class FileAuthStorageBackend {
+         }
+     }
+     acquireLockSyncWithRetry(path) {
+-        const maxAttempts = 10;
++        const maxAttempts = 250;
+         const delayMs = 20;
+         let lastError;
+         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+diff --git a/dist/core/settings-manager.js b/dist/core/settings-manager.js
+index cb06c10d276238865234d1129dfec66ab3ab7f9b..add00399352a1d8373c41f0168c6a15a408931ba 100644
+--- a/dist/core/settings-manager.js
++++ b/dist/core/settings-manager.js
+@@ -47,7 +47,7 @@ export class FileSettingsStorage {
+         this.projectSettingsPath = join(resolvedCwd, CONFIG_DIR_NAME, "settings.json");
+     }
+     acquireLockSyncWithRetry(path) {
+-        const maxAttempts = 10;
++        const maxAttempts = 250;
+         const delayMs = 20;
+         let lastError;
+         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+diff --git a/dist/core/trust-manager.js b/dist/core/trust-manager.js
+index 17af93811e70e6276796dfb09dab263c8a04d9ce..3dc651feb88a7cb3a20dd3899e5d323981acc373 100644
+--- a/dist/core/trust-manager.js
++++ b/dist/core/trust-manager.js
+@@ -104,7 +104,7 @@ function writeTrustFile(path, data) {
+ function acquireTrustLockSync(path) {
+     const trustDir = dirname(path);
+     mkdirSync(trustDir, { recursive: true });
+-    const maxAttempts = 10;
++    const maxAttempts = 250;
+     const delayMs = 20;
+     let lastError;
+     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
