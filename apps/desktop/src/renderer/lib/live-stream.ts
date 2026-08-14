@@ -91,6 +91,13 @@ function mergeAttachmentPaths(existing: string[] | undefined, incoming: string[]
 export type ApplyLiveStreamOptions = {
   /** Host runtime.event sequence — used for at-most-once apply. */
   sequence?: number;
+  /**
+   * Local optimistic preview of a just-typed message (not a host echo). It shows
+   * the exact input text and must NOT advance promptIndex, otherwise the matching
+   * host echo reads `prompts[promptIndex]` past the sentPrompts entry and falls
+   * back to the expanded text (e.g. a full `<skill>` block).
+   */
+  optimistic?: boolean;
 };
 
 /**
@@ -104,6 +111,7 @@ export function applyRuntimeEventToLiveStream(
   options?: ApplyLiveStreamOptions,
 ): LiveStreamState {
   const sequence = options?.sequence;
+  const optimistic = options?.optimistic === true;
   if (sequence !== undefined && state.seenSequences.includes(sequence)) {
     return state;
   }
@@ -145,8 +153,11 @@ export function applyRuntimeEventToLiveStream(
     }
     case "user.message": {
       const source = splitAttachedPaths(event.content);
-      const promptIndex = state.promptIndex + 1;
-      const prompt = prompts[promptIndex - 1] ?? source.text;
+      // Optimistic previews advance nothing: the paired host echo is what consumes
+      // the next sentPrompts entry and replaces any expanded slash/skill/template
+      // content with the original typed text.
+      const promptIndex = optimistic ? state.promptIndex : state.promptIndex + 1;
+      const prompt = optimistic ? source.text : (prompts[promptIndex - 1] ?? source.text);
       if (!prompt && source.paths.length === 0) {
         return mark({ ...state, promptIndex });
       }
@@ -420,7 +431,6 @@ export function retractOptimisticUserMessage(
     return {
       ...state,
       items: state.items.slice(0, i).concat(state.items.slice(i + 1)),
-      promptIndex: Math.max(0, state.promptIndex - 1),
     };
   }
   return state;

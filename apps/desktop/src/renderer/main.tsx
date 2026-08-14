@@ -1812,6 +1812,7 @@ function App() {
       .applyLiveStreamEvent(
         { type: "user.message", content: message },
         useShellStore.getState().sentPrompts,
+        { optimistic: true },
       );
     // Surface / retitle the conversation in the sidebar immediately (do not wait for
     // agent settle — pi has not flushed the session file yet on first turn).

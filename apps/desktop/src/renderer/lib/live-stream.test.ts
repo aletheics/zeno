@@ -232,10 +232,10 @@ describe("live stream (append-only)", () => {
       state,
       { type: "user.message", content: "steer please" },
       ["first", "steer please"],
-      { sequence: 3 },
+      { sequence: 3, optimistic: true },
     );
     expect(state.items.map((item) => item.kind)).toEqual(["user", "assistant", "user"]);
-    expect(state.promptIndex).toBe(2);
+    expect(state.promptIndex).toBe(1);
 
     state = retractOptimisticUserMessage(state, "steer please");
     expect(state.items.map((item) => item.kind)).toEqual(["user", "assistant"]);
@@ -247,6 +247,37 @@ describe("live stream (append-only)", () => {
     });
     expect(state.items.map((item) => item.kind)).toEqual(["user", "assistant"]);
     expect(state.items[1]).toMatchObject({ kind: "assistant", text: "Working on it…" });
+  });
+
+  it("replaces an expanded slash/skill host echo with the optimistic original text", () => {
+    let state = emptyLiveStream();
+    const prompts = ["/skill:officecli"];
+    // Optimistic preview shows the exact typed command.
+    state = applyRuntimeEventToLiveStream(
+      state,
+      { type: "user.message", content: "/skill:officecli" },
+      prompts,
+      { optimistic: true },
+    );
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0]).toMatchObject({ kind: "user", text: "/skill:officecli" });
+    expect(state.promptIndex).toBe(0);
+
+    // Host echoes the EXPANDED <skill> block — must dedupe against the original
+    // and never surface a second bubble carrying the full skill body.
+    state = applyRuntimeEventToLiveStream(
+      state,
+      {
+        type: "user.message",
+        content:
+          '<skill name="officecli" location="/x/officecli">\nReferences are relative to baseDir.\n\nYou can do X.\n</skill>',
+      },
+      prompts,
+      { sequence: 1 },
+    );
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0]).toMatchObject({ kind: "user", text: "/skill:officecli" });
+    expect(state.promptIndex).toBe(1);
   });
 
   it("ignores retract when the display text is not present", () => {

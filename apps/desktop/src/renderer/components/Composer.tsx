@@ -29,6 +29,7 @@ import type {
 } from "@zeno/contracts";
 import {
   ArrowUp,
+  Boxes,
   Check,
   ChevronDown,
   ChevronRight,
@@ -494,6 +495,16 @@ function ContextUsageIndicator(props: {
 
 const ICON_SM = { className: "size-4 shrink-0", strokeWidth: 1.75 } as const;
 
+/** Collapse a command description to a short single-line "what it does" for the menu. */
+function slashDescriptionForMenu(description: string): string {
+  const collapsed = description.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= 48) return collapsed;
+  const cut = collapsed.slice(0, 48);
+  const lastSpace = cut.lastIndexOf(" ");
+  const end = lastSpace > 24 ? lastSpace : 48;
+  return `${collapsed.slice(0, end)}…`;
+}
+
 /** Icons for `/` catalog — source groups + well-known builtin command names. */
 function commandSourceIcon(command: SlashCommandSummary) {
   if (command.source === "skill" || command.name.startsWith("skill:")) {
@@ -541,6 +552,8 @@ function commandSourceIcon(command: SlashCommandSummary) {
       return <Keyboard {...ICON_SM} />;
     case "login":
       return <LogIn {...ICON_SM} />;
+    case "mcp":
+      return <Boxes {...ICON_SM} />;
     default:
       return <Slash {...ICON_SM} />;
   }
@@ -955,10 +968,19 @@ export function Composer(props: ComposerProps) {
   }
 
   function selectCommand(command: SlashCommandSummary) {
-    props.onPromptChange(`/${command.name} `);
+    // Commit the command into the prompt as an invocation token (`/name `) and
+    // move the caret to its right so the user keeps typing the argument. The token
+    // routes to its handler/AI on submit — it is never expanded into content here.
+    const text = `/${command.name} `;
+    props.onPromptChange(text);
     setSuggestionsDismissed(true);
     closeMenu();
-    requestAnimationFrame(() => props.composerRef.current?.focus());
+    requestAnimationFrame(() => {
+      const el = props.composerRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(text.length, text.length);
+    });
   }
 
   async function selectAttachments(mode: "files" | "folders" = "files") {
@@ -1646,7 +1668,9 @@ export function Composer(props: ComposerProps) {
                           </span>
                         ) : null}
                       </span>
-                      <span className="composer-suggest-item-desc">{command.description}</span>
+                      <span className="composer-suggest-item-desc">
+                        {slashDescriptionForMenu(command.description)}
+                      </span>
                     </button>
                   ))}
                 </div>

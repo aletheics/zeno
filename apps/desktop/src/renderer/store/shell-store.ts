@@ -31,6 +31,7 @@ import {
   emptyLiveStream,
   resetLiveStream,
   retractOptimisticUserMessage,
+  type ApplyLiveStreamOptions,
   type LiveStreamState,
 } from "../lib/live-stream.ts";
 import {
@@ -195,7 +196,7 @@ export interface ShellState {
   applyLiveStreamEvent: (
     event: RuntimeEvent,
     prompts: string[],
-    options?: { sequence?: number },
+    options?: ApplyLiveStreamOptions,
   ) => void;
   /**
    * Drop an optimistic user row (e.g. send reclassified as steer queue).

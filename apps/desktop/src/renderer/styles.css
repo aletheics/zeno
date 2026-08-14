@@ -1605,15 +1605,12 @@ html[data-custom-window-controls="true"] .page-header {
 }
 .composer-hl-mention {
   color: #34c759;
-  font-weight: 500;
 }
 .composer-hl-slash {
   color: #bf5af2;
-  font-weight: 500;
 }
 .composer-hl-skill {
   color: #ff9f0a;
-  font-weight: 600;
 }
 .composer-hl-shell {
   color: #ff453a;
