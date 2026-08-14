@@ -150,6 +150,7 @@ applyThemeSelection(
   initialThemeState.sidebarTranslucent,
 );
 applyAppearancePrefs();
+const NEW_SESSION_OP_TIMEOUT_MS = 30_000;
 
 /** Surface app-level errors as a modal (agent timeline errors stay in-chat). */
 function reportAppError(error: unknown, fallback: string): string {
@@ -1032,7 +1033,7 @@ function App() {
               if (failure) {
                 store.settleSessionByRuntime(event.runtimeId, "failed", failure);
                 maybeNotify("error", failure);
-              } else {
+              } else if (store.sessionKeyForRuntime(event.runtimeId)) {
                 store.settleSessionByRuntime(event.runtimeId, "completed");
                 maybeNotify("complete");
               }
@@ -1043,7 +1044,7 @@ function App() {
                 store.takePendingFailure(event.runtimeId);
                 maybeMarkUnreadForRuntime(event.runtimeId);
                 store.settleSessionByRuntime(event.runtimeId, "aborted", event.event.message);
-                maybeNotify("error", event.event.message);
+                // User-initiated abort is not a failure — skip the "task failed" notification.
               }
               // Non-abort errors stay busy so auto-retry can re-enter recovering.
             } else if (event.event.type === "retry.started") {
@@ -1103,7 +1104,7 @@ function App() {
               store.takePendingFailure(event.runtimeId);
               maybeMarkUnreadForRuntime(event.runtimeId);
               store.settleSessionByRuntime(event.runtimeId, "aborted", event.event.message);
-              maybeNotify("error", event.event.message);
+              // User-initiated abort is not a failure — skip the "task failed" notification.
             }
             // Non-abort model errors keep the turn busy. Auto-retry emits retry.started
             // (recovering); final failure is settled by retry.ended / agent.settled.
@@ -1144,7 +1145,7 @@ function App() {
               store.setLastFailure(failure);
               store.settleSessionByRuntime(event.runtimeId, "failed", failure);
               maybeNotify("error", failure);
-            } else {
+            } else if (store.sessionKeyForRuntime(event.runtimeId)) {
               store.setLastFailure(undefined);
               store.settleSessionByRuntime(event.runtimeId, "completed");
               maybeNotify("complete");
@@ -2394,9 +2395,7 @@ function App() {
   async function newBlankTask() {
     const gen = ++newBlankTaskGenRef.current;
     // Coalesce bursts: one in-flight op; later clicks only bump gen and wait their turn.
-    if (newBlankTaskInFlightRef.current) {
-      // Let the in-flight call finish; the latest gen will re-enter via queue below.
-    }
+    if (newBlankTaskInFlightRef.current) return;
 
     // Do not abort a generating session — main parks the busy host for tab-like switching.
     if (gen !== newBlankTaskGenRef.current) return;
@@ -2433,6 +2432,16 @@ function App() {
     // flash 打开工作区以开始. pendingPureConversation drives conversation chrome instead.
 
     newBlankTaskInFlightRef.current = true;
+    const newBlankWatchdog = setTimeout(() => {
+      if (!newBlankTaskInFlightRef.current) return;
+      newBlankTaskGenRef.current += 1;
+      newBlankTaskInFlightRef.current = false;
+      pendingPureConversationRef.current = false;
+      setPendingPureConversation(false);
+      reportAppError(new Error("新建会话超时，请重试"), "无法开始新会话");
+      setTimelineReady(true);
+      pendingScrollBottomRef.current = false;
+    }, NEW_SESSION_OP_TIMEOUT_MS);
     try {
       setStatus("Creating conversation...");
       setRuntimeId(undefined);
@@ -2476,6 +2485,7 @@ function App() {
       setTimelineReady(true);
       pendingScrollBottomRef.current = false;
     } finally {
+      clearTimeout(newBlankWatchdog);
       if (gen === newBlankTaskGenRef.current) {
         newBlankTaskInFlightRef.current = false;
       }
@@ -2498,6 +2508,19 @@ function App() {
     if (newThreadForProjectInFlightRef.current) return;
 
     newThreadForProjectInFlightRef.current = true;
+
+    // Watchdog: release the in-flight gate if this op hangs (e.g. the main-process
+    // lifecycle queue is stuck while the busy host is parked), so later「新建会话」
+    // clicks can retry instead of being silently swallowed.
+    const newThreadWatchdog = setTimeout(() => {
+      if (!newThreadForProjectInFlightRef.current) return;
+      newThreadForProjectGenRef.current += 1;
+      newThreadForProjectPendingPathRef.current = null;
+      newThreadForProjectInFlightRef.current = false;
+      reportAppError(new Error("新建会话超时，请重试"), "无法在项目下新建会话");
+      setTimelineReady(true);
+      pendingScrollBottomRef.current = false;
+    }, NEW_SESSION_OP_TIMEOUT_MS);
     try {
       while (true) {
         const runGen = newThreadForProjectGenRef.current;
@@ -2558,6 +2581,7 @@ function App() {
         break;
       }
     } finally {
+      clearTimeout(newThreadWatchdog);
       newThreadForProjectInFlightRef.current = false;
       // Path queued after we cleared inFlight but before exit — pick it up.
       if (newThreadForProjectPendingPathRef.current) {

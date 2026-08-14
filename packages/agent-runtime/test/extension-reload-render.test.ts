@@ -217,6 +217,30 @@ describe("U05 generic custom renderers", () => {
     expect(sanitizeSerializable({ a: () => 1, b: "ok" })).toEqual({ b: "ok" });
   });
 
+  it("drops internal bookkeeping custom types (workspace-history.snapshot)", () => {
+    expect(
+      projectCustomMessage({
+        role: "custom",
+        customType: "workspace-history.snapshot",
+        content: [{ type: "text", text: '{"v":1,"kind":"baseline"}' }],
+        display: true,
+      }),
+    ).toBeNull();
+
+    expect(
+      projectCustomEntry({
+        type: "custom",
+        customType: "workspace-history.snapshot",
+        data: { v: 1, kind: "baseline", commit: "abc123", createdAt: "2026-08-14T00:00:00.000Z" },
+      }),
+    ).toBeNull();
+
+    // Unrelated custom types still project normally.
+    expect(
+      projectCustomMessage({ role: "custom", customType: "status-update", content: "ok" }),
+    ).toMatchObject({ kind: "custom.message", customType: "status-update" });
+  });
+
   it("projects custom messages from a live extension without executing renderers", async () => {
     const root = await mkdtemp(join(tmpdir(), "zeno-ext-render-"));
     temporaryDirectories.push(root);

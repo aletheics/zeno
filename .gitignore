@@ -38,3 +38,7 @@ session-*.jsonl
 
 # Local planning docs (not part of the published tree)
 docs/
+
+# Local agent knowledge (not part of the published tree)
+AGENTS.md
+.agent/
