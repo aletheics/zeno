@@ -1,14 +1,5 @@
 /** Streaming-safe rich content renderer for assistant messages. */
-import {
-  memo,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { BookMarked, Check, Copy, ExternalLink, FileCode2, Maximize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -567,36 +558,81 @@ function MarkdownTable(props: {
   );
 }
 
+/** Cap how often the expensive markdown parse runs during streaming (ms). */
+const STREAM_PARSE_INTERVAL_MS = 100;
+
+/**
+ * Follow `value` at most once per `intervalMs` (trailing edge). The first value
+ * commits immediately; rapid updates within the interval are coalesced into a
+ * single trailing commit that always lands on the latest value. Unlike
+ * useDeferredValue this is a fixed, bounded-latency throttle — the rendered text
+ * never lags by more than one interval, and the final text always flushes.
+ */
+function useTrailingThrottle<T>(value: T, intervalMs: number): T {
+  const [throttled, setThrottled] = useState(value);
+  const stateRef = useRef<{
+    hasCommitted: boolean;
+    committedAt: number;
+    pending: T | undefined;
+    timer: number | undefined;
+  }>({ hasCommitted: false, committedAt: 0, pending: undefined, timer: undefined });
+
+  useEffect(() => {
+    const state = stateRef.current;
+    const now = performance.now();
+
+    if (!state.hasCommitted || now - state.committedAt >= intervalMs) {
+      // First value, or the interval has elapsed since the last commit.
+      if (state.timer !== undefined) {
+        window.clearTimeout(state.timer);
+        state.timer = undefined;
+      }
+      state.hasCommitted = true;
+      state.committedAt = now;
+      state.pending = undefined;
+      setThrottled(value);
+      return;
+    }
+
+    // Still inside the interval — remember the latest and schedule one trailing
+    // commit. The timer survives value changes so it coalesces the whole burst.
+    state.pending = value;
+    if (state.timer === undefined) {
+      state.timer = window.setTimeout(
+        () => {
+          state.timer = undefined;
+          state.hasCommitted = true;
+          state.committedAt = performance.now();
+          const pending = state.pending;
+          state.pending = undefined;
+          if (pending !== undefined) setThrottled(pending);
+        },
+        intervalMs - (now - state.committedAt),
+      );
+    }
+  }, [value, intervalMs]);
+
+  // Clear any pending timer on unmount.
+  useEffect(() => {
+    const state = stateRef.current;
+    return () => {
+      if (state.timer !== undefined) window.clearTimeout(state.timer);
+    };
+  }, []);
+
+  return throttled;
+}
+
 export const MarkdownContent = memo(function MarkdownContent(props: {
   children: string;
   className?: string | undefined;
   workspacePath?: string | undefined;
   locale?: Locale | undefined;
 }) {
-  // Defer the expensive markdown parse during streaming. The assistant text grows
-  // token-by-token and re-parsing remark/rehype/katex on every delta stalls the
-  // renderer, producing a "stall then dump everything at once" feel. The deferred
-  // value keeps the rendered markdown one commit behind while React stays
-  // responsive and always flushes the final text.
-  const deferredText = useDeferredValue(props.children ?? "");
-  return (
-    <MarkdownContentBody
-      className={props.className}
-      workspacePath={props.workspacePath}
-      locale={props.locale}
-    >
-      {deferredText}
-    </MarkdownContentBody>
-  );
-});
-
-const MarkdownContentBody = memo(function MarkdownContentBody(props: {
-  children: string;
-  className?: string | undefined;
-  workspacePath?: string | undefined;
-  locale?: Locale | undefined;
-}) {
-  const text = normalizeLatexDelimiters(props.children ?? "");
+  // Throttle the expensive remark/rehype/katex parse during streaming: re-parsing
+  // the whole accumulated text on every token delta is what stalled the renderer.
+  const throttledText = useTrailingThrottle(props.children ?? "", STREAM_PARSE_INTERVAL_MS);
+  const text = normalizeLatexDelimiters(throttledText);
   const locale = props.locale ?? "en";
   if (!text) return null;
 
