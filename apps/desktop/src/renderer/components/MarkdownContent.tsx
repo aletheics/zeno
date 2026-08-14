@@ -1,5 +1,14 @@
 /** Streaming-safe rich content renderer for assistant messages. */
-import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  memo,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { BookMarked, Check, Copy, ExternalLink, FileCode2, Maximize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -559,6 +568,29 @@ function MarkdownTable(props: {
 }
 
 export const MarkdownContent = memo(function MarkdownContent(props: {
+  children: string;
+  className?: string | undefined;
+  workspacePath?: string | undefined;
+  locale?: Locale | undefined;
+}) {
+  // Defer the expensive markdown parse during streaming. The assistant text grows
+  // token-by-token and re-parsing remark/rehype/katex on every delta stalls the
+  // renderer, producing a "stall then dump everything at once" feel. The deferred
+  // value keeps the rendered markdown one commit behind while React stays
+  // responsive and always flushes the final text.
+  const deferredText = useDeferredValue(props.children ?? "");
+  return (
+    <MarkdownContentBody
+      className={props.className}
+      workspacePath={props.workspacePath}
+      locale={props.locale}
+    >
+      {deferredText}
+    </MarkdownContentBody>
+  );
+});
+
+const MarkdownContentBody = memo(function MarkdownContentBody(props: {
   children: string;
   className?: string | undefined;
   workspacePath?: string | undefined;

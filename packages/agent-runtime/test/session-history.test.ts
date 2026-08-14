@@ -233,4 +233,20 @@ describe("session history projection", () => {
       }),
     ).toEqual([{ role: "user", text: "first", entryId: "u1" }]);
   });
+
+  it("drops internal workspace-history snapshot custom entries", () => {
+    expect(
+      projectSessionHistory(
+        [
+          {
+            role: "custom",
+            customType: "workspace-history.snapshot",
+            content: [{ type: "text", text: '{"v":1,"kind":"baseline"}' }],
+          },
+          { role: "user", content: "hello" },
+        ],
+        ["snapshot-entry", "user-entry"],
+      ),
+    ).toEqual([{ role: "user", text: "hello", entryId: "user-entry" }]);
+  });
 });

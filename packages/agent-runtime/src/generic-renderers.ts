@@ -3,6 +3,18 @@
  * Never executes TUI Component factories (message/entry/tool renderers).
  */
 
+/**
+ * Internal bookkeeping custom types that must never surface in the chat timeline.
+ * These are infrastructure entries emitted by pi/extensions (e.g. the
+ * `workspace-history` time-machine snapshots) rather than user-facing content.
+ * Showing them as "扩展 · {type}" cards also breaks the optimistic user-message
+ * dedupe (the card lands between the optimistic row and the host echo).
+ */
+const INTERNAL_CUSTOM_TYPES = new Set(["workspace-history.snapshot"]);
+
+export function isInternalCustomType(customType: string | undefined): boolean {
+  return typeof customType === "string" && INTERNAL_CUSTOM_TYPES.has(customType);
+}
 export interface GenericCustomMessageView {
   kind: "custom.message";
   customType: string;
@@ -59,6 +71,7 @@ export function projectCustomMessage(message: {
 }): GenericCustomMessageView | null {
   if (message.role !== undefined && message.role !== "custom") return null;
   if (message.display === false) return null;
+  if (isInternalCustomType(message.customType)) return null;
   if (typeof message.customType !== "string" || message.customType.length === 0) return null;
   const view: GenericCustomMessageView = {
     kind: "custom.message",
@@ -80,6 +93,7 @@ export function projectCustomEntry(entry: {
   data?: unknown;
 }): GenericCustomEntryView | null {
   if (entry.type !== undefined && entry.type !== "custom") return null;
+  if (isInternalCustomType(entry.customType)) return null;
   if (typeof entry.customType !== "string" || entry.customType.length === 0) return null;
   const view: GenericCustomEntryView = {
     kind: "custom.entry",

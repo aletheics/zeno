@@ -80,6 +80,7 @@ import {
 } from "./session-parity.ts";
 
 export { createPortableExtensionUiBridge } from "./extension-ui-bridge.ts";
+import { isInternalCustomType } from "./generic-renderers.ts";
 export {
   projectCustomEntry,
   projectCustomMessage,
@@ -575,6 +576,7 @@ export function projectSessionHistory(
       if (entryId) item.entryId = entryId;
       history.push(item);
     } else if (row.role === "custom") {
+      if (isInternalCustomType(row.customType)) continue;
       const text = textFromMessageContent(row.content).trim();
       const item: SessionHistoryMessage = {
         role: "system",
