@@ -125,8 +125,13 @@ export function builtinPackageSearchRoots(options: {
   mainModuleUrl?: string;
   appPath?: string;
   resourcesPath?: string;
+  /** userData/pi-cli extract (real filesystem for bundled Node). */
+  extractedRoot?: string;
 }): string[] {
   const roots: string[] = [];
+  if (options.extractedRoot?.trim()) {
+    roots.push(join(options.extractedRoot.trim(), "node_modules", PI_SDK_PACKAGE));
+  }
   if (options.mainModuleUrl) {
     try {
       const mainDir = dirname(fileURLToPath(options.mainModuleUrl));
@@ -153,6 +158,7 @@ export function resolveBuiltinSdk(options: {
   mainModuleUrl?: string;
   appPath?: string;
   resourcesPath?: string;
+  extractedRoot?: string;
   /** Inject createRequire base (tests). */
   requireFrom?: string;
 }): ResolvedPiSdk {

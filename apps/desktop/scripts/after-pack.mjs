@@ -8,7 +8,7 @@
  *   ENOENT .../Resources/app-update.yml
  */
 import { chmodSync, existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 /**
  * Build the YAML electron-updater expects under Resources/app-update.yml.
@@ -103,9 +103,36 @@ export function writeAppUpdateYml(context) {
 }
 
 /**
+ * Fail the pack if managed Node/Python archives were not copied into Resources.
+ * Windows extraResources used to miss these when `runtimes/current` was a
+ * directory symlink instead of a junction.
+ *
+ * @param {string} resourcesDir
+ */
+export function assertBundledRuntimeResources(resourcesDir) {
+  const required = [
+    join(resourcesDir, "runtimes", "manifest.json"),
+    join(resourcesDir, "runtimes", "archives", "node.tar.gz"),
+    join(resourcesDir, "runtimes", "archives", "python.tar.gz"),
+  ];
+  const missing = required.filter((path) => !existsSync(path));
+  if (missing.length === 0) return;
+  throw new Error(
+    `[zeno afterPack] bundled runtimes missing from ${resourcesDir}: ${missing
+      .map((path) => basename(path))
+      .join(", ")}. Run fetch-runtimes before electron-builder.`,
+  );
+}
+
+/**
  * @param {import('electron-builder').AfterPackContext} context
  */
 export default async function afterPack(context) {
+  const resourcesDir = resolveResourcesDir(context);
+  if (existsSync(resourcesDir)) {
+    assertBundledRuntimeResources(resourcesDir);
+  }
+
   const roots = [];
   if (context.electronPlatformName === "darwin") {
     const appName = context.packager.appInfo.productFilename;

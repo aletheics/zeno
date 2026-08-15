@@ -29,6 +29,18 @@ interface ElectronParentPort {
 const parentPort = (process as NodeJS.Process & { parentPort?: ElectronParentPort }).parentPort;
 if (!parentPort) throw new Error("Zeno Agent Host must run as an Electron utility process");
 
+function logHostFatal(kind: string, error: unknown): void {
+  const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  console.error(`[agent-host] ${kind}: ${detail}`);
+}
+
+process.on("uncaughtException", (error) => {
+  logHostFatal("uncaughtException", error);
+});
+process.on("unhandledRejection", (reason) => {
+  logHostFatal("unhandledRejection", reason);
+});
+
 let handle: ZenoRuntimeHandle | undefined;
 let unsubscribe: (() => void) | undefined;
 let sequence = 0;

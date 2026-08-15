@@ -28,6 +28,7 @@ import { CommandPalette } from "./components/CommandPalette.tsx";
 import { Composer } from "./components/Composer.tsx";
 import { ConfirmDialog } from "./components/ConfirmDialog.tsx";
 import { ErrorDialog } from "./components/ErrorDialog.tsx";
+import { unwrapRemoteIpcError } from "../shared/ipc-error.ts";
 import { ExtensionUiChrome } from "./components/ExtensionUiChrome.tsx";
 import { ExtensionUiHost } from "./components/ExtensionUiHost.tsx";
 import { ProjectTrustDialog } from "./components/ProjectTrustDialog.tsx";
@@ -136,6 +137,7 @@ import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
   sessionRunKey,
+  shouldReuseForegroundThread,
   useShellStore,
 } from "./store/shell-store.ts";
 import "./styles.css";
@@ -154,7 +156,8 @@ const NEW_SESSION_OP_TIMEOUT_MS = 30_000;
 
 /** Surface app-level errors as a modal (agent timeline errors stay in-chat). */
 function reportAppError(error: unknown, fallback: string): string {
-  const message = error instanceof Error && error.message.trim() ? error.message : fallback;
+  const raw = error instanceof Error && error.message.trim() ? error.message : fallback;
+  const message = unwrapRemoteIpcError(raw);
   useShellStore.getState().showAppError(message);
   return message;
 }
@@ -923,6 +926,10 @@ function App() {
         setBoot(t(loc(), "boot.config"));
         await refreshConversationSessions();
         if (cancelled) return;
+        // Auto-resume starts the host before this window subscribes to events,
+        // so session.opened (and its history) is often missed. Project it now.
+        await hydrateResumedSession();
+        if (cancelled) return;
 
         setBoot(t(loc(), "boot.ready"));
         // Brief beat so "ready" is readable before the shell appears.
@@ -937,6 +944,7 @@ function App() {
             await refreshRecentWorkspaces();
             await refreshPiStatus({ ensure: true });
             await refreshConversationSessions();
+            await hydrateResumedSession();
           } catch {
             // ignore secondary failures
           }
@@ -1350,6 +1358,26 @@ function App() {
     ro.observe(dock);
     return () => ro.disconnect();
   }, [hasActivity, showContextUsage, accessVisibility, timelineReady]);
+
+  /**
+   * After cold start the host may already be bound to lastWorkspace's recent
+   * session, but the renderer never received session.opened. Pull that
+   * projection so the last thread is actually open, not just highlighted.
+   */
+  async function hydrateResumedSession(): Promise<void> {
+    const store = useShellStore.getState();
+    const file = store.snapshot?.sessionFile?.trim();
+    if (!file || !store.runtimeId) return;
+    if (store.history.length > 0 || store.liveStream.items.length > 0) return;
+    try {
+      const opened = await window.zeno.session.switch(file);
+      applySessionOpen(opened);
+      requestContentReveal();
+      restoreSessionContentMode(opened.snapshot.sessionFile?.trim() || file);
+    } catch {
+      // Click-to-open still works if projection fails.
+    }
+  }
 
   async function ensureHost(): Promise<HostSnapshot> {
     const store = useShellStore.getState();
@@ -2710,8 +2738,23 @@ function App() {
       sessionRunKey(currentStore.snapshot?.sessionFile),
       sessionRunKey(currentStore.snapshot?.sessionId),
     ];
-    // A project-card selection only changes rail state. Re-selecting the live session
-    // should restore its row selection without clearing and reloading the timeline.
+    // Re-selecting the live session usually just restores the thread view.
+    // After quit/reopen, auto-resume binds sessionFile before history arrives —
+    // that click must still project the session (otherwise only a hop-away works).
+    if (
+      shouldReuseForegroundThread({
+        switching: switchingSessionRef.current,
+        runtimeId: currentStore.runtimeId,
+        targetKey: targetSessionKey,
+        currentKeys: currentSessionKeys,
+        historyCount: currentStore.history.length,
+        liveCount: currentStore.liveStream.items.length,
+      })
+    ) {
+      setView("thread");
+      return;
+    }
+
     if (
       !switchingSessionRef.current &&
       currentStore.runtimeId &&
@@ -2719,6 +2762,14 @@ function App() {
       currentSessionKeys.includes(targetSessionKey)
     ) {
       setView("thread");
+      try {
+        const opened = await window.zeno.session.switch(sessionPath);
+        applySessionOpen(opened);
+        requestContentReveal();
+        restoreSessionContentMode(opened.snapshot.sessionFile?.trim() || sessionPath);
+      } catch (error) {
+        reportAppError(error, "无法打开会话");
+      }
       return;
     }
 

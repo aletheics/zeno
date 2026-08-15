@@ -89,16 +89,14 @@ linux:
   category: Development
   synopsis: Desktop shell for the pi coding agent
   description: Zeno is a desktop shell for the pi coding agent.
-# Unpack native helpers and the JS dependency tree used by embedded pi TUI.
+# Unpack native helpers only. Windows NSIS copies asar.unpacked file-by-file.
 # node-pty spawn-helper must be a real executable (missing +x → posix_spawnp failed).
-# pi CLI is spawned as a PTY child with *system* Node; system Node cannot read asar.
-# Spawning process.execPath + ELECTRON_RUN_AS_NODE works for asar but macOS treats
-# that as a second app launch (Dock bounce); force-quitting it kills terminal mode.
+# Builtin pi CLI JS is extracted into userData on first launch so bundled Node can
+# spawn terminal mode on every platform (see src/main/pi-cli-extract.ts).
 asarUnpack:
   - "**/*.node"
   - "**/node-pty/prebuilds/**"
   - "**/node-pty/build/**"
   - "**/spawn-helper"
   - "**/@silvia-odwyer/photon-node/**"
-  - "**/node_modules/**"
 afterPack: scripts/after-pack.mjs

@@ -101,7 +101,8 @@ export type SettingsSection =
   | "models"
   | "piSettings"
   | "pi"
-  | "archived";
+  | "archived"
+  | "browser";
 
 export interface ShellState {
   status: string;
@@ -297,6 +298,25 @@ export function sessionKeyFromSnapshot(
 ): string {
   if (!snapshot) return "";
   return sessionRunKey(snapshot.sessionFile?.trim() || snapshot.sessionId?.trim() || "");
+}
+
+/**
+ * True when the sidebar click is the already-open session *and* its timeline
+ * has been projected. Auto-resume often binds sessionFile before the renderer
+ * receives session.opened — that must still go through session.switch.
+ */
+export function shouldReuseForegroundThread(input: {
+  switching?: boolean;
+  runtimeId?: string | undefined;
+  targetKey: string;
+  currentKeys: readonly string[];
+  historyCount: number;
+  liveCount: number;
+}): boolean {
+  if (input.switching) return false;
+  if (!input.runtimeId || !input.targetKey) return false;
+  if (!input.currentKeys.includes(input.targetKey)) return false;
+  return input.historyCount > 0 || input.liveCount > 0;
 }
 
 /**

@@ -184,16 +184,21 @@ async function download(url, destFile) {
 }
 
 /**
- * Windows `tar` treats `C:` / `C:/` as a remote host ("Cannot connect to C:").
- * Convert to MSYS/Git-Bash form `/c/...` which stays local.
- * @param {string} p
+ * Git's GNU `tar` treats `C:\` as a remote host ("Cannot connect to C:").
+ * Windows built-in bsdtar (`%SystemRoot%\System32\tar.exe`) accepts drive letters.
+ * Prefer that binary so pack/extract work without rewriting paths to `/c/...`
+ * (which System32 tar does not understand).
+ *
+ * @param {string} [platform]
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
  */
-export function tarLocalPath(p) {
-  const abs = resolve(p).replace(/\\/g, "/");
-  if (process.platform !== "win32") return abs;
-  const m = abs.match(/^([A-Za-z]):\/(.*)$/);
-  if (m) return `/${m[1].toLowerCase()}/${m[2]}`;
-  return abs;
+export function resolveTarBinary(platform = process.platform, env = process.env) {
+  if (platform !== "win32") return "tar";
+  const root = env.SystemRoot || env.SYSTEMROOT || "C:\\Windows";
+  const systemTar = join(root, "System32", "tar.exe");
+  if (existsSync(systemTar)) return systemTar;
+  return "tar";
 }
 
 /**
@@ -202,12 +207,7 @@ export function tarLocalPath(p) {
  */
 export function runTar(args, opts = {}) {
   const stdio = opts.stdio ?? "inherit";
-  const normalized = args.map((a) => {
-    if (typeof a !== "string" || a.startsWith("-")) return a;
-    if (/^[A-Za-z]:[\\/]/.test(a) || a.includes("\\")) return tarLocalPath(a);
-    return a;
-  });
-  execFileSync("tar", normalized, { stdio });
+  execFileSync(resolveTarBinary(), args, { stdio });
 }
 
 /**
@@ -747,8 +747,11 @@ function materializeCurrent(platformDir) {
     const rel = platformDir.startsWith(RUNTIMES_ROOT)
       ? platformDir.slice(RUNTIMES_ROOT.length).replace(/^[/\\]/, "")
       : platformDir;
-    symlinkSync(rel, current, "dir");
-    console.log(`[fetch-runtimes] linked current -> ${rel} (no duplicate copy)`);
+    // Junctions on Windows look like real directories to electron-builder
+    // extraResources; `dir` symlinks are often copied as empty link files.
+    const linkType = process.platform === "win32" ? "junction" : "dir";
+    symlinkSync(rel, current, linkType);
+    console.log(`[fetch-runtimes] linked current -> ${rel} (${linkType}, no duplicate copy)`);
     return;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);

@@ -13,6 +13,7 @@ import {
   listVendorArchiveNames,
   npmPrefixDir,
   pythonVenvDir,
+  resolveTarBinary,
   resolveVendorRuntimeLayout,
   userRuntimesRoot,
 } from "./runtime-provision.ts";
@@ -67,6 +68,14 @@ describe("resolveVendorRuntimeLayout", () => {
     } finally {
       rmSync(vendorRoot, { recursive: true, force: true });
     }
+  });
+});
+
+describe("resolveTarBinary", () => {
+  it("prefers Windows System32 tar so Git GNU tar never sees drive letters", () => {
+    expect(resolveTarBinary("linux")).toBe("tar");
+    const win = resolveTarBinary("win32", { SystemRoot: "C:\\Windows" });
+    expect(win === "C:\\Windows\\System32\\tar.exe" || win === "tar").toBe(true);
   });
 });
 

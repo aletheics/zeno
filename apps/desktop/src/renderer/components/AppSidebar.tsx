@@ -15,6 +15,7 @@ import {
   Folder,
   FolderGit2,
   GitBranch,
+  Globe,
   Keyboard,
   Network,
   Package,
@@ -643,6 +644,12 @@ function SettingsRail(props: {
           testId: "settings-nav-terminal",
           labelKey: "section.terminal",
           icon: <Terminal className="size-3.5 shrink-0 opacity-70" strokeWidth={1.75} />,
+        },
+        {
+          section: "browser",
+          testId: "settings-nav-browser",
+          labelKey: "section.browser",
+          icon: <Globe className="size-3.5 shrink-0 opacity-70" strokeWidth={1.75} />,
         },
         {
           section: "worktree",

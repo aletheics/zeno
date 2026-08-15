@@ -9,7 +9,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   type BundledRuntimeManifest,
@@ -174,27 +174,22 @@ export function readProvisionStamp(userDataPath: string): ProvisionStamp | undef
 }
 
 /**
- * Windows `tar` treats `C:` / `C:/` as a remote host ("Cannot connect to C:").
- * Convert to MSYS/Git-Bash form `/c/...` which stays local.
+ * Git's GNU `tar` treats `C:\` as a remote host. Prefer Windows bsdtar,
+ * which accepts native drive-letter paths.
  */
-export function tarLocalPath(p: string): string {
-  const abs = resolve(p).replace(/\\/g, "/");
-  if (process.platform !== "win32") return abs;
-  const m = abs.match(/^([A-Za-z]):\/(.*)$/);
-  if (!m) return abs;
-  const drive = m[1];
-  const rest = m[2];
-  if (!drive || rest === undefined) return abs;
-  return `/${drive.toLowerCase()}/${rest}`;
+export function resolveTarBinary(
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  if (platform !== "win32") return "tar";
+  const root = env.SystemRoot || env.SYSTEMROOT || "C:\\Windows";
+  const systemTar = join(root, "System32", "tar.exe");
+  if (existsSync(systemTar)) return systemTar;
+  return "tar";
 }
 
 function runTar(args: string[]): void {
-  const normalized = args.map((a) => {
-    if (a.startsWith("-")) return a;
-    if (/^[A-Za-z]:[\\/]/.test(a) || a.includes("\\")) return tarLocalPath(a);
-    return a;
-  });
-  execFileSync("tar", normalized, { stdio: "ignore" });
+  execFileSync(resolveTarBinary(), args, { stdio: "ignore" });
 }
 
 /**

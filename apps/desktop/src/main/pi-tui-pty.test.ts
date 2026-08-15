@@ -279,8 +279,20 @@ describe("resolvePiPtyLaunch", () => {
   });
 
   it("runs asar-packaged CLI via Electron-as-Node, not system node", () => {
-    const asarCli =
-      "/Applications/Zeno.app/Contents/Resources/app.asar/node_modules/@earendil-works/pi-coding-agent/dist/cli.js";
+    // Last-resort fallback when userData extract is missing. Isolated asar path
+    // so a real /Applications/Zeno.app install cannot rewrite it to unpacked.
+    const asarCli = join(
+      tmpdir(),
+      "zeno-no-such-app.app",
+      "Contents",
+      "Resources",
+      "app.asar",
+      "node_modules",
+      "@earendil-works",
+      "pi-coding-agent",
+      "dist",
+      "cli.js",
+    );
     const systemNode = join(tmpdir(), "fake-system-node");
     writeFileSync(systemNode, "#!/bin/sh\n", { mode: 0o755 });
 

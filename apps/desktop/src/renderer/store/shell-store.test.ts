@@ -6,6 +6,7 @@ import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
   sessionRunKey,
+  shouldReuseForegroundThread,
   useShellStore,
 } from "./shell-store.ts";
 
@@ -110,6 +111,65 @@ describe("contentMode presentation", () => {
     expect(useShellStore.getState().contentMode).toBe("chat");
     // Map still says terminal for that session
     expect(loadContentModeForSession("/tmp/keep-terminal.jsonl")).toBe("terminal");
+  });
+});
+
+describe("shouldReuseForegroundThread", () => {
+  const keys = ["/tmp/a.jsonl", "sid-a"];
+
+  it("skips reload only when the live session already has projected content", () => {
+    expect(
+      shouldReuseForegroundThread({
+        runtimeId: "rt-1",
+        targetKey: "/tmp/a.jsonl",
+        currentKeys: keys,
+        historyCount: 2,
+        liveCount: 0,
+      }),
+    ).toBe(true);
+    expect(
+      shouldReuseForegroundThread({
+        runtimeId: "rt-1",
+        targetKey: "/tmp/a.jsonl",
+        currentKeys: keys,
+        historyCount: 0,
+        liveCount: 1,
+      }),
+    ).toBe(true);
+  });
+
+  it("reopens the last session after cold start when history was never applied", () => {
+    expect(
+      shouldReuseForegroundThread({
+        runtimeId: "rt-1",
+        targetKey: "/tmp/a.jsonl",
+        currentKeys: keys,
+        historyCount: 0,
+        liveCount: 0,
+      }),
+    ).toBe(false);
+  });
+
+  it("does not skip a different session or a mid-switch click", () => {
+    expect(
+      shouldReuseForegroundThread({
+        runtimeId: "rt-1",
+        targetKey: "/tmp/b.jsonl",
+        currentKeys: keys,
+        historyCount: 3,
+        liveCount: 0,
+      }),
+    ).toBe(false);
+    expect(
+      shouldReuseForegroundThread({
+        switching: true,
+        runtimeId: "rt-1",
+        targetKey: "/tmp/a.jsonl",
+        currentKeys: keys,
+        historyCount: 3,
+        liveCount: 0,
+      }),
+    ).toBe(false);
   });
 });
 

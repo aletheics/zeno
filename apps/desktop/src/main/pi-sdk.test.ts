@@ -70,6 +70,19 @@ describe("resolveBuiltinSdk", () => {
     expect(resolved.cliPath).toContain("cli.js");
     expect(resolved.packageRoot).toContain("pi-coding-agent");
   });
+
+  it("prefers the userData extract over appPath", () => {
+    const app = mkdtempSync(join(tmpdir(), "zeno-pi-app-"));
+    const extracted = mkdtempSync(join(tmpdir(), "zeno-pi-ex-"));
+    tempDirs.push(app, extracted);
+    writeFakePackage(join(app, "node_modules", "@earendil-works", "pi-coding-agent"), "1.0.0");
+    writeFakePackage(
+      join(extracted, "node_modules", "@earendil-works", "pi-coding-agent"),
+      "2.0.0",
+    );
+    const resolved = resolveBuiltinSdk({ appPath: app, extractedRoot: extracted });
+    expect(resolved.version).toBe("2.0.0");
+  });
 });
 
 describe("listPiConfigFiles", () => {

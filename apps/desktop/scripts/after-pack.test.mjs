@@ -6,7 +6,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { serializeAppUpdateYml, writeAppUpdateYml } from "./after-pack.mjs";
+import {
+  assertBundledRuntimeResources,
+  serializeAppUpdateYml,
+  writeAppUpdateYml,
+} from "./after-pack.mjs";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -94,6 +98,28 @@ function assert(condition, message) {
     assert(written === true, "win write");
     const body = readFileSync(join(resources, "app-update.yml"), "utf8");
     assert(body.includes("provider: github"), "win provider");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+{
+  const root = mkdtempSync(join(tmpdir(), "zeno-after-pack-runtimes-"));
+  try {
+    const resources = join(root, "resources");
+    mkdirSync(join(resources, "runtimes", "archives"), { recursive: true });
+    let threw = false;
+    try {
+      assertBundledRuntimeResources(resources);
+    } catch {
+      threw = true;
+    }
+    assert(threw, "missing archives must fail the pack");
+
+    writeFileSync(join(resources, "runtimes", "manifest.json"), "{}");
+    writeFileSync(join(resources, "runtimes", "archives", "node.tar.gz"), "n");
+    writeFileSync(join(resources, "runtimes", "archives", "python.tar.gz"), "p");
+    assertBundledRuntimeResources(resources);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
