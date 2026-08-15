@@ -11,7 +11,6 @@ import type {
   GitWorktreeInfo,
   HostSnapshot,
   ModelSummary,
-  PackageSummary,
   PiSettingsPatch,
   PiSettingsView,
   ProviderAuthSummary,
@@ -253,8 +252,6 @@ export function SettingsPage(props: SettingsPageProps) {
           <ModelsSection {...props} tr={tr} />
         ) : props.section === "piSettings" ? (
           <PiSettingsSection {...props} tr={tr} />
-        ) : props.section === "browser" ? (
-          <BrowserSection {...props} tr={tr} />
         ) : (
           <ArchivedSection locale={props.locale} tr={tr} />
         )}
@@ -1837,80 +1834,6 @@ function GitSection(
             onChange={(e) => setPrefs((current) => ({ ...current, customPr: e.target.value }))}
           />
         </div>
-      </SettingsSectionBlock>
-    </SettingsPageShell>
-  );
-}
-
-const BROWSER_USE_SOURCE = "npm:@amaster.ai/pi-browser-use";
-
-function BrowserSection(
-  props: SettingsPageProps & { tr: (key: MessageKey, vars?: Record<string, string>) => string },
-) {
-  const { tr } = props;
-  const showAppError = useShellStore((s) => s.showAppError);
-  const [packages, setPackages] = useState<PackageSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    window.zeno.packages
-      .list()
-      .then((list) => {
-        if (!cancelled) setPackages(list);
-      })
-      .catch(() => {
-        /* host may be stopped */
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const pkg = packages.find((p) => p.source === BROWSER_USE_SOURCE);
-  const enabled = pkg?.enabled === true;
-
-  async function toggle(on: boolean) {
-    setBusy(true);
-    try {
-      if (on) {
-        if (!pkg) {
-          await window.zeno.packages.install(BROWSER_USE_SOURCE, "global");
-        } else if (!pkg.enabled) {
-          await window.zeno.packages.setEnabled(BROWSER_USE_SOURCE, "global", true);
-        }
-      } else if (pkg) {
-        await window.zeno.packages.setEnabled(BROWSER_USE_SOURCE, "global", false);
-      }
-      setPackages(await window.zeno.packages.list());
-      useShellStore.getState().setStatus(tr(on ? "browser.enabled" : "browser.disabled"));
-    } catch (error) {
-      showAppError(error instanceof Error ? error.message : tr("browser.toggleFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <SettingsPageShell title={tr("section.browser")} testId="settings-browser">
-      <SettingsSectionBlock label={tr("browser.title")} testId="settings-browser-control">
-        <SettingsRow
-          title={tr("browser.enable")}
-          description={tr("browser.enableHint")}
-          control={
-            <SettingsToggle
-              checked={enabled}
-              onChange={(on) => void toggle(on)}
-              disabled={busy || loading}
-              aria-label={tr("browser.enable")}
-              testId="settings-browser-enable"
-            />
-          }
-        />
       </SettingsSectionBlock>
     </SettingsPageShell>
   );

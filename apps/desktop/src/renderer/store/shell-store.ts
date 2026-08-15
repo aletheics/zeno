@@ -101,8 +101,7 @@ export type SettingsSection =
   | "models"
   | "piSettings"
   | "pi"
-  | "archived"
-  | "browser";
+  | "archived";
 
 export interface ShellState {
   status: string;
