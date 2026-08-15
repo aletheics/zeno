@@ -95,9 +95,7 @@ describe("asar-unpack", () => {
       writeFile: (path, data) => written.push([path, String(data)]),
     });
     expect(count).toBe(1);
-    expect(written[0]?.[0].replace(/\\/g, "/").endsWith("node_modules/chalk/index.js")).toBe(
-      true,
-    );
+    expect(written[0]?.[0].replace(/\\/g, "/").endsWith("node_modules/chalk/index.js")).toBe(true);
     expect(written[0]?.[1]).toBe("ok");
   });
 
