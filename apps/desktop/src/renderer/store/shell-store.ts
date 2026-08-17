@@ -29,6 +29,7 @@ import type { ThreadRunState } from "../lib/timeline.ts";
 import {
   applyRuntimeEventToLiveStream,
   emptyLiveStream,
+  liveStreamNotCoveredByHistory,
   resetLiveStream,
   retractOptimisticUserMessage,
   type ApplyLiveStreamOptions,
@@ -112,6 +113,11 @@ export interface ShellState {
    * Streamed text only grows; cleared on session switch.
    */
   liveStream: LiveStreamState;
+  /**
+   * Parked-session live streams. Switch stashes the outgoing turn here; parked
+   * runtime events keep appending so promote can reconnect without losing tokens.
+   */
+  backgroundLiveStreams: Record<string, LiveStreamState>;
   history: SessionHistoryMessage[];
   threads: SessionThreadSummary[];
   prompt: string;
@@ -198,6 +204,13 @@ export interface ShellState {
     prompts: string[],
     options?: ApplyLiveStreamOptions,
   ) => void;
+  /** Apply a runtime event to a specific session stream (foreground or parked). */
+  applySessionLiveStreamEvent: (
+    sessionKey: string,
+    event: RuntimeEvent,
+    prompts: string[],
+    options?: { sequence?: number },
+  ) => void;
   /**
    * Drop an optimistic user row (e.g. send reclassified as steer queue).
    * Does not touch host authority — only the local live stream projection.
@@ -205,6 +218,8 @@ export interface ShellState {
   retractOptimisticUserMessage: (displayText: string) => void;
   /** Drop all stream state (session switch). */
   clearLiveStream: () => void;
+  /** Park the foreground live stream under the current session before a hop. */
+  stashForegroundLiveStream: () => void;
   setHistory: (history: SessionHistoryMessage[]) => void;
   setThreads: (threads: SessionThreadSummary[]) => void;
   setPrompt: (prompt: string) => void;
@@ -410,6 +425,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   snapshot: undefined,
   events: [],
   liveStream: emptyLiveStream(),
+  backgroundLiveStreams: {},
   history: [],
   threads: [],
   prompt: "",
@@ -477,11 +493,40 @@ export const useShellStore = create<ShellState>((set, get) => ({
     set((state) => ({
       liveStream: applyRuntimeEventToLiveStream(state.liveStream, event, prompts, options),
     })),
+  applySessionLiveStreamEvent: (sessionKey, event, prompts, options) => {
+    const key = sessionRunKey(sessionKey);
+    if (!key) return;
+    const fg = sessionKeyFromSnapshot(get().snapshot);
+    if (fg && key === fg) {
+      get().applyLiveStreamEvent(event, prompts, options);
+      return;
+    }
+    set((state) => ({
+      backgroundLiveStreams: {
+        ...state.backgroundLiveStreams,
+        [key]: applyRuntimeEventToLiveStream(
+          state.backgroundLiveStreams[key] ?? emptyLiveStream(),
+          event,
+          prompts,
+          options,
+        ),
+      },
+    }));
+  },
   retractOptimisticUserMessage: (displayText) =>
     set((state) => ({
       liveStream: retractOptimisticUserMessage(state.liveStream, displayText),
     })),
   clearLiveStream: () => set({ liveStream: resetLiveStream() }),
+  stashForegroundLiveStream: () => {
+    const state = get();
+    const key = sessionKeyFromSnapshot(state.snapshot);
+    if (!key) return;
+    if (state.liveStream.items.length === 0 && state.liveStream.seenSequences.length === 0) return;
+    set({
+      backgroundLiveStreams: { ...state.backgroundLiveStreams, [key]: state.liveStream },
+    });
+  },
   setHistory: (history) => set({ history }),
   setThreads: (threads) => set({ threads }),
   setPrompt: (prompt) => set({ prompt }),
@@ -817,6 +862,19 @@ export const useShellStore = create<ShellState>((set, get) => ({
         }
       }
       const busyHere = Boolean((key && runningSessions[key]) || (idKey && runningSessions[idKey]));
+      const prevKey = sessionKeyFromSnapshot(state.snapshot);
+      const backgroundLiveStreams = { ...state.backgroundLiveStreams };
+      if (prevKey && prevKey !== key) {
+        if (state.liveStream.items.length > 0 || state.liveStream.seenSequences.length > 0) {
+          backgroundLiveStreams[prevKey] = state.liveStream;
+        }
+      }
+      const incoming =
+        key && prevKey === key ? state.liveStream : key ? backgroundLiveStreams[key] : undefined;
+      if (key) delete backgroundLiveStreams[key];
+      const liveStream = incoming
+        ? liveStreamNotCoveredByHistory(incoming, input.history)
+        : emptyLiveStream();
       return {
         snapshot: input.snapshot,
         runtimeId: input.snapshot.runtimeId,
@@ -830,7 +888,8 @@ export const useShellStore = create<ShellState>((set, get) => ({
               })),
         history: input.history,
         events: [],
-        liveStream: emptyLiveStream(),
+        liveStream,
+        backgroundLiveStreams,
         sentPrompts: [],
         queuedMessages: input.snapshot.queuedMessages,
         lastFailure: undefined,
@@ -857,6 +916,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
       history: [],
       events: [],
       liveStream: emptyLiveStream(),
+      backgroundLiveStreams: {},
       queuedMessages: { steering: [], followUp: [] },
       running: false,
       sessionMarkers: {},

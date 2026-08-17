@@ -4,6 +4,7 @@ import {
   applyRuntimeEventToLiveStream,
   assertLiveStreamTextMonotonic,
   emptyLiveStream,
+  liveStreamNotCoveredByHistory,
   retractOptimisticUserMessage,
 } from "./live-stream.ts";
 
@@ -290,5 +291,31 @@ describe("live stream (append-only)", () => {
     );
     const next = retractOptimisticUserMessage(state, "missing");
     expect(next).toEqual(state);
+  });
+});
+
+describe("liveStreamNotCoveredByHistory", () => {
+  it("drops user/assistant rows already present in history and keeps open tools", () => {
+    let state = emptyLiveStream();
+    state = applyRuntimeEventToLiveStream(state, { type: "user.message", content: "hi" }, ["hi"], {
+      sequence: 1,
+    });
+    state = applyRuntimeEventToLiveStream(state, { type: "message.delta", delta: "hello" }, [], {
+      sequence: 2,
+    });
+    state = applyRuntimeEventToLiveStream(
+      state,
+      { type: "tool.started", toolCallId: "t1", toolName: "bash", args: {} },
+      [],
+      { sequence: 3 },
+    );
+    const next = liveStreamNotCoveredByHistory(state, [
+      { role: "user", text: "hi" },
+      { role: "assistant", text: "hello" },
+    ]);
+    expect(next.items.some((item) => item.kind === "user" || item.kind === "assistant")).toBe(
+      false,
+    );
+    expect(next.items.some((item) => item.kind === "tool" && item.status === "running")).toBe(true);
   });
 });

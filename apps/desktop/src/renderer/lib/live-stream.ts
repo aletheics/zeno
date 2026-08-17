@@ -6,7 +6,7 @@
  * 2. Each host sequence is applied at most once (dedupe)
  * 3. Cleared only on session switch / stop / crash
  */
-import type { RuntimeEvent } from "@zeno/contracts";
+import type { RuntimeEvent, SessionHistoryMessage } from "@zeno/contracts";
 import type { TimelineItem } from "./timeline.ts";
 import { splitAttachedPaths } from "./timeline.ts";
 
@@ -27,6 +27,41 @@ export function emptyLiveStream(): LiveStreamState {
 
 export function resetLiveStream(): LiveStreamState {
   return emptyLiveStream();
+}
+
+function sameOrPrefix(a: string, b: string): boolean {
+  if (!b) return Boolean(a);
+  return a === b || a.startsWith(b) || b.startsWith(a);
+}
+
+function historyCoversLiveItem(history: SessionHistoryMessage[], item: TimelineItem): boolean {
+  if (item.kind === "user" || item.kind === "assistant" || item.kind === "thinking") {
+    return history.some((row) => row.role === item.kind && sameOrPrefix(row.text, item.text));
+  }
+  if (item.kind === "tool") {
+    if (item.status === "running") return false;
+    return history.some((row) => {
+      if (row.role !== "tool") return false;
+      if (item.toolName && row.toolName && item.toolName === row.toolName) return true;
+      return Boolean(item.toolCallId && row.text.includes(item.toolCallId));
+    });
+  }
+  if (item.kind === "system") {
+    return history.some((row) => row.role === "system" && row.text === item.text);
+  }
+  return false;
+}
+
+/**
+ * After promote, session.current history already has flushed/in-memory entries.
+ * Keep only live items the history does not yet cover (open tools, extra tokens).
+ */
+export function liveStreamNotCoveredByHistory(
+  stream: LiveStreamState,
+  history: SessionHistoryMessage[],
+): LiveStreamState {
+  if (stream.items.length === 0 || history.length === 0) return stream;
+  return { ...stream, items: stream.items.filter((item) => !historyCoversLiveItem(history, item)) };
 }
 
 /**

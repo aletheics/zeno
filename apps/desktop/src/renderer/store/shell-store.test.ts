@@ -2,6 +2,7 @@ import { IPC_PROTOCOL_VERSION, type HostEvent } from "@zeno/contracts";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { loadContentModeForSession, saveContentModeForSession } from "../lib/content-mode-prefs.ts";
 import { COMPLETED_MARKER_MS, isBusyRunState } from "../lib/session-markers.ts";
+import { emptyLiveStream } from "../lib/live-stream.ts";
 import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
@@ -403,5 +404,70 @@ describe("per-session running", () => {
     useShellStore.getState().settleSessionByRuntime("rt-1", "aborted", "late");
     expect(useShellStore.getState().sessionMarkers["/tmp/s1.jsonl"]?.state).toBe("running");
     expect(useShellStore.getState().sessionKeyForRuntime("rt-1")).toBeUndefined();
+  });
+
+  it("stashes a live turn and restores it when the session is promoted", () => {
+    const snapshotA = {
+      runtimeId: "rt-a",
+      sequence: 3,
+      cwd: "/tmp",
+      agentDir: "/tmp/agent",
+      sessionId: "a",
+      sessionFile: "/tmp/a.jsonl",
+      slashCommands: [],
+      queuedMessages: { steering: [], followUp: [] },
+      activeTools: [],
+      projectTrusted: true,
+      resources: { extensions: 0, skills: 0, prompts: 0, themes: 0, contextFiles: 0 },
+      configuredPackages: { global: 0, project: 0 },
+      diagnostics: [],
+    };
+    const snapshotB = {
+      ...snapshotA,
+      runtimeId: "rt-b",
+      sessionId: "b",
+      sessionFile: "/tmp/b.jsonl",
+    };
+    useShellStore.setState({
+      snapshot: snapshotA,
+      liveStream: emptyLiveStream(),
+      backgroundLiveStreams: {},
+      history: [],
+    });
+    useShellStore.getState().applyLiveStreamEvent({ type: "user.message", content: "hi" }, ["hi"], {
+      sequence: 1,
+    });
+    useShellStore.getState().applyLiveStreamEvent({ type: "message.delta", delta: "partial" }, [], {
+      sequence: 2,
+    });
+    useShellStore.getState().stashForegroundLiveStream();
+    useShellStore.getState().clearLiveStream();
+    expect(
+      useShellStore.getState().backgroundLiveStreams["/tmp/a.jsonl"]?.items.length,
+    ).toBeGreaterThan(0);
+
+    useShellStore.getState().applySessionOpen({
+      snapshot: snapshotB,
+      threads: [],
+      history: [],
+    });
+    expect(useShellStore.getState().liveStream.items).toEqual([]);
+
+    useShellStore
+      .getState()
+      .applySessionLiveStreamEvent("/tmp/a.jsonl", { type: "message.delta", delta: " more" }, [], {
+        sequence: 3,
+      });
+
+    useShellStore.getState().applySessionOpen({
+      snapshot: snapshotA,
+      threads: [],
+      history: [{ role: "user", text: "hi" }],
+    });
+    const items = useShellStore.getState().liveStream.items;
+    expect(items.some((item) => item.kind === "user")).toBe(false);
+    expect(items.some((item) => item.kind === "assistant" && item.text.includes("partial"))).toBe(
+      true,
+    );
   });
 });

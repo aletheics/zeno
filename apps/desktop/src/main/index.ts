@@ -73,9 +73,12 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   findParkedSessionKeyByCwd,
+  idleParkedCount,
   MAX_PARKED_HOSTS,
   normalizeHostCwdKey,
+  PARKED_IDLE_TTL_MS,
   pickParkedEvictionKey,
+  shouldForwardParkedRuntimeEvent,
   shouldParkForeground,
 } from "./host-park-policy.ts";
 import {
@@ -2468,8 +2471,8 @@ function hostCommandTimeoutMs(commandType: string): number | undefined {
 }
 
 /**
- * A live utility-process host that is not the UI foreground (still generating).
- * Parked hosts keep receiving messages so in-flight prompts can finish.
+ * A live utility-process host that is not the UI foreground.
+ * Busy parks keep generating; idle parks stay warm for promote until TTL / cap.
  */
 interface ParkedHost {
   host: ActiveHost;
@@ -2478,6 +2481,9 @@ interface ParkedHost {
   pending: Map<string, PendingWaiter>;
   sessionKey: string;
   workspaceCwd?: string;
+  parkedAt: number;
+  idleSince?: number | undefined;
+  idleTimer?: ReturnType<typeof setTimeout> | undefined;
 }
 
 function deferred<T>(): Deferred<T> {
@@ -2590,8 +2596,8 @@ class HostSupervisor {
   #builtinInstalled = false;
   /**
    * Detached live hosts keyed by session file / session id.
-   * Busy hosts are always parked; idle hosts are also parked (up to MAX_PARKED_HOSTS)
-   * so cross-project / conversation switches can promote instead of cold-starting.
+   * Foreground is just the promoted pointer; every parked runtime stays first-class.
+   * Busy parks are never evicted. Idle parks are capped and reaped after TTL.
    */
   #parked = new Map<string, ParkedHost>();
 
@@ -2651,15 +2657,7 @@ class HostSupervisor {
   }
 
   #findParkedByCwd(cwd: string): ParkedHost | undefined {
-    const sessionKey = findParkedSessionKeyByCwd(
-      [...this.#parked.values()].map((p) => ({
-        sessionKey: p.sessionKey,
-        ...(p.workspaceCwd ? { workspaceCwd: p.workspaceCwd } : {}),
-        ...(p.snapshot.cwd ? { snapshotCwd: p.snapshot.cwd } : {}),
-        busy: pendingHasPrompt(p.pending),
-      })),
-      cwd,
-    );
+    const sessionKey = findParkedSessionKeyByCwd(this.#parkedRefs(), cwd);
     return sessionKey ? this.#findParkedBySession(sessionKey) : undefined;
   }
 
@@ -2669,12 +2667,37 @@ class HostSupervisor {
       ...(p.workspaceCwd ? { workspaceCwd: p.workspaceCwd } : {}),
       ...(p.snapshot.cwd ? { snapshotCwd: p.snapshot.cwd } : {}),
       busy: pendingHasPrompt(p.pending),
+      parkedAt: p.parkedAt,
+      ...(p.idleSince !== undefined ? { idleSince: p.idleSince } : {}),
     }));
   }
 
-  /** Evict oldest idle (then any) parked host when over capacity. */
+  #disarmIdleReap(parked: ParkedHost): void {
+    if (!parked.idleTimer) return;
+    clearTimeout(parked.idleTimer);
+    parked.idleTimer = undefined;
+  }
+
+  #armIdleReap(parked: ParkedHost): void {
+    this.#disarmIdleReap(parked);
+    if (pendingHasPrompt(parked.pending)) {
+      parked.idleSince = undefined;
+      return;
+    }
+    const idleSince = parked.idleSince ?? parked.parkedAt;
+    parked.idleSince = idleSince;
+    const wait = Math.max(0, PARKED_IDLE_TTL_MS - (Date.now() - idleSince));
+    parked.idleTimer = setTimeout(() => {
+      const live = this.#findParkedBySession(parked.sessionKey);
+      if (live !== parked || pendingHasPrompt(live.pending)) return;
+      void this.#killParked(live, "idle-ttl");
+    }, wait);
+    parked.idleTimer.unref();
+  }
+
+  /** Evict oldest idle parks while idle count is over the warm cap. Never evict busy. */
   #evictParkedIfNeeded(): void {
-    while (this.#parked.size >= MAX_PARKED_HOSTS) {
+    while (idleParkedCount(this.#parkedRefs()) > MAX_PARKED_HOSTS) {
       const key = pickParkedEvictionKey(this.#parkedRefs());
       if (!key) break;
       const victim = this.#findParkedBySession(key);
@@ -2682,6 +2705,7 @@ class HostSupervisor {
         this.#parked.delete(key);
         continue;
       }
+      if (pendingHasPrompt(victim.pending)) break;
       void this.#killParked(victim, "evict");
     }
   }
@@ -2718,26 +2742,32 @@ class HostSupervisor {
       void this.#killParked(existing, "replaced");
     }
 
-    this.#evictParkedIfNeeded();
-
-    // Re-insert so Map order tracks recency (FIFO eviction prefers older entries).
+    // Re-insert so Map order tracks recency; idle cap is applied after insert.
     this.#parked.delete(sessionKey);
-    this.#parked.set(sessionKey, {
+    const now = Date.now();
+    const parked: ParkedHost = {
       host,
       snapshot,
       lastSequence: this.#lastSequence,
       pending: this.#pending,
       sessionKey,
+      parkedAt: now,
+      ...(busy ? {} : { idleSince: now }),
       ...(this.#workspaceCwd ? { workspaceCwd: this.#workspaceCwd } : {}),
-    });
+    };
+    this.#parked.set(sessionKey, parked);
     this.#host = undefined;
     this.#snapshot = undefined;
     this.#lastSequence = 0;
     this.#pending = new Map();
+    if (busy) this.#disarmIdleReap(parked);
+    else this.#armIdleReap(parked);
+    this.#evictParkedIfNeeded();
     return true;
   }
 
   async #killParked(parked: ParkedHost, reason: string): Promise<void> {
+    this.#disarmIdleReap(parked);
     this.#parked.delete(parked.sessionKey);
     // Also delete by any alias keys that might differ.
     for (const [key, value] of this.#parked) {
@@ -2776,6 +2806,7 @@ class HostSupervisor {
     // Re-find after possible re-park (map stable by identity).
     const live = this.#findParkedBySession(sessionPath);
     if (!live) return false;
+    this.#disarmIdleReap(live);
     this.#parked.delete(live.sessionKey);
     for (const [key, value] of this.#parked) {
       if (value === live) this.#parked.delete(key);
@@ -4350,13 +4381,13 @@ class HostSupervisor {
         }
       }
 
-      // Foreground events go to the renderer as today. Parked hosts still emit
-      // agent.settled so the UI can clear per-session running indicators.
+      // Foreground events go to the renderer as today. Parked hosts forward
+      // turn/tool/retry events so sidebar markers and promote reconnect stay live.
       if (isForeground) {
         this.#emit(message, false);
       } else if (
         message.type === "runtime.event" &&
-        (message.event.type === "agent.settled" || message.event.type === "message.failed")
+        shouldForwardParkedRuntimeEvent(message.event.type)
       ) {
         this.#emit(message, false);
       }
@@ -4394,6 +4425,7 @@ class HostSupervisor {
       ? new Error("Agent Host was replaced or stopped")
       : formatHostExitError(exitCode, host.stderr);
     if (parked) {
+      this.#disarmIdleReap(parked);
       this.#parked.delete(parked.sessionKey);
       for (const [key, value] of this.#parked) {
         if (value === parked) this.#parked.delete(key);
@@ -4499,8 +4531,14 @@ class HostSupervisor {
     } else {
       pending.resolve(message);
     }
-    // Parked hosts stay alive after the last prompt so cross-project switches can
-    // promote them (bounded by MAX_PARKED_HOSTS eviction). Do not auto-kill idle parks.
+    if (!parked) return;
+    if (pendingHasPrompt(parked.pending)) {
+      this.#disarmIdleReap(parked);
+      parked.idleSince = undefined;
+      return;
+    }
+    parked.idleSince = Date.now();
+    this.#armIdleReap(parked);
   }
 
   #rejectPending(error: Error): void {
