@@ -3,6 +3,7 @@
  * Windows uses native caption buttons via Electron titleBarOverlay.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Minus, Square, X, Copy } from "lucide-react";
 import { TITLEBAR_HEIGHT_PX, titlebarControlTopPx } from "../lib/desktop-chrome.ts";
 import { cn } from "../lib/utils.ts";
@@ -36,12 +37,16 @@ export function WindowCaptionButtons() {
     };
   }, []);
 
-  if (!visible) return null;
+  if (!visible || typeof document === "undefined") return null;
 
   const btnSize = 28;
   const top = titlebarControlTopPx(btnSize);
 
-  return (
+  // Portaled to document.body (same as the collapsed-rail expand control): Electron's
+  // -webkit-app-region:drag titlebars (ThreadHeader / settings top-cap) steal clicks from
+  // fixed overlays that live inside .app-shell, so the caption cluster must render outside
+  // that subtree to stay hit-testable on Linux.
+  return createPortal(
     <div
       className="window-caption-buttons no-drag"
       data-testid="window-caption-buttons"
@@ -86,6 +91,7 @@ export function WindowCaptionButtons() {
       >
         <X className="size-3.5" strokeWidth={1.75} />
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }
