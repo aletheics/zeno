@@ -8,6 +8,10 @@ Zeno desktop shell — sidebar, session workspace, and composer:
 
 ![Zeno desktop](./assets/screenshots/zeno-desktop.png)
 
+Animated demo:
+
+![Zeno demo](./assets/gif/zeno.gif)
+
 ## Requirements
 
 - Node.js 22.19 or newer
