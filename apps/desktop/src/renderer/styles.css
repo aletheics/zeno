@@ -370,6 +370,23 @@ body {
   width: 4.5rem !important;
   height: 4.5rem !important;
   border-radius: 1.15rem;
+  will-change: transform;
+  animation: zeno-breathe 2.6s ease-in-out infinite;
+}
+/* Cold-start logo breathes (subtle scale) while the host bootstraps. */
+@keyframes zeno-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bootstrap-logo {
+    animation: none;
+  }
 }
 .bootstrap-brand {
   font-size: 1.125rem;

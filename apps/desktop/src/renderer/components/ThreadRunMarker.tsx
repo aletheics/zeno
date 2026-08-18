@@ -1,12 +1,13 @@
 /**
  * Sidebar row run-state glyph (ui-spec §5.2). Not a badge — icon/dot only.
  */
-import { Check, Loader2, OctagonX, RotateCcw, Square } from "lucide-react";
+import { Check, OctagonX, Square } from "lucide-react";
 import type { ReactNode } from "react";
 import type { MessageKey } from "../lib/i18n.ts";
 import type { SessionMarker } from "../lib/session-markers.ts";
 import type { ThreadRunState } from "../lib/timeline.ts";
 import { cn } from "../lib/utils.ts";
+import { ZenoBlob } from "./ZenoBlob.tsx";
 
 export function ThreadRunMarker(props: {
   marker: SessionMarker | undefined;
@@ -28,20 +29,10 @@ export function ThreadRunMarker(props: {
 
   switch (state) {
     case "running":
-      return wrap(<Loader2 className={cn(common, "animate-spin text-blue-400")} strokeWidth={2} />);
+      return wrap(<ZenoBlob state="running" className={cn(props.className, "text-blue-400")} />);
     case "waiting":
-      // Half-circle status (ui-spec Waiting).
-      return wrap(
-        <span
-          className={cn(
-            "inline-flex size-3 shrink-0 items-center justify-center text-[11px] leading-none text-amber-400/90",
-            props.className,
-          )}
-          aria-hidden
-        >
-          ◐
-        </span>,
-      );
+      // Drowsy blob — half-closed eyes, minimal wobble.
+      return wrap(<ZenoBlob state="waiting" className={cn(props.className, "text-amber-400/90")} />);
     case "completed":
       return wrap(<Check className={cn(common, "text-emerald-500/90")} strokeWidth={2.25} />);
     case "failed":
@@ -55,9 +46,7 @@ export function ThreadRunMarker(props: {
         />,
       );
     case "recovering":
-      return wrap(
-        <RotateCcw className={cn(common, "animate-spin text-blue-400/80")} strokeWidth={2} />,
-      );
+      return wrap(<ZenoBlob state="recovering" className={cn(props.className, "text-blue-400/80")} />);
     default:
       return null;
   }
