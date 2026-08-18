@@ -32,7 +32,9 @@ export function ThreadRunMarker(props: {
       return wrap(<ZenoBlob state="running" className={cn(props.className, "text-blue-400")} />);
     case "waiting":
       // Drowsy blob — half-closed eyes, minimal wobble.
-      return wrap(<ZenoBlob state="waiting" className={cn(props.className, "text-amber-400/90")} />);
+      return wrap(
+        <ZenoBlob state="waiting" className={cn(props.className, "text-amber-400/90")} />,
+      );
     case "completed":
       return wrap(<Check className={cn(common, "text-emerald-500/90")} strokeWidth={2.25} />);
     case "failed":
@@ -46,7 +48,9 @@ export function ThreadRunMarker(props: {
         />,
       );
     case "recovering":
-      return wrap(<ZenoBlob state="recovering" className={cn(props.className, "text-blue-400/80")} />);
+      return wrap(
+        <ZenoBlob state="recovering" className={cn(props.className, "text-blue-400/80")} />,
+      );
     default:
       return null;
   }

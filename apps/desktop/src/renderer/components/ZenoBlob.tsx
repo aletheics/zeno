@@ -146,11 +146,7 @@ export function sampleBlob(t: number, state: ThreadRunState): BlobFrame {
 }
 
 /** States that keep the loop running; terminal/idle states render one frame. */
-const ANIMATED_STATES: ReadonlySet<ThreadRunState> = new Set([
-  "running",
-  "recovering",
-  "waiting",
-]);
+const ANIMATED_STATES: ReadonlySet<ThreadRunState> = new Set(["running", "recovering", "waiting"]);
 
 export function ZenoBlob(props: { state: ThreadRunState; className?: string }) {
   const { state } = props;
@@ -182,12 +178,28 @@ export function ZenoBlob(props: { state: ThreadRunState; className?: string }) {
   }, [animated, state]);
 
   return (
-    <svg viewBox="0 0 100 100" aria-hidden="true" className={cn("size-3 shrink-0", props.className)}>
+    <svg
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      className={cn("size-3 shrink-0", props.className)}
+    >
       <defs>
         <mask id={maskId}>
           <rect width="100" height="100" fill="white" />
-          <ellipse cx={frame.eyeL.cx} cy={frame.eyeL.cy} rx={frame.eyeL.rx} ry={frame.eyeL.ry} fill="black" />
-          <ellipse cx={frame.eyeR.cx} cy={frame.eyeR.cy} rx={frame.eyeR.rx} ry={frame.eyeR.ry} fill="black" />
+          <ellipse
+            cx={frame.eyeL.cx}
+            cy={frame.eyeL.cy}
+            rx={frame.eyeL.rx}
+            ry={frame.eyeL.ry}
+            fill="black"
+          />
+          <ellipse
+            cx={frame.eyeR.cx}
+            cy={frame.eyeR.cy}
+            rx={frame.eyeR.rx}
+            ry={frame.eyeR.ry}
+            fill="black"
+          />
         </mask>
       </defs>
       <path d={frame.d} fill="currentColor" mask={`url(#${maskId})`} />
