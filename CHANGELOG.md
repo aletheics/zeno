@@ -12,10 +12,20 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   carries `data-theme` itself, that redeclaration beat the value written on
   `<html>` for the whole shell subtree, pinning every font to the 14px / 12px
   default no matter what the setting said.
+- The app could keep running an outdated pi after an upgrade. `userData/pi-cli`
+  counted as a valid source for the builtin SDK whenever the directory merely
+  existed, and it sorts ahead of `node_modules` in the search order, so an
+  extract left behind by an earlier release silently pinned the app to that
+  older pi. It is now consulted only when it matches the version actually
+  shipped — and never in development, where `node_modules` is the only source
+  of truth.
 
 ### Changed
 
 - Bundled pi runtime upgraded to 0.84.3.
+- Startup logs which builtin pi SDK was resolved and the path it came from,
+  so a mismatched runtime is visible immediately instead of only when
+  something breaks.
 
 ## [0.1.4] - 2026-08-18
 

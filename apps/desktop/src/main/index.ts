@@ -87,7 +87,11 @@ import {
   sanitizeUtilityProcessEnv,
 } from "./host-spawn.ts";
 import { createAutoUpdateController, type AutoUpdateController } from "./auto-update.ts";
-import { ensureExtractedPiCli, piCliExtractDir } from "./pi-cli-extract.ts";
+import {
+  ensureExtractedPiCli,
+  isExtractedPiCliCurrentFor,
+  piCliExtractDir,
+} from "./pi-cli-extract.ts";
 import { ensurePiCli, type PiCliProgressEvent } from "./pi-cli-ensure.ts";
 import { ensurePiSubagentsSpawnPatch } from "./pi-subagents-patch.ts";
 import {
@@ -219,6 +223,14 @@ function desktopUserDataPath(): string {
   }
 }
 
+/** Path to the shipped app.asar, or undefined when running unpackaged (dev). */
+function packagedAsarPath(): string | undefined {
+  if (!app.isPackaged) return undefined;
+  const resources =
+    typeof process.resourcesPath === "string" && process.resourcesPath ? process.resourcesPath : "";
+  return resources ? join(resources, "app.asar") : undefined;
+}
+
 function resolveBuiltinSdkCached(): ResolvedPiSdk {
   if (cachedBuiltinSdk) return cachedBuiltinSdk;
   const opts: {
@@ -235,25 +247,39 @@ function resolveBuiltinSdkCached(): ResolvedPiSdk {
   if (typeof process.resourcesPath === "string" && process.resourcesPath) {
     opts.resourcesPath = process.resourcesPath;
   }
-  const extracted = piCliExtractDir(desktopUserDataPath());
-  if (existsSync(extracted)) opts.extractedRoot = extracted;
+  /*
+   * userData/pi-cli exists only so packaged builds can run the TUI on bundled
+   * Node, which cannot read asar. Offer it as a search root only when it holds
+   * the version we actually ship: it sorts ahead of node_modules, so a leftover
+   * extract from an earlier release would pin the app to the old SDK. Dev has no
+   * asar to extract from, so there node_modules is the only source of truth.
+   */
+  const asarPath = packagedAsarPath();
+  if (asarPath) {
+    const userDataPath = desktopUserDataPath();
+    if (isExtractedPiCliCurrentFor({ userDataPath, asarPath })) {
+      opts.extractedRoot = piCliExtractDir(userDataPath);
+    }
+  }
   cachedBuiltinSdk = resolveBuiltinSdk(opts);
+  // Which pi is actually loaded is otherwise invisible until something breaks.
+  console.log(
+    `[zeno] builtin pi SDK ${cachedBuiltinSdk.version ?? "unresolved"} ← ${
+      cachedBuiltinSdk.packageRoot ?? cachedBuiltinSdk.error ?? "not found"
+    }`,
+  );
   return cachedBuiltinSdk;
 }
 
 function ensurePiCliExtracted(): Promise<void> {
-  if (!app.isPackaged) return Promise.resolve();
+  const asarPath = packagedAsarPath();
+  if (!asarPath) return Promise.resolve();
   if (piCliExtractInFlight) return piCliExtractInFlight;
   piCliExtractInFlight = Promise.resolve()
     .then(() => {
-      const resources =
-        typeof process.resourcesPath === "string" && process.resourcesPath
-          ? process.resourcesPath
-          : "";
-      if (!resources) return;
       const result = ensureExtractedPiCli({
         userDataPath: desktopUserDataPath(),
-        asarPath: join(resources, "app.asar"),
+        asarPath,
       });
       if (result?.extractedNow) {
         cachedBuiltinSdk = undefined;

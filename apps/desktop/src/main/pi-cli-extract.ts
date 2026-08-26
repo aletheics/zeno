@@ -101,6 +101,26 @@ function readAsarPackageVersion(asarPath: string): string | undefined {
 }
 
 /**
+ * True when userData/pi-cli holds an extract of exactly the pi package shipped
+ * in `asarPath`.
+ *
+ * The extract sorts ahead of node_modules in the builtin search roots, so a
+ * leftover copy from an earlier release would silently pin the app to the old
+ * SDK. Callers must gate on this before offering the extract as a search root.
+ */
+export function isExtractedPiCliCurrentFor(options: {
+  userDataPath: string;
+  asarPath: string;
+}): boolean {
+  const asarPath = options.asarPath.trim();
+  if (!asarPath) return false;
+  const version = readAsarPackageVersion(asarPath);
+  if (!version) return false;
+  const extractDir = piCliExtractDir(options.userDataPath);
+  return isPiCliExtractCurrent(readPiCliExtractStamp(extractDir), version, extractDir);
+}
+
+/**
  * Copy the builtin pi CLI + production deps from asar (or a directory fixture)
  * into userData/pi-cli. No-ops when the stamp matches and cli.js is present.
  */

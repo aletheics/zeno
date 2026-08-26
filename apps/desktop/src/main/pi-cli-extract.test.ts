@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 import {
   ensureExtractedPiCli,
   extractedPiCliPackageRoot,
+  isExtractedPiCliCurrentFor,
   isPiCliExtractCurrent,
   piCliExtractDir,
   readPiCliExtractStamp,
@@ -91,5 +92,61 @@ describe("ensureExtractedPiCli", () => {
     const userData = mkdtempSync(join(tmpdir(), "zeno-ud-"));
     tempDirs.push(empty, userData);
     expect(ensureExtractedPiCli({ userDataPath: userData, asarPath: empty })).toBeUndefined();
+  });
+});
+
+/*
+ * The extract sorts ahead of node_modules in the builtin SDK search roots, so
+ * anything that offers it as a root must first prove it matches the shipped
+ * package — otherwise a leftover extract pins the app to the previous SDK.
+ */
+describe("isExtractedPiCliCurrentFor", () => {
+  it("accepts an extract of the shipped version", () => {
+    const asar = mkdtempSync(join(tmpdir(), "zeno-asar-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-ud-"));
+    tempDirs.push(asar, userData);
+    writeAsarFixture(asar);
+    ensureExtractedPiCli({ userDataPath: userData, asarPath: asar });
+
+    expect(isExtractedPiCliCurrentFor({ userDataPath: userData, asarPath: asar })).toBe(true);
+  });
+
+  it("rejects an extract left behind by an earlier release", () => {
+    const asar = mkdtempSync(join(tmpdir(), "zeno-asar-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-ud-"));
+    tempDirs.push(asar, userData);
+    writeAsarFixture(asar);
+    ensureExtractedPiCli({ userDataPath: userData, asarPath: asar });
+
+    // Ship a newer pi without re-extracting, as an in-place upgrade does.
+    writeFileSync(
+      join(asar, "node_modules", "@earendil-works", "pi-coding-agent", "package.json"),
+      JSON.stringify({
+        name: "@earendil-works/pi-coding-agent",
+        version: "0.85.0",
+        dependencies: { chalk: "5.0.0" },
+      }),
+    );
+
+    expect(isExtractedPiCliCurrentFor({ userDataPath: userData, asarPath: asar })).toBe(false);
+  });
+
+  it("rejects when nothing has been extracted yet", () => {
+    const asar = mkdtempSync(join(tmpdir(), "zeno-asar-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-ud-"));
+    tempDirs.push(asar, userData);
+    writeAsarFixture(asar);
+
+    expect(isExtractedPiCliCurrentFor({ userDataPath: userData, asarPath: asar })).toBe(false);
+  });
+
+  it("rejects without an asar to compare against (dev runs)", () => {
+    const asar = mkdtempSync(join(tmpdir(), "zeno-asar-"));
+    const userData = mkdtempSync(join(tmpdir(), "zeno-ud-"));
+    tempDirs.push(asar, userData);
+    writeAsarFixture(asar);
+    ensureExtractedPiCli({ userDataPath: userData, asarPath: asar });
+
+    expect(isExtractedPiCliCurrentFor({ userDataPath: userData, asarPath: "  " })).toBe(false);
   });
 });
