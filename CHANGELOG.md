@@ -3,6 +3,56 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Settings → Appearance → Typography resizes the UI again. The font-size tokens
+  were declared in the theme blocks as well as on `:root`; because the app shell
+  carries `data-theme` itself, that redeclaration beat the value written on
+  `<html>` for the whole shell subtree, pinning every font to the 14px / 12px
+  default no matter what the setting said.
+
+### Changed
+
+- Bundled pi runtime upgraded to 0.84.3.
+
+## [0.1.4] - 2026-08-18
+
+### Added
+
+- Parked sessions are first-class across thread switches: busy agent hosts are
+  never evicted, idle ones stay warm for ten minutes, and a parked run keeps
+  streaming into its own session instead of aborting when you switch away.
+
+### Changed
+
+- The sidebar run-state glyph is now an animated mark that morphs with the run
+  state, replacing the spinner and the half-circle "waiting" character.
+
+### Fixed
+
+- Linux: the draggable titlebar no longer steals clicks from the window caption
+  buttons.
+
+## [0.1.3] - 2026-08-15
+
+### Added
+
+- The last foreground session reopens when you relaunch after quitting.
+
+### Changed
+
+- Bundled pi runtime upgraded to 0.84.2.
+- Packaged builds unpack native modules only; the builtin pi CLI is extracted
+  into `userData/pi-cli` on first launch instead of shipping an unpacked
+  `node_modules`.
+
+### Fixed
+
+- Windows: runtime extraction uses the system `tar`, and packaging now asserts
+  the bundled runtimes are actually present.
+
 ## [0.1.2] - 2026-08-15
 
 ### Added

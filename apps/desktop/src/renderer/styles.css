@@ -85,6 +85,29 @@
   animation: shimmer 1.4s linear infinite;
 }
 
+/*
+ * Typography scale — single source of truth, `:root` only.
+ *
+ * Settings → Appearance → Typography writes these as inline styles on <html>
+ * (lib/appearance-prefs.ts). They must NOT be re-declared in the
+ * [data-theme="dark"] / [data-theme="light"] blocks below: the app shell
+ * carries the theme attribute itself (<div class="app-shell" data-theme="…">),
+ * so a theme-block declaration beats the inherited <html> value on every node
+ * inside the shell and pins the whole UI to the default size. Theme blocks own
+ * color / material only.
+ */
+:root {
+  --ui-font-size: 14px;
+  --code-font-size: 12px;
+  /*
+   * Unified group / section label type (sidebar, settings, menus, palette).
+   * Same size as body/UI text — hierarchy uses color/weight, not a smaller type.
+   */
+  --group-label-size: var(--ui-font-size, 14px);
+  --group-label-weight: 500;
+  --group-label-line-height: 1.35;
+}
+
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
@@ -186,16 +209,6 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  /* Appearance prefs (overridden by applyAppearancePrefs). */
-  --ui-font-size: 14px;
-  --code-font-size: 12px;
-  /*
-   * Unified group / section label type (sidebar, settings, menus, palette).
-   * Same size as body/UI text — hierarchy uses color/weight, not a smaller type.
-   */
-  --group-label-size: var(--ui-font-size, 14px);
-  --group-label-weight: 500;
-  --group-label-line-height: 1.35;
   /* Dark theme group names */
   --group-label-color: #747474;
 }
@@ -274,13 +287,6 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  /*
-   * Unified group / section label type (sidebar, settings, menus, palette).
-   * Same size as body/UI text — hierarchy uses color/weight, not a smaller type.
-   */
-  --group-label-size: var(--ui-font-size, 14px);
-  --group-label-weight: 500;
-  --group-label-line-height: 1.35;
   /* Light theme group names */
   --group-label-color: #a7a9a9;
 }
