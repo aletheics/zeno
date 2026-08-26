@@ -3,7 +3,7 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
-## [Unreleased]
+## [0.1.5] - 2026-08-26
 
 ### Fixed
 
