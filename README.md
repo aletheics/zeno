@@ -152,7 +152,7 @@ on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
 扫码加入 Zeno 交流群：
 
 <p align="center">
-  <img src="./assets/screenshots/qq.jpg" alt="Zeno 交流群" width="180" />
+  <img src="./assets/screenshots/qq.jpg" alt="Zeno 交流群" width="300" />
 </p>
 
 ## Contributing
