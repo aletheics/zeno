@@ -1,5 +1,7 @@
 # Zeno
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Zeno is a desktop shell for the [pi](https://pi.dev) coding agent: a Codex-style UI that keeps configuration, packages, sessions, and tools on the native pi side (`~/.pi/agent`).
 
 ## Screenshots
@@ -147,12 +149,12 @@ on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
 
 > **macOS note:** first open of an unsigned download may need `xattr -cr /Applications/Zeno.app` (Gatekeeper quarantine). Auto-update does **not** require an Apple Developer ID — Zeno verifies the release zip (`sha512` via electron-updater) and replaces the `.app` itself (same model as Tauri updater + minisign). Optional `CSC_LINK` / `CSC_KEY_PASSWORD` still improve Gatekeeper UX and notifications when present.
 
-## 交流群
+## Community
 
-扫码加入 Zeno 交流群：
+Scan the QR code to join the Zeno community:
 
 <p align="center">
-  <img src="./assets/screenshots/qq.jpg" alt="Zeno 交流群" width="300" />
+  <img src="./assets/screenshots/qq.jpg" alt="Zeno community" width="300" />
 </p>
 
 ## Contributing
