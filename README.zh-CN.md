@@ -32,11 +32,11 @@ pnpm electron:install
 
 各应用在仓库根目录下拥有**独立的** `dev` / `build` 入口：
 
-| 应用                         | 开发                | 构建                 | 说明                                                  |
-| ---------------------------- | ------------------ | -------------------- | ----------------------------------------------------- |
-| **桌面端** (`apps/desktop`)  | `pnpm dev`         | `pnpm build:desktop` | 热重载（HMR + 自动重启）。一次性：`pnpm run dev:once` |
-| **落地页** (`apps/landing`)  | `pnpm dev:landing` | `pnpm build:landing` | 预览：`pnpm preview:landing`                          |
-| **所有包**                   | —                  | `pnpm build`         | 工作区内的递归 `build`                                |
+| 应用                        | 开发               | 构建                 | 说明                                                  |
+| --------------------------- | ------------------ | -------------------- | ----------------------------------------------------- |
+| **桌面端** (`apps/desktop`) | `pnpm dev`         | `pnpm build:desktop` | 热重载（HMR + 自动重启）。一次性：`pnpm run dev:once` |
+| **落地页** (`apps/landing`) | `pnpm dev:landing` | `pnpm build:landing` | 预览：`pnpm preview:landing`                          |
+| **所有包**                  | —                  | `pnpm build`         | 工作区内的递归 `build`                                |
 
 ### 桌面端
 
@@ -97,26 +97,26 @@ pnpm package   # 为本操作系统生成安装包 + electron-updater 更新源
 
 每个带 tag 的发布只发布安装包和 **electron-updater** 所需的内容：
 
-| 资产                                          | 作用                                       |
-| --------------------------------------------- | ------------------------------------------ |
-| `Zeno-*-win-x64.exe`                          | Windows 安装（NSIS）                       |
-| `latest.yml`                                  | Windows 更新源                             |
-| `Zeno-*-mac-arm64.dmg` / `Zeno-*-mac-x64.dmg` | macOS 手动安装                             |
-| `Zeno-*-mac-arm64.zip` / `Zeno-*-mac-x64.zip` | macOS **自动更新** 载荷                    |
-| `latest-mac.yml`                              | macOS 更新源（列出两个 zip）               |
-| `Zeno-*-linux-*.AppImage`                     | Linux 运行 / 更新                          |
-| `Zeno-*-linux-*.deb`                          | Linux 手动安装（可选，方便使用）           |
-| `latest-linux.yml`                            | Linux 更新源                               |
-| `*.blockmap`                                  | 差异下载映射（生成时）                     |
+| 资产                                          | 作用                             |
+| --------------------------------------------- | -------------------------------- |
+| `Zeno-*-win-x64.exe`                          | Windows 安装（NSIS）             |
+| `latest.yml`                                  | Windows 更新源                   |
+| `Zeno-*-mac-arm64.dmg` / `Zeno-*-mac-x64.dmg` | macOS 手动安装                   |
+| `Zeno-*-mac-arm64.zip` / `Zeno-*-mac-x64.zip` | macOS **自动更新** 载荷          |
+| `latest-mac.yml`                              | macOS 更新源（列出两个 zip）     |
+| `Zeno-*-linux-*.AppImage`                     | Linux 运行 / 更新                |
+| `Zeno-*-linux-*.deb`                          | Linux 手动安装（可选，方便使用） |
+| `latest-linux.yml`                            | Linux 更新源                     |
+| `*.blockmap`                                  | 差异下载映射（生成时）           |
 
 若缺失任一必需的更新源或 mac zip，CI 会**失败**（`scripts/release-assets.mjs`）。blockmap 在存在时会被保留，以便更新时只下载变更的部分。
 
 ## CI 与发布
 
-| 工作流      | 文件                            | 触发时机                | 作用                                                        |
-| ----------- | ------------------------------- | ----------------------- | ----------------------------------------------------------- |
-| **CI**      | `.github/workflows/ci.yml`      | PR + push 到 `main`     | Ubuntu：安装 → lint/类型/格式化 → 测试 → 构建              |
-| **Release** | `.github/workflows/release.yml` | push `v*` tag（或手动） | 多平台安装包 + 更新源 → **GitHub Release**                  |
+| 工作流      | 文件                            | 触发时机                | 作用                                          |
+| ----------- | ------------------------------- | ----------------------- | --------------------------------------------- |
+| **CI**      | `.github/workflows/ci.yml`      | PR + push 到 `main`     | Ubuntu：安装 → lint/类型/格式化 → 测试 → 构建 |
+| **Release** | `.github/workflows/release.yml` | push `v*` tag（或手动） | 多平台安装包 + 更新源 → **GitHub Release**    |
 
 ### 版本管理
 
