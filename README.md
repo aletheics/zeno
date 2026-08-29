@@ -14,6 +14,16 @@ Animated demo:
 
 ![Zeno demo](./assets/gif/zeno.gif)
 
+## 🤝 Community
+
+<p align="center">
+  <img src="./assets/screenshots/qq.jpg" alt="Zeno community" width="300" />
+</p>
+
+<p align="center">
+  Scan the QR code to join the Zeno community:
+</p>
+
 ## Requirements
 
 - Node.js 22.19 or newer
@@ -149,14 +159,6 @@ on Release. Packaging sets `CSC_IDENTITY_AUTO_DISCOVERY=false` (unsigned).
 
 > **macOS note:** first open of an unsigned download may need `xattr -cr /Applications/Zeno.app` (Gatekeeper quarantine). Auto-update does **not** require an Apple Developer ID — Zeno verifies the release zip (`sha512` via electron-updater) and replaces the `.app` itself (same model as Tauri updater + minisign). Optional `CSC_LINK` / `CSC_KEY_PASSWORD` still improve Gatekeeper UX and notifications when present.
 
-## Community
-
-Scan the QR code to join the Zeno community:
-
-<p align="center">
-  <img src="./assets/screenshots/qq.jpg" alt="Zeno community" width="300" />
-</p>
-
 ## Contributing
 
 Contributions are welcome — bug fixes, docs, and small features are the easiest
@@ -179,6 +181,31 @@ React Renderer → Preload → Electron Main → utilityProcess Agent Host → p
 - A fresh pi home receives no Zeno packages, resources, or custom settings.
 - `utilityProcess` provides crash isolation, not a security sandbox.
 - Extension portable UI (select/confirm/status/widgets/…) and TUI-only degraded surface: see [`packages/agent-runtime/EXTENSION_UI.md`](./packages/agent-runtime/EXTENSION_UI.md).
+
+---
+
+## 👥 Contributors
+
+Thanks to everyone who has contributed to Zeno!
+
+<a href="https://github.com/aletheics/zeno/graphs/contributors">
+  <img src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/contributors.svg" alt="Contributors" />
+</a>
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=aletheics%2Fzeno&type=date&legend=top-left">
+
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-dark.svg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
+ </picture>
+</a>
+
+---
 
 ## License
 

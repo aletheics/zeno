@@ -14,6 +14,16 @@ Zeno 桌面外壳 —— 侧边栏、会话工作区与输入框：
 
 ![Zeno demo](./assets/gif/zeno.gif)
 
+## 🤝 交流群
+
+<p align="center">
+  <img src="./assets/screenshots/qq.jpg" alt="Zeno 交流群" width="300" />
+</p>
+
+<p align="center">
+  扫码加入 Zeno 交流群：
+</p>
+
 ## 环境要求
 
 - Node.js 22.19 或更高版本
@@ -137,14 +147,6 @@ tag 必须为 `v` + semver（例如 `v0.1.2`）。CI 从 tag 读取版本，构�
 
 > **macOS 说明：** 首次打开未签名下载可能需要执行 `xattr -cr /Applications/Zeno.app`（Gatekeeper 隔离）。自动更新**不需要** Apple Developer ID —— Zeno 会校验 release zip（通过 electron-updater 的 `sha512`）并自行替换 `.app`（与 Tauri updater + minisign 相同的模型）。可选的 `CSC_LINK` / `CSC_KEY_PASSWORD` 仍能改善 Gatekeeper 体验与通知（在提供时）。
 
-## 交流群
-
-扫码加入 Zeno 交流群：
-
-<p align="center">
-  <img src="./assets/screenshots/qq.jpg" alt="Zeno 交流群" width="180" />
-</p>
-
 ## 贡献
 
 欢迎贡献 —— bug 修复、文档和小型功能最容易进入。无需 CLA。
@@ -164,6 +166,31 @@ React Renderer → Preload → Electron Main → utilityProcess Agent Host → p
 - 全新的 pi home 不会获得任何 Zeno 包、资源或自定义设置。
 - `utilityProcess` 提供崩溃隔离，而非安全沙箱。
 - 扩展便携 UI（select/confirm/status/widgets/…）与仅 TUI 的降级界面：见 [`packages/agent-runtime/EXTENSION_UI.md`](./packages/agent-runtime/EXTENSION_UI.md)。
+
+---
+
+## 👥 贡献者
+
+感谢所有为 Zeno 做出贡献的朋友们！
+
+<a href="https://github.com/aletheics/zeno/graphs/contributors">
+  <img src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/contributors.svg" alt="Contributors" />
+</a>
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=aletheics%2Fzeno&type=date&legend=top-left">
+
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-dark.svg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
+ </picture>
+</a>
+
+---
 
 ## 许可证
 
