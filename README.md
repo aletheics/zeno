@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/screenshots/icon.png" alt="Zeno" />
+  <img src="./assets/screenshots/icon.png" alt="Zeno" width="300" />
 </p>
 
 # Zeno
