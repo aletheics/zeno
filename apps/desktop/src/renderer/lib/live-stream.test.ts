@@ -321,9 +321,14 @@ describe("liveStreamNotCoveredByHistory", () => {
 
   it("keeps live assistant text when history is a stale prefix (extra tokens)", () => {
     let state = emptyLiveStream();
-    state = applyRuntimeEventToLiveStream(state, { type: "message.delta", delta: "Hello world" }, [], {
-      sequence: 1,
-    });
+    state = applyRuntimeEventToLiveStream(
+      state,
+      { type: "message.delta", delta: "Hello world" },
+      [],
+      {
+        sequence: 1,
+      },
+    );
     // History flushed mid-stream only has the head of the reply; the live stream
     // holds the full text. It must not be dropped or the tail is lost.
     const next = liveStreamNotCoveredByHistory(state, [{ role: "assistant", text: "Hello" }]);
