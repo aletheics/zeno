@@ -29,14 +29,20 @@ export function resetLiveStream(): LiveStreamState {
   return emptyLiveStream();
 }
 
-function sameOrPrefix(a: string, b: string): boolean {
-  if (!b) return Boolean(a);
-  return a === b || a.startsWith(b) || b.startsWith(a);
+/**
+ * True when `historyText` already contains everything `liveText` holds — i.e. the
+ * history is equal to or a strict prefix-superset of the live text. The reverse
+ * (live text is a prefix-superset of history) means history is stale and the live
+ * stream still carries extra tokens that must be preserved; that is NOT "covered".
+ */
+function historyCoversText(historyText: string, liveText: string): boolean {
+  if (!liveText) return Boolean(historyText);
+  return liveText === historyText || historyText.startsWith(liveText);
 }
 
 function historyCoversLiveItem(history: SessionHistoryMessage[], item: TimelineItem): boolean {
   if (item.kind === "user" || item.kind === "assistant" || item.kind === "thinking") {
-    return history.some((row) => row.role === item.kind && sameOrPrefix(row.text, item.text));
+    return history.some((row) => row.role === item.kind && historyCoversText(row.text, item.text));
   }
   if (item.kind === "tool") {
     if (item.status === "running") return false;

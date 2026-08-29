@@ -4350,9 +4350,15 @@ class HostSupervisor {
         if (message.type === "runtime.event") {
           if (this.#snapshot && message.runtimeId !== this.#snapshot.runtimeId) return;
           if (message.sequence !== this.#lastSequence + 1) {
+            // A lost/duplicate/out-of-order event. Resync metadata in the background
+            // but NEVER drop the event: the renderer's append-only live stream dedupes
+            // by sequence and grows text monotonically, so forwarding is always safe.
+            // Dropping it here — and every later event until the snapshot round-trip
+            // lands — is what froze the reply mid-stream on a single missed token.
             this.#count("runtime.gap");
-            void this.snapshot().catch(() => undefined);
-            return;
+            if (message.sequence > this.#lastSequence + 1) {
+              void this.snapshot().catch(() => undefined);
+            }
           }
           this.#lastSequence = message.sequence;
           this.#count(message.event.type);
