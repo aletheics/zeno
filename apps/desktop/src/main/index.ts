@@ -4841,7 +4841,21 @@ async function createWindow(): Promise<void> {
       : url.startsWith("file:");
     if (!ok) event.preventDefault();
   });
-  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // `target="_blank"` links (plugin catalog → npm, "open in web" → pi.dev/packages,
+  // docs, etc.) must never spawn a second Electron window. Route http(s)/mailto out
+  // to the system browser instead; deny everything else. Without this, the
+  // catalog's "在网页打开" button and package title links silently do nothing.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const protocol = new URL(url).protocol;
+      if (["http:", "https:", "mailto:"].includes(protocol)) {
+        void shell.openExternal(url).catch(() => undefined);
+      }
+    } catch {
+      // Malformed URL — fall through to deny.
+    }
+    return { action: "deny" };
+  });
 
   applyAppScale(mainWindow, normalizeAppScale(desktopPrefs.appScale));
   attachWindowBoundsPersistence(mainWindow);
