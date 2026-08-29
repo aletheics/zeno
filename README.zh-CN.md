@@ -174,7 +174,7 @@ React Renderer → Preload → Electron Main → utilityProcess Agent Host → p
 感谢所有为 Zeno 做出贡献的朋友们！
 
 <a href="https://github.com/aletheics/zeno/graphs/contributors">
-  <img src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/contributors.svg" alt="Contributors" />
+  <img src="https://contrib.rocks/image?repo=aletheics/zeno" alt="Contributors" />
 </a>
 
 ---
