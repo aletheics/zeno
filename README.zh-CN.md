@@ -1,18 +1,12 @@
+<p align="center">
+  <img src="./assets/screenshots/icon.png" alt="Zeno" />
+</p>
+
 # Zeno
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 Zeno 是 [pi](https://pi.dev) 编程 agent 的桌面外壳：一个 Codex 风格的界面，把配置、包、会话和工具都保留在原生 pi 侧（`~/.pi/agent`）。
-
-## 截图
-
-Zeno 桌面外壳 —— 侧边栏、会话工作区与输入框：
-
-![Zeno desktop](./assets/screenshots/zeno-desktop.png)
-
-动画演示：
-
-![Zeno demo](./assets/gif/zeno.gif)
 
 ## 🤝 交流群
 
@@ -23,6 +17,16 @@ Zeno 桌面外壳 —— 侧边栏、会话工作区与输入框：
 <p align="center">
   扫码加入 Zeno 交流群：
 </p>
+
+## 截图
+
+Zeno 桌面外壳 —— 侧边栏、会话工作区与输入框：
+
+![Zeno desktop](./assets/screenshots/zeno-desktop.png)
+
+动画演示：
+
+![Zeno demo](./assets/gif/zeno.gif)
 
 ## 环境要求
 
