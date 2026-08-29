@@ -196,12 +196,13 @@ Thanks to everyone who has contributed to Zeno!
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=aletheics%2Fzeno&type=date&legend=top-left">
+## Star History
 
+<a href="https://www.star-history.com/?repos=aletheics%2Fzeno&type=date&legend=bottom-right">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-dark.svg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
-   <img alt="Star History Chart" src="https://raw.githubusercontent.com/aletheics/zeno/chart-assets/star-history-light.svg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=aletheics/zeno&type=date&theme=dark&legend=bottom-right&sealed_token=Hv3S5OqsLP0HjqwiYhWhzr-C6n7C9Quv-ogx_deSrDHgRBsNQ7h7O4ABgY__lOXzFlYHgYe2eUCtL9fEYQbgV4zJ7aASk8Blj822IujayqZFB8o2mCuspg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=aletheics/zeno&type=date&legend=bottom-right&sealed_token=Hv3S5OqsLP0HjqwiYhWhzr-C6n7C9Quv-ogx_deSrDHgRBsNQ7h7O4ABgY__lOXzFlYHgYe2eUCtL9fEYQbgV4zJ7aASk8Blj822IujayqZFB8o2mCuspg" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=aletheics/zeno&type=date&legend=bottom-right&sealed_token=Hv3S5OqsLP0HjqwiYhWhzr-C6n7C9Quv-ogx_deSrDHgRBsNQ7h7O4ABgY__lOXzFlYHgYe2eUCtL9fEYQbgV4zJ7aASk8Blj822IujayqZFB8o2mCuspg" />
  </picture>
 </a>
 
