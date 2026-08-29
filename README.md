@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="./assets/screenshots/icon.png" alt="Zeno" width="300" />
-</p>
-
 # Zeno
 
 [English](README.md) | [简体中文](README.zh-CN.md)
