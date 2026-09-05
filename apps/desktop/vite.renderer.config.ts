@@ -52,7 +52,12 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["**/*.test.ts", "../agent-host/**/*.test.ts", "../main/**/*.test.ts"],
+    include: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "../agent-host/**/*.test.ts",
+      "../main/**/*.test.ts",
+    ],
     exclude: ["**/e2e/**", "**/node_modules/**"],
   },
 });

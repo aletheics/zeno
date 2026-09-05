@@ -142,6 +142,7 @@ import { useShellStore, type SettingsSection } from "../../store/shell-store.ts"
 import { PiSdkSection } from "./PiSdkSection.tsx";
 import { RuntimesSection } from "./RuntimesSection.tsx";
 import { ThemeSkinStudio } from "./ThemeSkinStudio.tsx";
+import { ConfirmDialog } from "../ConfirmDialog.tsx";
 import {
   Command,
   CommandEmpty,
@@ -538,7 +539,12 @@ type ArchivedSessionRow = {
   archivedAt?: string;
 };
 
-function ArchivedSection(props: {
+type PendingDelete =
+  | { kind: "session"; id: string; name: string }
+  | { kind: "project"; cwdKey: string; name: string }
+  | { kind: "all" };
+
+export function ArchivedSection(props: {
   locale: Locale;
   tr: (key: MessageKey, vars?: Record<string, string>) => string;
 }) {
@@ -548,6 +554,7 @@ function ArchivedSection(props: {
   const [query, setQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [openGroupMenu, setOpenGroupMenu] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const projectAliases = loadProjectAliases();
   const threadAliases = loadThreadAliases();
@@ -644,18 +651,40 @@ function ArchivedSection(props: {
     refresh();
   }
 
+  function performDelete(pending: PendingDelete) {
+    if (pending.kind === "session") {
+      deleteThreadLocal(pending.id);
+      unarchiveThread(pending.id);
+      const m = { ...loadArchivedThreadMeta() };
+      delete m[pending.id];
+      saveArchivedThreadMeta(m);
+    } else if (pending.kind === "project") {
+      const ids = rows.filter((r) => r.cwd === pending.cwdKey).map((r) => r.id);
+      for (const id of ids) {
+        deleteThreadLocal(id);
+        unarchiveThread(id);
+      }
+      const m = { ...loadArchivedThreadMeta() };
+      for (const id of ids) delete m[id];
+      saveArchivedThreadMeta(m);
+      setOpenGroupMenu(null);
+    } else {
+      for (const id of sessionIds) {
+        deleteThreadLocal(id);
+        unarchiveThread(id);
+      }
+      saveArchivedThreadMeta({});
+    }
+    refresh();
+  }
+
   function deleteSession(id: string) {
     const name = rows.find((r) => r.id === id)?.title ?? id.slice(0, 8);
     if (loadConfirmDelete()) {
-      const ok = window.confirm(tr("confirm.deleteMessage", { name }));
-      if (!ok) return;
+      setPendingDelete({ kind: "session", id, name });
+      return;
     }
-    deleteThreadLocal(id);
-    unarchiveThread(id);
-    const m = { ...loadArchivedThreadMeta() };
-    delete m[id];
-    saveArchivedThreadMeta(m);
-    refresh();
+    performDelete({ kind: "session", id, name });
   }
 
   function deleteAllInProject(cwdKey: string) {
@@ -666,34 +695,18 @@ function ArchivedSection(props: {
     }
     const name = rows.find((r) => r.cwd === cwdKey)?.projectName ?? cwdKey;
     if (loadConfirmDelete()) {
-      const ok = window.confirm(tr("confirm.deleteMessage", { name }));
-      if (!ok) return;
+      setPendingDelete({ kind: "project", cwdKey, name });
+      return;
     }
-    const ids = rows.filter((r) => r.cwd === cwdKey).map((r) => r.id);
-    for (const id of ids) {
-      deleteThreadLocal(id);
-      unarchiveThread(id);
-    }
-    const m = { ...loadArchivedThreadMeta() };
-    for (const id of ids) delete m[id];
-    saveArchivedThreadMeta(m);
-    setOpenGroupMenu(null);
-    refresh();
+    performDelete({ kind: "project", cwdKey, name });
   }
 
   function deleteAll() {
     if (loadConfirmDelete()) {
-      const ok = window.confirm(
-        tr("confirm.deleteMessage", { name: tr("settings.archived.deleteAll") }),
-      );
-      if (!ok) return;
+      setPendingDelete({ kind: "all" });
+      return;
     }
-    for (const id of sessionIds) {
-      deleteThreadLocal(id);
-      unarchiveThread(id);
-    }
-    saveArchivedThreadMeta({});
-    refresh();
+    performDelete({ kind: "all" });
   }
 
   return (
@@ -836,6 +849,30 @@ function ArchivedSection(props: {
           </section>
         ))
       )}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={tr("confirm.deleteTitle")}
+        message={
+          pendingDelete
+            ? tr("confirm.deleteMessage", {
+                name:
+                  pendingDelete.kind === "all"
+                    ? tr("settings.archived.deleteAll")
+                    : pendingDelete.name,
+              })
+            : ""
+        }
+        confirmLabel={tr("confirm.delete")}
+        cancelLabel={tr("common.cancel")}
+        danger
+        onConfirm={() => {
+          const pending = pendingDelete;
+          if (!pending) return;
+          setPendingDelete(null);
+          performDelete(pending);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </SettingsPageShell>
   );
 }
@@ -3549,7 +3586,7 @@ function buildEnabledModelsPatterns(selected: Set<string>, globText: string): st
   return [...exact, ...extra];
 }
 
-function ModelsSectionContent(
+export function ModelsSectionContent(
   props: SettingsPageProps & {
     tr: (key: MessageKey, vars?: Record<string, string>) => string;
     auth: ProviderAuthControls;
@@ -3602,6 +3639,7 @@ function ModelsSectionContent(
   const [fetchListBusy, setFetchListBusy] = useState(false);
   const [selectedFetchedIds, setSelectedFetchedIds] = useState<Set<string>>(() => new Set());
   const [batchBusy, setBatchBusy] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<ModelSummary | null>(null);
   const sessionKey =
     props.snapshot?.model != null
       ? `${props.snapshot.model.provider}/${props.snapshot.model.id}`
@@ -4072,9 +4110,14 @@ function ModelsSectionContent(
     }
   }
 
-  async function removeCustomModel(model: ModelSummary) {
-    const name = model.name || model.id;
-    if (!window.confirm(tr("models.customDeleteConfirm", { name }))) return;
+  function removeCustomModel(model: ModelSummary) {
+    setPendingRemove(model);
+  }
+
+  async function performRemoveCustomModel() {
+    const model = pendingRemove;
+    if (!model) return;
+    setPendingRemove(null);
     setLoading(true);
     try {
       await props.onEnsureHost();
@@ -4187,7 +4230,7 @@ function ModelsSectionContent(
             <SettingsIconButton
               danger
               disabled={loading || dialogBusy}
-              onClick={() => void removeCustomModel(model)}
+              onClick={() => removeCustomModel(model)}
               testId={`model-delete-${model.provider}-${model.id}`}
               title={tr("models.customDelete")}
               aria-label={tr("models.customDelete")}
@@ -4609,7 +4652,7 @@ function ModelsSectionContent(
                                 <SettingsIconButton
                                   danger
                                   disabled={loading || dialogBusy}
-                                  onClick={() => void removeCustomModel(model)}
+                                  onClick={() => removeCustomModel(model)}
                                   testId={`model-remove-${providerId.trim()}-${model.id}`}
                                   title={tr("models.customRemove")}
                                   aria-label={tr("models.customRemove")}
@@ -4895,6 +4938,20 @@ function ModelsSectionContent(
             document.body,
           )
         : null}
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title={tr("confirm.deleteTitle")}
+        message={
+          pendingRemove
+            ? tr("models.customDeleteConfirm", { name: pendingRemove.name || pendingRemove.id })
+            : ""
+        }
+        confirmLabel={tr("confirm.delete")}
+        cancelLabel={tr("common.cancel")}
+        danger
+        onConfirm={() => void performRemoveCustomModel()}
+        onCancel={() => setPendingRemove(null)}
+      />
     </SettingsPageShell>
   );
 }

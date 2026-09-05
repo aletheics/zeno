@@ -54,6 +54,7 @@ import {
 } from "../../../shared/theme-css.ts";
 import { t, type Locale, type MessageKey } from "../../lib/i18n.ts";
 import { cn } from "../../lib/utils.ts";
+import { ConfirmDialog } from "../ConfirmDialog.tsx";
 import {
   activeThemePack,
   ART_DEFAULTS,
@@ -563,6 +564,7 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
   const [canScrollBack, setCanScrollBack] = useState(false);
   const [canScrollForward, setCanScrollForward] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
   /** Remount key so the CSS variable select returns to its placeholder after insert. */
   const [cssVariableSelectKey, setCssVariableSelectKey] = useState(0);
@@ -874,7 +876,13 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
   }
 
   async function deleteSkin(): Promise<void> {
-    if (!activeRecord || busy || !window.confirm(tr("appearance.themeSkinDeleteConfirm"))) return;
+    if (!activeRecord || busy) return;
+    setConfirmDelete(true);
+  }
+
+  async function performDeleteSkin(): Promise<void> {
+    if (!activeRecord) return;
+    setConfirmDelete(false);
     setBusy(true);
     setMessage(undefined);
     try {
@@ -1632,6 +1640,16 @@ export function ThemeSkinStudio(props: ThemeSkinStudioProps) {
           ) : null}
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={confirmDelete}
+        title={tr("confirm.deleteTitle")}
+        message={tr("appearance.themeSkinDeleteConfirm")}
+        confirmLabel={tr("confirm.delete")}
+        cancelLabel={tr("common.cancel")}
+        danger
+        onConfirm={() => void performDeleteSkin()}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </>
   );
 }

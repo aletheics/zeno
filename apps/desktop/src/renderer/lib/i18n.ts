@@ -384,6 +384,7 @@ const messages = {
     "piSdk.unavailable": "未安装",
     "piSdk.use": "切换",
     "piSdk.using": "使用中",
+    "piSdk.switchConfirmTitle": "切换 SDK",
     "piSdk.switchConfirm": "切换 SDK 会重启 Agent Host 并关闭终端中的 pi 进程。",
     "piSdk.switchConfirmBusy":
       "当前有任务正在运行（生成中 / 后台会话 / 终端）。切换将中止这些任务并重启 Agent Host，是否继续？",
@@ -1647,6 +1648,7 @@ const messages = {
     "piSdk.unavailable": "Not installed",
     "piSdk.use": "Switch",
     "piSdk.using": "In use",
+    "piSdk.switchConfirmTitle": "Switch SDK",
     "piSdk.switchConfirm": "Switching SDK restarts the Agent Host and stops terminal pi processes.",
     "piSdk.switchConfirmBusy":
       "Work is in progress (generation / background sessions / terminal). Switching will abort that work and restart the Agent Host. Continue?",

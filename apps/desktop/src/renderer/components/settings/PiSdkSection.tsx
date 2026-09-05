@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { t, type Locale, type MessageKey } from "../../lib/i18n.ts";
 import { cn } from "../../lib/utils.ts";
+import { forceForSwitch, shouldRetryOnBusy, type SwitchConfirm } from "../../lib/pi-sdk-switch.ts";
 import { useShellStore } from "../../store/shell-store.ts";
 import {
   SettingsPageShell,
@@ -14,6 +15,7 @@ import {
   SettingsRow,
   SettingsSectionBlock,
 } from "./SettingsPrimitives.tsx";
+import { ConfirmDialog } from "../ConfirmDialog.tsx";
 
 function configTitleKey(id: string): MessageKey {
   return `piSdk.config.${id}` as MessageKey;
@@ -39,11 +41,6 @@ function formatMtime(ms: number | undefined, locale: Locale): string {
   } catch {
     return "";
   }
-}
-
-function isBusyError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.startsWith("PI_SDK_BUSY:");
 }
 
 function busySummary(
@@ -167,6 +164,7 @@ export function PiSdkSection(props: { locale: Locale }) {
   const [files, setFiles] = useState<PiConfigFileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [switchConfirm, setSwitchConfirm] = useState<SwitchConfirm | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -205,41 +203,54 @@ export function PiSdkSection(props: { locale: Locale }) {
     }
 
     const isBusy = Boolean(latest.activity?.busy) || shellRunning || runningSessionCount > 0;
-    const confirmMsg = isBusy ? tr("piSdk.switchConfirmBusy") : tr("piSdk.switchConfirm");
-    if (!window.confirm(confirmMsg)) return;
+    setSwitchConfirm({
+      kind: "pre",
+      source,
+      message: isBusy ? tr("piSdk.switchConfirmBusy") : tr("piSdk.switchConfirm"),
+      isBusy,
+    });
+  }
 
+  async function onSwitchConfirm() {
+    const pending = switchConfirm;
+    if (!pending) return;
+    setSwitchConfirm(null);
+
+    const { source } = pending;
+    const force = forceForSwitch(pending);
     setBusy(true);
     try {
-      const next = await window.zeno.piSdk.setSource(source, { force: isBusy });
+      const next = await window.zeno.piSdk.setSource(source, { force });
       setSdkStatus(next);
       setFiles(await window.zeno.piSdk.listConfigFiles());
-      setStatus(
-        tr("piSdk.using") +
-          ` · ${source === "builtin" ? tr("piSdk.builtin") : tr("piSdk.global")}` +
-          (next.activeVersion ? ` ${next.activeVersion}` : ""),
-      );
-    } catch (error) {
-      if (isBusyError(error)) {
-        if (window.confirm(tr("piSdk.switchConfirmBusy"))) {
-          try {
-            const next = await window.zeno.piSdk.setSource(source, { force: true });
-            setSdkStatus(next);
-            setFiles(await window.zeno.piSdk.listConfigFiles());
-            return;
-          } catch (retryError) {
-            showAppError(
-              retryError instanceof Error ? retryError.message : tr("piSdk.switchFailed"),
-            );
-          }
-        } else {
-          setStatus(tr("piSdk.switchBusyRefused"));
-        }
-      } else {
-        showAppError(error instanceof Error ? error.message : tr("piSdk.switchFailed"));
+      // The force-retry path (busy refusal) intentionally omits the "using" status
+      // line, matching the original synchronous flow.
+      if (pending.kind === "pre") {
+        setStatus(
+          tr("piSdk.using") +
+            ` · ${source === "builtin" ? tr("piSdk.builtin") : tr("piSdk.global")}` +
+            (next.activeVersion ? ` ${next.activeVersion}` : ""),
+        );
       }
+    } catch (error) {
+      if (shouldRetryOnBusy(pending, error)) {
+        setSwitchConfirm({ kind: "retry", source, message: tr("piSdk.switchConfirmBusy") });
+        return;
+      }
+      showAppError(error instanceof Error ? error.message : tr("piSdk.switchFailed"));
       await refresh();
     } finally {
       setBusy(false);
+    }
+  }
+
+  function onSwitchCancel() {
+    const pending = switchConfirm;
+    if (!pending) return;
+    setSwitchConfirm(null);
+    if (pending.kind === "retry") {
+      setStatus(tr("piSdk.switchBusyRefused"));
+      void refresh();
     }
   }
 
@@ -512,6 +523,15 @@ export function PiSdkSection(props: { locale: Locale }) {
           })
         )}
       </SettingsSectionBlock>
+      <ConfirmDialog
+        open={switchConfirm !== null}
+        title={tr("piSdk.switchConfirmTitle")}
+        message={switchConfirm?.message ?? ""}
+        confirmLabel={tr("common.confirm")}
+        cancelLabel={tr("common.cancel")}
+        onConfirm={() => void onSwitchConfirm()}
+        onCancel={onSwitchCancel}
+      />
     </SettingsPageShell>
   );
 }
