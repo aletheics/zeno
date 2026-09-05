@@ -27,8 +27,32 @@ const ENDPOINTS = {
   zaiCnSubscription: "https://open.bigmodel.cn/api/biz/subscription/list",
 } as const;
 
+interface HostUsageEndpoint {
+  host: string;
+  endpoint: string;
+  parse: (json: unknown) => ParsedProviderUsage;
+}
+
+/** Balance endpoints that can be inferred from a custom provider's base URL host. */
+const HOST_USAGE_ENDPOINTS: HostUsageEndpoint[] = [
+  { host: "api.deepseek.com", endpoint: ENDPOINTS.deepseekBalance, parse: parseDeepSeekUsage },
+];
+
+function matchUsageEndpoint(baseUrl: string): HostUsageEndpoint | undefined {
+  let hostname: string;
+  try {
+    hostname = new URL(baseUrl).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  return HOST_USAGE_ENDPOINTS.find(
+    ({ host }) => hostname === host || hostname.endsWith(`.${host}`),
+  );
+}
+
 interface ProviderUsageModelRuntime {
-  getProvider(provider: string): { name?: string } | undefined;
+  getProvider(provider: string): { name?: string; baseUrl?: string } | undefined;
+  getProviders(): ReadonlyArray<{ id: string; name?: string; baseUrl?: string }>;
   hasConfiguredAuth(provider: string): boolean;
   isUsingOAuth(provider: string): boolean;
   getAuth(provider: string): Promise<
@@ -108,7 +132,7 @@ async function readResponseText(response: Response): Promise<string> {
 }
 
 async function fetchJson(
-  url: (typeof ENDPOINTS)[keyof typeof ENDPOINTS],
+  url: string,
   headers: Record<string, string>,
   fetchImpl: typeof fetch,
 ): Promise<JsonResponse> {
@@ -245,16 +269,18 @@ async function queryClaude(
   return snapshot(services, provider, nowMs, "ok", parseClaudeUsage(response.json));
 }
 
-async function queryDeepSeek(
+async function queryApiKeyBalance(
   services: ProviderUsageServices,
+  provider: string,
+  endpoint: string,
+  parse: (json: unknown) => ParsedProviderUsage,
   fetchImpl: typeof fetch,
   nowMs: number,
 ): Promise<ProviderUsageSnapshot> {
-  const provider = "deepseek";
   const token = await resolveToken(services, provider);
   if (!token) return snapshot(services, provider, nowMs, "needs-auth");
   const response = await fetchJson(
-    ENDPOINTS.deepseekBalance,
+    endpoint,
     { Authorization: `Bearer ${token}`, Accept: "application/json" },
     fetchImpl,
   );
@@ -262,7 +288,22 @@ async function queryDeepSeek(
   if (!response.ok) {
     return snapshot(services, provider, nowMs, "error", undefined, requestFailureDetail(response));
   }
-  return snapshot(services, provider, nowMs, "ok", parseDeepSeekUsage(response.json));
+  return snapshot(services, provider, nowMs, "ok", parse(response.json));
+}
+
+async function queryDeepSeek(
+  services: ProviderUsageServices,
+  fetchImpl: typeof fetch,
+  nowMs: number,
+): Promise<ProviderUsageSnapshot> {
+  return queryApiKeyBalance(
+    services,
+    "deepseek",
+    ENDPOINTS.deepseekBalance,
+    parseDeepSeekUsage,
+    fetchImpl,
+    nowMs,
+  );
 }
 
 async function queryCopilot(
@@ -422,6 +463,28 @@ export async function listProviderUsage(
   }
   if (configured("zai-coding-cn")) {
     add("zai-coding-cn", queryZai(services, "zai-coding-cn", fetchImpl, nowMs));
+  }
+
+  // Custom (and any non-builtin) providers: infer a balance endpoint from the
+  // base URL host (e.g. a custom model pointed at api.deepseek.com).
+  const handledProviders = new Set([
+    "openai-codex",
+    "anthropic",
+    "github-copilot",
+    "openrouter",
+    "zai",
+    "zai-coding-cn",
+    "deepseek",
+  ]);
+  for (const provider of services.modelRuntime.getProviders()) {
+    if (handledProviders.has(provider.id)) continue;
+    if (!provider.baseUrl || !services.modelRuntime.hasConfiguredAuth(provider.id)) continue;
+    const match = matchUsageEndpoint(provider.baseUrl);
+    if (!match) continue;
+    add(
+      provider.id,
+      queryApiKeyBalance(services, provider.id, match.endpoint, match.parse, fetchImpl, nowMs),
+    );
   }
 
   const settled = await Promise.allSettled(queries);

@@ -9,6 +9,7 @@ function services(options: {
   providers: string[];
   oauth?: string[];
   tokens?: Record<string, string>;
+  baseUrls?: Record<string, string>;
 }): ProviderUsageServices {
   const known = new Set(options.providers);
   const oauth = new Set(options.oauth ?? []);
@@ -16,7 +17,15 @@ function services(options: {
     agentDir: "/tmp/zeno-provider-usage-test",
     modelRuntime: {
       getProvider(provider) {
-        return known.has(provider) ? { name: `Name ${provider}` } : undefined;
+        if (!known.has(provider)) return undefined;
+        const baseUrl = options.baseUrls?.[provider];
+        return { name: `Name ${provider}`, ...(baseUrl ? { baseUrl } : {}) };
+      },
+      getProviders() {
+        return [...known].map((provider) => {
+          const baseUrl = options.baseUrls?.[provider];
+          return { id: provider, name: `Name ${provider}`, ...(baseUrl ? { baseUrl } : {}) };
+        });
       },
       hasConfiguredAuth(provider) {
         return known.has(provider);
@@ -179,5 +188,38 @@ describe("live provider usage queries", () => {
     expect(result).toEqual([
       expect.objectContaining({ provider: "openrouter", status: "needs-auth" }),
     ]);
+  });
+
+  it("reads balance for a custom provider matched by base URL host", async () => {
+    const requests: Array<{ url: string; authorization: string | null }> = [];
+    const fetchImpl = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = requestUrl(input);
+      const headers = new Headers(init?.headers);
+      requests.push({ url, authorization: headers.get("authorization") });
+      return jsonResponse({
+        is_available: true,
+        balance_infos: [{ currency: "CNY", total_balance: "88.00" }],
+      });
+    }) as typeof fetch;
+
+    const result = await listProviderUsage(
+      services({
+        providers: ["my-deepseek"],
+        tokens: { "my-deepseek": "ds-custom-key" },
+        baseUrls: { "my-deepseek": "https://api.deepseek.com" },
+      }),
+      { fetchImpl, nowMs: 1_775_000_000_000 },
+    );
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        provider: "my-deepseek",
+        displayName: "Name my-deepseek",
+        status: "ok",
+      }),
+    ]);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.url).toContain("api.deepseek.com/user/balance");
+    expect(requests[0]?.authorization).toBe("Bearer ds-custom-key");
   });
 });
