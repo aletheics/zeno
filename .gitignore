@@ -36,9 +36,9 @@ session-*.jsonl
 *.swp
 *.swo
 
-# Local planning docs (not part of the published tree)
-docs/
+# Local planning docs (not part of the published tree); llm-wiki product rules are shared.
+docs/*
+!docs/llm-wiki/
 
 # Local agent knowledge (not part of the published tree)
-AGENTS.md
 .agent/
