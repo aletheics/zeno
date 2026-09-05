@@ -18,8 +18,10 @@
   message={t(locale, "confirm.deleteMessage", { name })}
   confirmLabel={t(locale, "confirm.delete")}
   cancelLabel={t(locale, "common.cancel")}
-  danger            // 删除类操作用 destructive 样式
-  onConfirm={() => { /* 真正执行删除 */ }}
+  danger // 删除类操作用 destructive 样式
+  onConfirm={() => {
+    /* 真正执行删除 */
+  }}
   onCancel={() => setOpen(false)}
 />
 ```

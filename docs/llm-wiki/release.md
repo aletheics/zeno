@@ -25,11 +25,11 @@ git push origin v0.1.2
 
 `scripts/release-assets.mjs` 会校验，缺任一必选资产 CI 直接失败：
 
-| 平台 | 必选资产 |
-|---|---|
-| Windows | `Zeno-*-win-x64.exe` + `latest.yml`（+ `*.blockmap`，若生成） |
-| macOS | `Zeno-*-mac-{arm64,x64}.dmg` + `Zeno-*-mac-{arm64,x64}.zip` + `latest-mac.yml` |
-| Linux | `Zeno-*-linux-*.AppImage` + `latest-linux.yml`（+ 可选 `.deb` / blockmap） |
+| 平台    | 必选资产                                                                       |
+| ------- | ------------------------------------------------------------------------------ |
+| Windows | `Zeno-*-win-x64.exe` + `latest.yml`（+ `*.blockmap`，若生成）                  |
+| macOS   | `Zeno-*-mac-{arm64,x64}.dmg` + `Zeno-*-mac-{arm64,x64}.zip` + `latest-mac.yml` |
+| Linux   | `Zeno-*-linux-*.AppImage` + `latest-linux.yml`（+ 可选 `.deb` / blockmap）     |
 
 - `latest-mac.yml` 由 `scripts/merge-latest-mac-yml.mjs` 合并 arm64 + x64 两个产物得到。
 - blockmap 保留（差分更新只需下载变化区间）。
