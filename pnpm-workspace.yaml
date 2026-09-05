@@ -6,6 +6,7 @@ catalogMode: prefer
 
 catalog:
   "@earendil-works/pi-coding-agent": 0.85.0
+  "@earendil-works/pi-server": 0.85.0
   "@silvia-odwyer/photon-node": 0.3.4
   "@types/node": 26.1.1
   "@types/react": 19.2.17

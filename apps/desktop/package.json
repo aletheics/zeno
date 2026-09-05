@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "catalog:",
+    "@earendil-works/pi-server": "catalog:",
     "@shadcn/react": "catalog:",
     "@silvia-odwyer/photon-node": "catalog:",
     "@zeno/agent-runtime": "workspace:*",
