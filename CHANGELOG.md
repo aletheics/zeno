@@ -12,6 +12,9 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   size / color / shape / expression / eye pickers) and toggled with the `/pet`
   slash command. Its overlay window never steals focus and boots straight into
   your chosen color without a flash.
+- Usage statistics ("真实额度") now read the real account balance for DeepSeek
+  and Moonshot/Kimi, and for custom models whose base URL points at those
+  providers.
 
 ### Changed
 
@@ -28,6 +31,12 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
 - The dev watch launcher no longer intermittently fails at launch with
   "Cannot find module": build watchers now start only after Electron has loaded
   the main bundle.
+- The packaged app no longer crashes when starting the Agent Host: the bundled
+  pi runtime's missing `@earendil-works/pi-server` dependency is now declared
+  and shipped in the package.
+- "Check for updates" and the plugin/MCP catalogs no longer fail with
+  "fetch failed" behind a regional network — the npm registry is now read from
+  `~/.npmrc` (e.g. `registry.npmmirror.com`) instead of hardcoding npmjs.org.
 
 ## [0.1.5] - 2026-08-26
 
