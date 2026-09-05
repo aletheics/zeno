@@ -45,7 +45,7 @@ export function silhouette(name: ProfileName, pose: Partial<Silhouette> = {}): S
 /** Cercle parfait : sert de base neutre (point, bulle, cible de fondu). */
 export function circle(radius: number, pose: Partial<Silhouette> = {}): Silhouette {
   return {
-    radii: new Array(PROFILE_SAMPLES).fill(radius),
+    radii: Array.from({ length: PROFILE_SAMPLES }, () => radius),
     rot: 0,
     cx: 0,
     cy: 0,
@@ -58,7 +58,7 @@ export function circle(radius: number, pose: Partial<Silhouette> = {}): Silhouet
 /** Interpolation de deux silhouettes. `out` est reutilise pour eviter d'allouer a 60 fps. */
 export function blend(a: Silhouette, b: Silhouette, t: number, out?: Silhouette): Silhouette {
   const dst = out ?? {
-    radii: new Array<number>(PROFILE_SAMPLES),
+    radii: Array.from({ length: PROFILE_SAMPLES }, () => 0),
     rot: 0,
     cx: 0,
     cy: 0,
@@ -134,7 +134,7 @@ export function closedPath(pts: Point[], tension = 1 / 6): string {
  * dans la boucle de rendu.
  */
 export function profileFromPolygon(poly: Point[], cx: number, cy: number): number[] {
-  const radii = new Array<number>(PROFILE_SAMPLES).fill(0);
+  const radii = Array.from({ length: PROFILE_SAMPLES }, () => 0);
   const n = poly.length;
   for (let k = 0; k < PROFILE_SAMPLES; k++) {
     const dx = COS[k] ?? 0;
@@ -224,7 +224,7 @@ export function superellipseProfile(n: number, sx = 1, sy = 1): number[] {
 export function unionOfCirclesProfile(
   circles: Array<{ x: number; y: number; r: number }>,
 ): number[] {
-  const out = new Array<number>(PROFILE_SAMPLES).fill(0);
+  const out = Array.from({ length: PROFILE_SAMPLES }, () => 0);
   for (let i = 0; i < PROFILE_SAMPLES; i++) {
     const dx = COS[i] ?? 0;
     const dy = SIN[i] ?? 0;

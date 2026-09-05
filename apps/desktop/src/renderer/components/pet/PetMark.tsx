@@ -9,7 +9,7 @@
 import { useEffect, useId, useRef } from "react";
 import { listen, onWindowMoved } from "@/lib/api/host";
 import { petReadOverlayFrame, type PetOverlayFrame } from "@/lib/api/pet";
-import type { PetColor, PetEyeColor, PetShape, PetVerb } from "@/lib/pet";
+import type { PetColor, PetEyeColor } from "@/lib/pet";
 import { isPetColor, resolvePetBodyInk, resolvePetEyeInk } from "@/lib/pet";
 import { BotEngine, DEMI_VIEWBOX, POSES, RAYON, mixHex, type BotFrame } from "@/lib/pet/bloub";
 import {
@@ -91,10 +91,10 @@ export function PetMark({
   expression = "neutre",
   restOnly = false,
 }: {
-  shape?: PetShape | string;
+  shape?: string;
   color?: PetColor;
   eyeColor?: PetEyeColor;
-  verb?: PetVerb | string;
+  verb?: string;
   sizePx?: number;
   title?: string;
   paused?: boolean;
