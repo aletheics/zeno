@@ -59,6 +59,18 @@ function formatUsd(value: number): string {
   }).format(value);
 }
 
+function formatCurrency(value: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}
+
 function resetFromWindow(window: Record<string, unknown>, nowMs: number): string | undefined {
   const explicit = isoFromEpoch(window.reset_at, "seconds");
   if (explicit) return explicit;
@@ -317,4 +329,17 @@ export function parseCopilotUsage(json: unknown): ParsedProviderUsage {
     usageLines,
     ...(rawPlan ? { planName: titleCase(rawPlan) } : {}),
   };
+}
+
+export function parseDeepSeekUsage(json: unknown): ParsedProviderUsage {
+  const root = asRecord(json);
+  const infos = Array.isArray(root?.balance_infos) ? root.balance_infos : [];
+  const first = asRecord(infos[0]);
+  const total = asNumber(first?.total_balance);
+  const usageLines: ProviderUsageLine[] = [];
+  if (total !== undefined) {
+    const currency = asString(first?.currency) ?? "CNY";
+    usageLines.push({ label: "Balance", value: `${formatCurrency(total, currency)} remaining` });
+  }
+  return { limits: [], usageLines };
 }

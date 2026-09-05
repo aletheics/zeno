@@ -3,6 +3,7 @@ import {
   parseClaudeUsage,
   parseCodexUsage,
   parseCopilotUsage,
+  parseDeepSeekUsage,
   parseOpenRouterUsage,
   parseZaiUsage,
 } from "../src/provider-usage-parsers.ts";
@@ -216,5 +217,24 @@ describe("provider usage parsers", () => {
       },
     ]);
     expect(usage.usageLines).toEqual([{ label: "Extra usage", value: "4" }]);
+  });
+
+  it("maps DeepSeek account balance", () => {
+    const usage = parseDeepSeekUsage({
+      is_available: true,
+      balance_infos: [
+        {
+          currency: "CNY",
+          total_balance: "110.00",
+          granted_balance: "10.00",
+          topped_up_balance: "100.00",
+        },
+      ],
+    });
+
+    expect(usage.limits).toEqual([]);
+    expect(usage.usageLines).toEqual([
+      { label: "Balance", value: expect.stringContaining("110.00") },
+    ]);
   });
 });

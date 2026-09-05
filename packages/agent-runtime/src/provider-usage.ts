@@ -5,6 +5,7 @@ import {
   parseClaudeUsage,
   parseCodexUsage,
   parseCopilotUsage,
+  parseDeepSeekUsage,
   parseOpenRouterUsage,
   parseZaiUsage,
   type ParsedProviderUsage,
@@ -17,6 +18,7 @@ const ENDPOINTS = {
   codex: "https://chatgpt.com/backend-api/wham/usage",
   claude: "https://api.anthropic.com/api/oauth/usage",
   copilot: "https://api.github.com/copilot_internal/user",
+  deepseekBalance: "https://api.deepseek.com/user/balance",
   openRouterCredits: "https://openrouter.ai/api/v1/credits",
   openRouterKey: "https://openrouter.ai/api/v1/key",
   zaiQuota: "https://api.z.ai/api/monitor/usage/quota/limit",
@@ -243,6 +245,26 @@ async function queryClaude(
   return snapshot(services, provider, nowMs, "ok", parseClaudeUsage(response.json));
 }
 
+async function queryDeepSeek(
+  services: ProviderUsageServices,
+  fetchImpl: typeof fetch,
+  nowMs: number,
+): Promise<ProviderUsageSnapshot> {
+  const provider = "deepseek";
+  const token = await resolveToken(services, provider);
+  if (!token) return snapshot(services, provider, nowMs, "needs-auth");
+  const response = await fetchJson(
+    ENDPOINTS.deepseekBalance,
+    { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    fetchImpl,
+  );
+  if (isAuthFailure(response)) return snapshot(services, provider, nowMs, "needs-auth");
+  if (!response.ok) {
+    return snapshot(services, provider, nowMs, "error", undefined, requestFailureDetail(response));
+  }
+  return snapshot(services, provider, nowMs, "ok", parseDeepSeekUsage(response.json));
+}
+
 async function queryCopilot(
   services: ProviderUsageServices,
   fetchImpl: typeof fetch,
@@ -385,6 +407,9 @@ export async function listProviderUsage(
   }
   if (configured("anthropic")) {
     add("anthropic", queryClaude(services, fetchImpl, nowMs));
+  }
+  if (configured("deepseek")) {
+    add("deepseek", queryDeepSeek(services, fetchImpl, nowMs));
   }
   if (configured("github-copilot")) {
     add("github-copilot", queryCopilot(services, fetchImpl, readCredential, nowMs));
