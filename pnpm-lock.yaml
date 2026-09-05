@@ -326,6 +326,8 @@ overrides:
   dompurify: '>=3.4.13'
   brace-expansion@^5.0.0: '>=5.0.9'
 
+pnpmfileChecksum: sha256-+Dna969wjxkUvMCOl3yg7M3w9KO4iBxN+wJb2Gkisr8=
+
 patchedDependencies:
   '@earendil-works/pi-coding-agent': 21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d
 
@@ -773,6 +775,10 @@ packages:
 
   '@earendil-works/pi-protocol@0.85.0':
     resolution: {integrity: sha512-knPb0QeV6/1K6t9X6K4Wri9ZOlhqnGx1HYRy2N7x5ZEU7zcYDlR0oSfgbrsmMFmJJal5DZ9Q2HjekayjssKCVQ==}
+    engines: {node: '>=22.19.0'}
+
+  '@earendil-works/pi-server@0.85.0':
+    resolution: {integrity: sha512-S8a6a26TM40C7WInj7bNu+HLbVMGosg4gRo2jB5yw0mH1TZ6HHKMxT2YDJpDpnSyGmCwEPj5GBG2sG1jbthWrA==}
     engines: {node: '>=22.19.0'}
 
   '@earendil-works/pi-telemetry@0.85.0':
@@ -5370,6 +5376,7 @@ snapshots:
       '@earendil-works/pi-ai': 0.85.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@earendil-works/pi-client': 0.85.0
       '@earendil-works/pi-protocol': 0.85.0
+      '@earendil-works/pi-server': 0.85.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@earendil-works/pi-tui': 0.85.0
       '@silvia-odwyer/photon-node': 0.3.4
       chalk: 5.6.2
@@ -5400,6 +5407,19 @@ snapshots:
     dependencies:
       '@earendil-works/chord': 0.85.0
       typebox: 1.3.7
+
+  '@earendil-works/pi-server@0.85.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
+    dependencies:
+      '@earendil-works/chord': 0.85.0
+      '@earendil-works/pi-agent-core': 0.85.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+      '@earendil-works/pi-protocol': 0.85.0
+    transitivePeerDependencies:
+      - '@modelcontextprotocol/sdk'
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+      - ws
+      - zod
 
   '@earendil-works/pi-telemetry@0.85.0': {}
 
