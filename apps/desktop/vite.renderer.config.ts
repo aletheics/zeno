@@ -25,6 +25,7 @@ export default defineConfig({
           import.meta.dirname,
           "src/renderer/session-content-demo.html",
         ),
+        pet: resolve(import.meta.dirname, "src/renderer/pet.html"),
       },
       output: {
         codeSplitting: {

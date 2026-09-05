@@ -140,7 +140,12 @@ import {
   shouldReuseForegroundThread,
   useShellStore,
 } from "./store/shell-store.ts";
+import { startPetFocusBridge } from "./lib/pet/petFocusBridge.ts";
+import { createPetFocusSource } from "./lib/pet/pixFocusSource.ts";
+import { petPushFocus, petPushTasks, petToggle } from "./lib/api/pet.ts";
+import { isDesktopHost } from "./lib/api/host.ts";
 import "./styles.css";
+import "./pet.css";
 
 const initialThemeState = useShellStore.getState();
 applyDocumentTheme(initialThemeState.colorMode);
@@ -612,6 +617,24 @@ function App() {
     foregroundMarkerState === "waiting" || foregroundMarkerState === "recovering"
       ? foregroundMarkerState
       : deriveRunState({ hostStatus: status, running, lastFailure });
+  // Relay session state to the always-on-top desktop pet (bloub): focus kind +
+  // task bubbles, pushed through main → pet window IPC.
+  useEffect(() => {
+    if (!isDesktopHost()) return;
+    const bridge = startPetFocusBridge(
+      createPetFocusSource({
+        getState: () => useShellStore.getState(),
+        subscribe: (cb) => useShellStore.subscribe(cb),
+        push: (focus) => {
+          void petPushFocus(focus);
+        },
+        pushTasks: (tasks) => {
+          void petPushTasks(tasks);
+        },
+      }),
+    );
+    return () => bridge.stop();
+  }, []);
   const timeline = useMemo(() => {
     // history = session JSONL at open; liveStream = append-only log for this session
     // (streamed text only grows). Do not re-project deltas from the events ring.
@@ -1649,6 +1672,15 @@ function App() {
         setSettingsSection("models");
         setView("settings");
         return true;
+      case "pet": {
+        const saved = await petToggle();
+        setStatus(
+          saved.enabled && saved.visible
+            ? t(locale, "slash.pet.shown")
+            : t(locale, "slash.pet.hidden"),
+        );
+        return true;
+      }
       case "upcoming":
         reportAppError(
           new Error(t(locale, "session.parity.commandUpcoming", { name: action.name })),

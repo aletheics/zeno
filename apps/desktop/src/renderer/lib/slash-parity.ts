@@ -31,6 +31,7 @@ const BUILTIN_DESC_KEYS: Record<string, MessageKey> = {
   hotkeys: "slash.builtin.hotkeys",
   mcp: "slash.builtin.mcp",
   login: "slash.builtin.login",
+  pet: "slash.builtin.pet",
 };
 
 export function listDesktopBuiltinSlashCommands(locale: Locale = "zh"): BuiltinSlashCommand[] {
@@ -77,6 +78,7 @@ export function listDesktopBuiltinSlashCommands(locale: Locale = "zh"): BuiltinS
     { name: "hotkeys", description: tr("slash.builtin.hotkeys"), source: "builtin" },
     { name: "mcp", description: tr("slash.builtin.mcp"), source: "builtin" },
     { name: "login", description: tr("slash.builtin.login"), source: "builtin" },
+    { name: "pet", description: tr("slash.builtin.pet"), source: "builtin" },
   ];
 }
 
@@ -188,6 +190,7 @@ export type BuiltinSlashAction =
   | { type: "upcoming"; name: string }
   | { type: "mcp" }
   | { type: "login" }
+  | { type: "pet" }
   | { type: "runtime"; command: string; args: string }
   | { type: "unknown"; name: string };
 
@@ -239,6 +242,8 @@ export function resolveBuiltinSlash(
       return { type: "mcp" };
     case "login":
       return { type: "login" };
+    case "pet":
+      return { type: "pet" };
     default:
       return { type: "runtime", command: name, args };
   }

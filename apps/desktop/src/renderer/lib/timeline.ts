@@ -1,14 +1,6 @@
-import type { HostEvent, SessionHistoryMessage } from "@zeno/contracts";
+import type { HostEvent, SessionHistoryMessage, ZenoRunState } from "@zeno/contracts";
 
-export type ThreadRunState =
-  | "idle"
-  | "running"
-  | "waiting"
-  | "completed"
-  | "failed"
-  | "aborted"
-  | "crashed"
-  | "recovering";
+export type ThreadRunState = ZenoRunState;
 
 export type TimelineItem =
   | {

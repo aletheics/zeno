@@ -4,9 +4,27 @@ import type {
   HostEvent,
   PiCliProgressEvent,
   ZenoDesktopApi,
+  PetCommand,
+  PetFocus,
+  PetPrefs,
+  PetTask,
   TerminalDataEvent,
   TerminalExitEvent,
 } from "@zeno/contracts";
+
+// First-paint pet prefs. The main process passes the saved appearance for the
+// pet window only via `--pet-boot=<json>` in `additionalArguments`; expose it as
+// `window.__GROK_PET_BOOT__` so `readPetBootPrefs()` has the real color before
+// React mounts (no green → picked color flash).
+const petBootArg = process.argv.find((arg) => arg.startsWith("--pet-boot="));
+if (petBootArg) {
+  try {
+    const boot = JSON.parse(petBootArg.slice("--pet-boot=".length));
+    contextBridge.exposeInMainWorld("__GROK_PET_BOOT__", boot);
+  } catch {
+    // Malformed boot prefs — fall back to defaults.
+  }
+}
 
 const api: ZenoDesktopApi = {
   app: {
@@ -37,6 +55,49 @@ const api: ZenoDesktopApi = {
         listener(state);
       ipcRenderer.on("zeno:window:state", handler);
       return () => ipcRenderer.removeListener("zeno:window:state", handler);
+    },
+  },
+  pet: {
+    getPrefs: () => ipcRenderer.invoke("zeno:pet:get-prefs"),
+    setPrefs: (prefs) => ipcRenderer.invoke("zeno:pet:set-prefs", prefs),
+    show: () => ipcRenderer.invoke("zeno:pet:show"),
+    hide: () => ipcRenderer.invoke("zeno:pet:hide"),
+    toggle: () => ipcRenderer.invoke("zeno:pet:toggle"),
+    getFocus: () => ipcRenderer.invoke("zeno:pet:get-focus"),
+    getTasks: () => ipcRenderer.invoke("zeno:pet:get-tasks"),
+    pushFocus: (focus) => ipcRenderer.invoke("zeno:pet:push-focus", focus),
+    pushTasks: (tasks) => ipcRenderer.invoke("zeno:pet:push-tasks", tasks),
+    openSettings: () => ipcRenderer.invoke("zeno:pet:open-settings"),
+    focusSession: (sessionId) => ipcRenderer.invoke("zeno:pet:focus-session", sessionId),
+    showMain: () => ipcRenderer.invoke("zeno:pet:show-main"),
+    setHitChrome: (chrome) => ipcRenderer.invoke("zeno:pet:set-hit-chrome", chrome),
+    readFrame: () => ipcRenderer.invoke("zeno:pet:read-frame"),
+    syncSize: (bounds) => ipcRenderer.invoke("zeno:pet:sync-size", bounds),
+    setDragging: (dragging) => ipcRenderer.invoke("zeno:pet:set-dragging", dragging),
+    setMenuOpen: (open) => ipcRenderer.invoke("zeno:pet:set-menu-open", open),
+    setIgnoreCursor: (ignore) => ipcRenderer.invoke("zeno:pet:set-ignore-cursor", ignore),
+    startDragging: () => ipcRenderer.invoke("zeno:pet:start-dragging"),
+    nudge: (dx, dy) => ipcRenderer.invoke("zeno:pet:nudge", dx, dy),
+    policy: () => ipcRenderer.invoke("zeno:pet:policy"),
+    onPrefs(listener) {
+      const handler = (_event: Electron.IpcRendererEvent, prefs: PetPrefs) => listener(prefs);
+      ipcRenderer.on("zeno:pet:prefs", handler);
+      return () => ipcRenderer.removeListener("zeno:pet:prefs", handler);
+    },
+    onFocus(listener) {
+      const handler = (_event: Electron.IpcRendererEvent, focus: PetFocus) => listener(focus);
+      ipcRenderer.on("zeno:pet:focus", handler);
+      return () => ipcRenderer.removeListener("zeno:pet:focus", handler);
+    },
+    onTasks(listener) {
+      const handler = (_event: Electron.IpcRendererEvent, tasks: PetTask[]) => listener(tasks);
+      ipcRenderer.on("zeno:pet:tasks", handler);
+      return () => ipcRenderer.removeListener("zeno:pet:tasks", handler);
+    },
+    onCommand(listener) {
+      const handler = (_event: Electron.IpcRendererEvent, command: PetCommand) => listener(command);
+      ipcRenderer.on("zeno:pet:command", handler);
+      return () => ipcRenderer.removeListener("zeno:pet:command", handler);
     },
   },
   pi: {

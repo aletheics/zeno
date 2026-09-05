@@ -169,6 +169,7 @@ import {
   SettingsTextarea,
   SettingsToggle,
 } from "./SettingsPrimitives.tsx";
+import { PetSection } from "./PetSection.tsx";
 
 export interface SettingsPageProps {
   snapshot: HostSnapshot | undefined;
@@ -235,6 +236,8 @@ export function SettingsPage(props: SettingsPageProps) {
           <RuntimesSection locale={props.locale} />
         ) : props.section === "behavior" ? (
           <BehaviorSection {...props} tr={tr} />
+        ) : props.section === "pet" ? (
+          <PetSection tr={tr} />
         ) : props.section === "environment" ? (
           <EnvironmentSection {...props} tr={tr} />
         ) : props.section === "worktree" ? (

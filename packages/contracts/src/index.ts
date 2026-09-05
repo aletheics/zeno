@@ -1602,6 +1602,100 @@ export type BundledRuntimeStatus = {
   };
 };
 
+/** Authoritative agent run state shared by renderer, preload, and the desktop pet. */
+export type ZenoRunState =
+  | "idle"
+  | "running"
+  | "waiting"
+  | "completed"
+  | "failed"
+  | "aborted"
+  | "crashed"
+  | "recovering";
+
+/**
+ * Desktop pet (bloub) focus kinds, priority order (lowest rank wins):
+ *   needs_you < error < working < ready < connecting < idle.
+ */
+export type PetKind = "idle" | "connecting" | "working" | "needs_you" | "ready" | "error";
+
+export type PetFocus = {
+  kind: PetKind;
+  sessionId: string | null;
+  title: string | null;
+  toolTitle: string | null;
+  rank: number;
+  updatedAt: number;
+  /** True while the main composer has a non-empty draft. */
+  composing?: boolean;
+};
+
+export type PetTaskPhase = "active" | "done";
+
+export type PetTask = {
+  sessionId: string;
+  title: string | null;
+  snippet: string | null;
+  toolTitle: string | null;
+  kind: PetKind;
+  phase: PetTaskPhase;
+  /** 0..1 phase progress. */
+  progress: number;
+  updatedAt: number;
+};
+
+export type PetPrefs = {
+  enabled: boolean;
+  visible: boolean;
+  shape: string;
+  color: string;
+  eyeColor?: string;
+  expression?: string;
+  bubblesEnabled?: boolean;
+  progressBarEnabled?: boolean;
+  bubbleDismissSec?: number;
+  bubbleShape?: string;
+  bubbleStyle?: string;
+  sizePx: number;
+  x?: number | null;
+  y?: number | null;
+  overlayW?: number | null;
+  overlayH?: number | null;
+};
+
+export type PetOverlayPolicy = {
+  compactIdle: boolean;
+  cursorClickThrough: boolean;
+};
+
+export type PetHitChrome = {
+  markCx: number;
+  markCy: number;
+  markR: number;
+  bubbleX: number;
+  bubbleY: number;
+  bubbleW: number;
+  bubbleH: number;
+  windowW: number;
+  windowH: number;
+};
+
+export type PetWorkRect = { x: number; y: number; w: number; h: number };
+
+export type PetOverlayFrame = {
+  winX: number;
+  winY: number;
+  overlayW: number;
+  overlayH: number;
+  work: PetWorkRect;
+};
+
+/** Command relayed from the pet overlay back to the main renderer. */
+export type PetCommand =
+  | { type: "open-settings" }
+  | { type: "focus-session"; sessionId: string }
+  | { type: "show-main" };
+
 export interface ZenoDesktopApi {
   app: {
     /** OS platform + packaging flags for chrome layout / dev tools. */
@@ -1641,6 +1735,48 @@ export interface ZenoDesktopApi {
     close(): Promise<void>;
     isMaximized(): Promise<boolean>;
     onStateChange(listener: (state: { isMaximized: boolean }) => void): () => void;
+  };
+  /**
+   * Always-on-top desktop pet (bloub) — a living SVG companion driven by
+   * per-session focus + task bubbles. Enabled from Settings → 宠物.
+   */
+  pet: {
+    getPrefs(): Promise<PetPrefs>;
+    setPrefs(prefs: PetPrefs): Promise<PetPrefs>;
+    show(): Promise<PetPrefs>;
+    hide(): Promise<PetPrefs>;
+    /** Flip visibility: hide when shown, show (and enable) otherwise. */
+    toggle(): Promise<PetPrefs>;
+    getFocus(): Promise<PetFocus | null>;
+    getTasks(): Promise<PetTask[]>;
+    /** Main renderer pushes computed focus/tasks; main relays to the pet window. */
+    pushFocus(focus: PetFocus): Promise<void>;
+    pushTasks(tasks: PetTask[]): Promise<void>;
+    /** Pet → main relay: open the 宠物 settings section. */
+    openSettings(): Promise<void>;
+    /** Pet → main relay: bring a session to the foreground. */
+    focusSession(sessionId: string): Promise<void>;
+    /** Pet → main relay: show/focus the main window. */
+    showMain(): Promise<void>;
+    /** Pet reports its painted hit regions (mark + bubbles) to main. */
+    setHitChrome(chrome: PetHitChrome): Promise<void>;
+    /** Pet reads its window origin/size + monitor work area (logical px). */
+    readFrame(): Promise<PetOverlayFrame | null>;
+    /** Resize + reposition the overlay in one step (logical px). */
+    syncSize(bounds: { x: number; y: number; width: number; height: number }): Promise<void>;
+    setDragging(dragging: boolean): Promise<void>;
+    setMenuOpen(open: boolean): Promise<void>;
+    setIgnoreCursor(ignore: boolean): Promise<void>;
+    startDragging(): Promise<void>;
+    /** Move the overlay by logical CSS pixels (manual drag). */
+    nudge(dx: number, dy: number): Promise<void>;
+    policy(): Promise<PetOverlayPolicy>;
+    /** Pet renderer subscriptions (relayed from main renderer pushes). */
+    onPrefs(listener: (prefs: PetPrefs) => void): () => void;
+    onFocus(listener: (focus: PetFocus) => void): () => void;
+    onTasks(listener: (tasks: PetTask[]) => void): () => void;
+    /** Main renderer subscription for pet → main command relay. */
+    onCommand(listener: (command: PetCommand) => void): () => void;
   };
   /**
    * Global `pi` CLI detection (no auto-install).

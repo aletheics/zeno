@@ -34,6 +34,12 @@ import {
   type SessionThreadSummary,
   type SessionTreeView,
   type UpsertCustomProviderInput,
+  type PetCommand,
+  type PetFocus,
+  type PetOverlayFrame,
+  type PetOverlayPolicy,
+  type PetPrefs,
+  type PetTask,
   isHostEvent,
 } from "@zeno/contracts";
 import {
@@ -394,6 +400,10 @@ const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const HOST_EVENT_CHANNEL = "zeno:host:event";
 const PI_PROGRESS_CHANNEL = "zeno:pi:progress";
 const APP_UPDATE_CHANNEL = "zeno:app:update-status";
+const PET_PREFS_CHANNEL = "zeno:pet:prefs";
+const PET_FOCUS_CHANNEL = "zeno:pet:focus";
+const PET_TASKS_CHANNEL = "zeno:pet:tasks";
+const PET_COMMAND_CHANNEL = "zeno:pet:command";
 
 /** Best-effort branch / worktree labels for composer chrome (no git binary required). */
 function readGitContext(cwd: string | undefined): GitContextInfo {
@@ -1888,15 +1898,14 @@ function assertNpmPackageName(value: unknown): string {
   return value;
 }
 
-/** 仅信任主窗口顶层 frame 发起的 IPC，拒绝子 frame / 外部内容。 */
+/** 仅信任主窗口 / 宠物窗口顶层 frame 发起的 IPC，拒绝子 frame / 外部内容。 */
 function assertTrustedSender(event: Electron.IpcMainInvokeEvent): void {
-  const win = mainWindow;
-  if (!win || win.isDestroyed() || event.sender !== win.webContents) {
-    throw new Error("不受信任的 IPC 发送方");
-  }
-  if (event.senderFrame !== win.webContents.mainFrame) {
-    throw new Error("不受信任的 IPC frame");
-  }
+  const trusted = [mainWindow, petWindow]
+    .filter((win): win is BrowserWindow => Boolean(win && !win.isDestroyed()))
+    .some(
+      (win) => event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame,
+    );
+  if (!trusted) throw new Error("不受信任的 IPC 发送方");
 }
 /**
  * On Windows, npx-resolver in pi-mcp-adapter misidentifies Unix shell scripts
@@ -2093,6 +2102,8 @@ interface DesktopPrefs {
    * Bundled Node/Python under Resources/runtimes. Default ON when unset.
    */
   bundledRuntimes?: Partial<BundledRuntimePrefs>;
+  /** Always-on-top desktop pet (bloub). Full prefs incl. window position. */
+  pet?: PetPrefs;
 }
 
 const WINDOW_MIN_WIDTH = 760;
@@ -2102,6 +2113,8 @@ const APP_SCALE_MIN = 80;
 const APP_SCALE_MAX = 150;
 const WINDOW_DEFAULT_WIDTH = 1440;
 const WINDOW_DEFAULT_HEIGHT = 900;
+const PET_WINDOW_SIZE = 168;
+const PET_MARGIN = 24;
 
 export type WorktreePrefs = {
   root: string;
@@ -2256,14 +2269,17 @@ function loadDesktopPrefs(): DesktopPrefs {
         typeof parsed.lastWorkspace === "string" ? parsed.lastWorkspace : undefined,
       ) ?? recentWorkspaces[0];
     const windowBounds = normalizeWindowBoundsPrefs(parsed.window);
+    const pet = normalizePetPrefs(parsed.pet);
     const cleaned: DesktopPrefs = {
       ...parsed,
       recentWorkspaces,
       ...(lastWorkspace ? { lastWorkspace } : {}),
       ...(windowBounds ? { window: windowBounds } : {}),
+      ...(pet ? { pet } : {}),
     };
     if (!lastWorkspace) delete cleaned.lastWorkspace;
     if (!windowBounds) delete cleaned.window;
+    if (!pet) delete cleaned.pet;
     // Persist scrub so a deleted /tmp workspace cannot keep blocking send/start.
     const dirty =
       JSON.stringify(parsed.recentWorkspaces ?? []) !== JSON.stringify(recentWorkspaces) ||
@@ -2436,6 +2452,464 @@ function attachWindowBoundsPersistence(win: BrowserWindow): void {
   win.on("close", () => {
     if (timer) clearTimeout(timer);
     persistMainWindowBounds(win);
+  });
+}
+
+const PET_KINDS: ReadonlySet<string> = new Set([
+  "idle",
+  "connecting",
+  "working",
+  "needs_you",
+  "ready",
+  "error",
+]);
+
+const PET_PREFS_FALLBACK: PetPrefs = {
+  enabled: false,
+  visible: false,
+  shape: "hex",
+  color: "black",
+  eyeColor: "auto",
+  expression: "neutre",
+  bubblesEnabled: true,
+  progressBarEnabled: false,
+  bubbleDismissSec: 15,
+  bubbleShape: "round",
+  bubbleStyle: "ink",
+  sizePx: 128,
+};
+
+const PET_OVERLAY_POLICY_ELECTRON: PetOverlayPolicy = {
+  // Compact idle keeps the always-on-top footprint small; manual nudge drag is
+  // cross-platform (Electron has no reliable compositor "start dragging" IPC).
+  compactIdle: true,
+  cursorClickThrough: false,
+};
+
+/** Validate persisted pet prefs; merge into fallback, dropping nonsense values. */
+function normalizePetPrefs(raw: unknown): PetPrefs | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const enabled = o.enabled === true;
+  const visible = o.visible === true;
+  const hasPos = isFiniteNumber(o.x) && isFiniteNumber(o.y);
+  const str = (v: unknown): string | undefined =>
+    typeof v === "string" && v.trim() ? v : undefined;
+  const num = (v: unknown): number | undefined =>
+    isFiniteNumber(v) ? Math.round(v as number) : undefined;
+  // Build from the fallback, overriding only fields the caller actually supplied
+  // with a concrete value (exactOptionalPropertyTypes forbids `prop: undefined`).
+  const prefs: PetPrefs = { ...PET_PREFS_FALLBACK, enabled, visible };
+  const shape = str(o.shape);
+  if (shape) prefs.shape = shape;
+  const color = str(o.color);
+  if (color) prefs.color = color;
+  const eyeColor = str(o.eyeColor);
+  if (eyeColor) prefs.eyeColor = eyeColor;
+  const expression = str(o.expression);
+  if (expression) prefs.expression = expression;
+  if (typeof o.bubblesEnabled === "boolean") prefs.bubblesEnabled = o.bubblesEnabled;
+  if (typeof o.progressBarEnabled === "boolean") prefs.progressBarEnabled = o.progressBarEnabled;
+  const bubbleDismissSec = num(o.bubbleDismissSec);
+  if (bubbleDismissSec !== undefined) prefs.bubbleDismissSec = bubbleDismissSec;
+  const bubbleShape = str(o.bubbleShape);
+  if (bubbleShape) prefs.bubbleShape = bubbleShape;
+  const bubbleStyle = str(o.bubbleStyle);
+  if (bubbleStyle) prefs.bubbleStyle = bubbleStyle;
+  const sizePx = num(o.sizePx);
+  if (sizePx !== undefined) prefs.sizePx = sizePx;
+  if (hasPos) {
+    prefs.x = Math.round(o.x as number);
+    prefs.y = Math.round(o.y as number);
+  }
+  const overlayW = num(o.overlayW);
+  if (overlayW !== undefined) prefs.overlayW = overlayW;
+  const overlayH = num(o.overlayH);
+  if (overlayH !== undefined) prefs.overlayH = overlayH;
+  return prefs;
+}
+
+/** Pet position: persisted (when still on-screen) or bottom-right of the primary display. */
+function resolvePetPosition(pet: PetPrefs | undefined): {
+  x?: number;
+  y?: number;
+} {
+  if (pet && isFiniteNumber(pet.x) && isFiniteNumber(pet.y)) {
+    const x = pet.x as number;
+    const y = pet.y as number;
+    const w = isFiniteNumber(pet.overlayW) ? (pet.overlayW as number) : PET_WINDOW_SIZE;
+    const h = isFiniteNumber(pet.overlayH) ? (pet.overlayH as number) : PET_WINDOW_SIZE;
+    const visible = screen.getAllDisplays().some((d) => {
+      const b = d.workArea;
+      return x < b.x + b.width && x + w > b.x && y < b.y + b.height && y + h > b.y;
+    });
+    if (visible) return { x, y };
+  }
+  const area = screen.getPrimaryDisplay().workArea;
+  return {
+    x: area.x + area.width - PET_WINDOW_SIZE - PET_MARGIN,
+    y: area.y + area.height - PET_WINDOW_SIZE - PET_MARGIN,
+  };
+}
+
+function persistPetBounds(win: BrowserWindow): void {
+  if (win.isDestroyed()) return;
+  try {
+    const bounds = win.getBounds();
+    const prefs = loadDesktopPrefs();
+    const pet: PetPrefs = prefs.pet ?? PET_PREFS_FALLBACK;
+    saveDesktopPrefs({
+      ...prefs,
+      pet: {
+        ...pet,
+        x: Math.round(bounds.x),
+        y: Math.round(bounds.y),
+        overlayW: Math.round(bounds.width),
+        overlayH: Math.round(bounds.height),
+      },
+    });
+  } catch {
+    // ignore
+  }
+}
+
+function attachPetBoundsPersistence(win: BrowserWindow): void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = undefined;
+      persistPetBounds(win);
+    }, 250);
+  };
+  win.on("move", schedule);
+  win.on("close", () => {
+    if (timer) clearTimeout(timer);
+    persistPetBounds(win);
+  });
+}
+
+async function createPetWindow(): Promise<void> {
+  if (petWindow && !petWindow.isDestroyed()) return;
+  const prefs = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+  // First-paint prefs: inject the saved appearance into the renderer before React
+  // mounts so the mark never flashes the fallback color (green → picked color).
+  const petBoot = JSON.stringify({
+    shape: prefs.shape,
+    color: prefs.color,
+    eyeColor: prefs.eyeColor,
+    expression: prefs.expression,
+    sizePx: prefs.sizePx,
+    bubblesEnabled: prefs.bubblesEnabled,
+    progressBarEnabled: prefs.progressBarEnabled,
+    bubbleDismissSec: prefs.bubbleDismissSec,
+    bubbleShape: prefs.bubbleShape,
+    bubbleStyle: prefs.bubbleStyle,
+  });
+  const position = resolvePetPosition(prefs);
+  const width = isFiniteNumber(prefs.overlayW) ? (prefs.overlayW as number) : PET_WINDOW_SIZE;
+  const height = isFiniteNumber(prefs.overlayH) ? (prefs.overlayH as number) : PET_WINDOW_SIZE;
+  petWindow = new BrowserWindow({
+    width,
+    height,
+    ...(position.x !== undefined && position.y !== undefined
+      ? { x: position.x, y: position.y }
+      : {}),
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    // A desktop pet must never steal keyboard focus from the workbench — doing
+    // so mid-click makes the cursor jump and the main window flicker. `focusable:
+    // false` + `showInactive()` keep it a pure overlay (zeno-update parity).
+    focusable: false,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      preload: join(currentDirectory, "..", "preload", "preload.cjs"),
+      additionalArguments: [`--pet-boot=${petBoot}`],
+    },
+  });
+
+  // 宠物窗口与主窗口同一信任等级：拒绝导航离开本地入口、拒绝新开窗口。
+  const devServerOrigin = (() => {
+    const u = process.env.VITE_DEV_SERVER_URL;
+    if (!u) return undefined;
+    try {
+      return new URL(u).origin;
+    } catch {
+      return undefined;
+    }
+  })();
+  petWindow.webContents.on("will-navigate", (event, url) => {
+    const ok = devServerOrigin
+      ? (() => {
+          try {
+            return new URL(url).origin === devServerOrigin;
+          } catch {
+            return false;
+          }
+        })()
+      : url.startsWith("file:");
+    if (!ok) event.preventDefault();
+  });
+  petWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
+  attachPetBoundsPersistence(petWindow);
+  petWindow.once("ready-to-show", () => {
+    if (!petWindow || petWindow.isDestroyed()) return;
+    petWindow.showInactive();
+  });
+  // Replay prefs + current focus/tasks so the pet is not blank on first paint.
+  petWindow.webContents.once("did-finish-load", () => {
+    if (!petWindow || petWindow.isDestroyed()) return;
+    petWindow.webContents.send(PET_PREFS_CHANNEL, prefs);
+    if (lastPetFocus) petWindow.webContents.send(PET_FOCUS_CHANNEL, lastPetFocus);
+    petWindow.webContents.send(PET_TASKS_CHANNEL, lastPetTasks);
+  });
+
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    await petWindow.loadURL(`${devServerUrl.replace(/\/+$/, "")}/pet.html`);
+  } else {
+    await petWindow.loadFile(join(currentDirectory, "..", "renderer", "pet.html"));
+  }
+}
+
+function showPetWindow(): void {
+  if (petWindow && !petWindow.isDestroyed()) {
+    petWindow.showInactive();
+    return;
+  }
+  void createPetWindow();
+}
+
+function hidePetWindow(): void {
+  if (petWindow && !petWindow.isDestroyed()) petWindow.destroy();
+  petWindow = undefined;
+}
+
+/** Persist prefs then reconcile the window with `enabled && visible`. */
+function applyPetPrefs(prefs: PetPrefs): PetPrefs {
+  const current = loadDesktopPrefs();
+  saveDesktopPrefs({ ...current, pet: prefs });
+  if (prefs.enabled && prefs.visible) showPetWindow();
+  else hidePetWindow();
+  // Push the change to an already-open overlay so appearance edits (size/shape/
+  // color/expression) apply live. A freshly-created window is covered by the
+  // did-finish-load replay in createPetWindow; this send is a no-op for it.
+  if (petWindow && !petWindow.isDestroyed()) {
+    petWindow.webContents.send(PET_PREFS_CHANNEL, prefs);
+  }
+  // Also notify the main window so the settings "显示桌面宠物" toggle follows
+  // hides triggered from the pet's own context menu (not just the settings UI).
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(PET_PREFS_CHANNEL, prefs);
+  }
+  return prefs;
+}
+
+function showMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function sendPetCommand(command: PetCommand): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(PET_COMMAND_CHANNEL, command);
+  }
+}
+
+function readPetFrame(): PetOverlayFrame | null {
+  if (!petWindow || petWindow.isDestroyed()) return null;
+  const bounds = petWindow.getBounds();
+  const area = screen.getDisplayMatching(bounds).workArea;
+  return {
+    winX: bounds.x,
+    winY: bounds.y,
+    overlayW: bounds.width,
+    overlayH: bounds.height,
+    work: { x: area.x, y: area.y, w: area.width, h: area.height },
+  };
+}
+
+function normalizePetFocus(raw: unknown): PetFocus | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.kind !== "string" || !PET_KINDS.has(o.kind)) return null;
+  return {
+    kind: o.kind as PetFocus["kind"],
+    sessionId: typeof o.sessionId === "string" ? o.sessionId : null,
+    title: typeof o.title === "string" ? o.title : null,
+    toolTitle: typeof o.toolTitle === "string" ? o.toolTitle : null,
+    rank: typeof o.rank === "number" ? o.rank : 5,
+    updatedAt: typeof o.updatedAt === "number" ? o.updatedAt : 0,
+    composing: o.composing === true,
+  };
+}
+
+function normalizePetTasks(raw: unknown): PetTask[] {
+  if (!Array.isArray(raw)) return [];
+  const out: PetTask[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    if (typeof o.sessionId !== "string" || !o.sessionId) continue;
+    out.push({
+      sessionId: o.sessionId,
+      title: typeof o.title === "string" ? o.title : null,
+      snippet: typeof o.snippet === "string" ? o.snippet : null,
+      toolTitle: typeof o.toolTitle === "string" ? o.toolTitle : null,
+      kind:
+        typeof o.kind === "string" && PET_KINDS.has(o.kind)
+          ? (o.kind as PetTask["kind"])
+          : "working",
+      phase: o.phase === "done" ? "done" : "active",
+      progress: typeof o.progress === "number" ? Math.min(1, Math.max(0, o.progress)) : 0,
+      updatedAt: typeof o.updatedAt === "number" ? o.updatedAt : 0,
+    });
+  }
+  return out;
+}
+
+function registerPetIpc(): void {
+  ipcMain.handle("zeno:pet:get-prefs", (event) => {
+    assertTrustedSender(event);
+    return loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+  });
+  ipcMain.handle("zeno:pet:set-prefs", (event, raw: unknown) => {
+    assertTrustedSender(event);
+    const current = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+    const next = normalizePetPrefs(raw);
+    // Reject garbage without clobbering the saved appearance back to fallback.
+    if (!next) return current;
+    return applyPetPrefs({ ...current, ...next });
+  });
+  ipcMain.handle("zeno:pet:show", (event) => {
+    assertTrustedSender(event);
+    const prefs = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+    // Match zeno-update `show_pet`: showing also implies the pet is enabled,
+    // otherwise `enabled && visible` stays false and the toggle snaps back off.
+    return applyPetPrefs({ ...prefs, enabled: true, visible: true });
+  });
+  ipcMain.handle("zeno:pet:hide", (event) => {
+    assertTrustedSender(event);
+    const prefs = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+    return applyPetPrefs({ ...prefs, visible: false });
+  });
+  ipcMain.handle("zeno:pet:toggle", (event) => {
+    assertTrustedSender(event);
+    const prefs = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+    // Match zeno-update `pet_toggle`: flip visibility atomically so `/pet` in
+    // the composer shows or hides the companion in one round trip.
+    if (prefs.enabled && prefs.visible) {
+      return applyPetPrefs({ ...prefs, visible: false });
+    }
+    return applyPetPrefs({ ...prefs, enabled: true, visible: true });
+  });
+  ipcMain.handle("zeno:pet:get-focus", (event) => {
+    assertTrustedSender(event);
+    return lastPetFocus;
+  });
+  ipcMain.handle("zeno:pet:get-tasks", (event) => {
+    assertTrustedSender(event);
+    return lastPetTasks;
+  });
+  ipcMain.handle("zeno:pet:push-focus", (event, raw: unknown) => {
+    assertTrustedSender(event);
+    const next = normalizePetFocus(raw);
+    if (!next) return;
+    lastPetFocus = next;
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.webContents.send(PET_FOCUS_CHANNEL, next);
+    }
+  });
+  ipcMain.handle("zeno:pet:push-tasks", (event, raw: unknown) => {
+    assertTrustedSender(event);
+    const next = normalizePetTasks(raw);
+    lastPetTasks = next;
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.webContents.send(PET_TASKS_CHANNEL, next);
+    }
+  });
+  ipcMain.handle("zeno:pet:open-settings", (event) => {
+    assertTrustedSender(event);
+    showMainWindow();
+    sendPetCommand({ type: "open-settings" });
+  });
+  ipcMain.handle("zeno:pet:focus-session", (event, sessionId: unknown) => {
+    assertTrustedSender(event);
+    if (typeof sessionId !== "string" || !sessionId) return;
+    showMainWindow();
+    sendPetCommand({ type: "focus-session", sessionId });
+  });
+  ipcMain.handle("zeno:pet:show-main", (event) => {
+    assertTrustedSender(event);
+    showMainWindow();
+  });
+  ipcMain.handle("zeno:pet:set-hit-chrome", (event) => {
+    assertTrustedSender(event);
+    // Tauri click-through hit regions are not needed: Electron keeps the whole
+    // overlay interactive (policy.cursorClickThrough === false).
+  });
+  ipcMain.handle("zeno:pet:read-frame", (event) => {
+    assertTrustedSender(event);
+    return readPetFrame();
+  });
+  ipcMain.handle("zeno:pet:sync-size", (event, bounds: unknown) => {
+    assertTrustedSender(event);
+    if (!petWindow || petWindow.isDestroyed()) return;
+    if (!bounds || typeof bounds !== "object") return;
+    const o = bounds as Record<string, unknown>;
+    if (
+      !isFiniteNumber(o.x) ||
+      !isFiniteNumber(o.y) ||
+      !isFiniteNumber(o.width) ||
+      !isFiniteNumber(o.height)
+    ) {
+      return;
+    }
+    petWindow.setBounds({
+      x: Math.round(o.x as number),
+      y: Math.round(o.y as number),
+      width: Math.round(o.width as number),
+      height: Math.round(o.height as number),
+    });
+  });
+  ipcMain.handle("zeno:pet:set-dragging", (event) => {
+    assertTrustedSender(event);
+  });
+  ipcMain.handle("zeno:pet:set-menu-open", (event) => {
+    assertTrustedSender(event);
+  });
+  ipcMain.handle("zeno:pet:set-ignore-cursor", (event) => {
+    assertTrustedSender(event);
+  });
+  ipcMain.handle("zeno:pet:start-dragging", (event) => {
+    assertTrustedSender(event);
+    // Electron uses manual nudge (petShouldManualDrag), so OS startDragging is a no-op.
+  });
+  ipcMain.handle("zeno:pet:nudge", (event, dx: unknown, dy: unknown) => {
+    assertTrustedSender(event);
+    if (!petWindow || petWindow.isDestroyed()) return;
+    if (typeof dx !== "number" || typeof dy !== "number") return;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+    const b = petWindow.getBounds();
+    petWindow.setPosition(Math.round(b.x + dx), Math.round(b.y + dy));
+  });
+  ipcMain.handle("zeno:pet:policy", (event) => {
+    assertTrustedSender(event);
+    return PET_OVERLAY_POLICY_ELECTRON;
   });
 }
 
@@ -4592,6 +5066,9 @@ class HostSupervisor {
 }
 
 let mainWindow: BrowserWindow | undefined;
+let petWindow: BrowserWindow | undefined;
+let lastPetFocus: PetFocus | null = null;
+let lastPetTasks: PetTask[] = [];
 let autoUpdate: AutoUpdateController | undefined;
 let supervisor: HostSupervisor | undefined;
 let themeLibrary: ThemeLibrary | undefined;
@@ -4871,6 +5348,12 @@ async function createWindow(): Promise<void> {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     if (savedWindow.isMaximized) mainWindow.maximize();
     mainWindow.show();
+  });
+  mainWindow.on("closed", () => {
+    // The pet mirrors the main renderer's run state; close it with the main window so
+    // window-all-closed still fires and the app exits cleanly.
+    if (petWindow && !petWindow.isDestroyed()) petWindow.destroy();
+    petWindow = undefined;
   });
   supervisor = new HostSupervisor(mainWindow);
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -5350,6 +5833,11 @@ void app
     }
 
     await createWindow();
+    const bootPetPrefs = loadDesktopPrefs().pet ?? PET_PREFS_FALLBACK;
+    if (bootPetPrefs.enabled && bootPetPrefs.visible) void createPetWindow();
+
+    registerPetIpc();
+
     autoUpdate = createAutoUpdateController({
       broadcast: (status) => {
         if (!mainWindow || mainWindow.isDestroyed()) return;

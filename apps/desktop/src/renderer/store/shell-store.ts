@@ -94,6 +94,7 @@ export type SettingsSection =
   | "environment"
   | "worktree"
   | "behavior"
+  | "pet"
   | "git"
   | "usage"
   | "notifications"

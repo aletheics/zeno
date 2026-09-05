@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" style="color-scheme: dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zeno · 桌面伴侣</title>
+    <style>
+      /* Transparent frameless pet window: no product background, no scrollbars. */
+      html,
+      body,
+      #root {
+        height: 100% !important;
+        min-height: 100% !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        background: transparent !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/pet-main.tsx"></script>
+  </body>
+</html>

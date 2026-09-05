@@ -30,6 +30,7 @@ import type {
 import {
   ArrowUp,
   Boxes,
+  Cat,
   Check,
   ChevronDown,
   ChevronRight,
@@ -554,6 +555,8 @@ function commandSourceIcon(command: SlashCommandSummary) {
       return <LogIn {...ICON_SM} />;
     case "mcp":
       return <Boxes {...ICON_SM} />;
+    case "pet":
+      return <Cat {...ICON_SM} />;
     default:
       return <Slash {...ICON_SM} />;
   }

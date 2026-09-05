@@ -92,15 +92,7 @@ const rendererDev = runVp(
 // Wait for dev server to be ready.
 await new Promise((r) => setTimeout(r, 2000));
 
-// ── 3. Start build watchers ──
-console.log("[watch] Starting build watchers for main / preload / agent ...");
-const buildProcs = [
-  runVp(["build", "--watch", "--config", "vite.main.config.ts"]),
-  runVp(["build", "--watch", "--config", "vite.preload.config.ts"]),
-  runVp(["build", "--watch", "--config", "vite.agent.config.ts"]),
-];
-
-// ── 4. Electron lifecycle ──
+// ── 3. Electron lifecycle ──
 let electronProc = null;
 let restartTimer = null;
 let pendingRestart = false;
@@ -202,6 +194,17 @@ for (const file of distOutputs) {
 // ── 5. Launch Electron ──
 void launchElectron();
 
+// ── 6. Start build watchers (after Electron has loaded its main bundle) ──
+// Started AFTER launchElectron so the watchers' initial rebuild cannot race
+// Electron's first read of dist/main/main.mjs (the intermittent "Cannot find
+// module" failure on alternate runs).
+console.log("[watch] Starting build watchers for main / preload / agent ...");
+const buildProcs = [
+  runVp(["build", "--watch", "--config", "vite.main.config.ts"]),
+  runVp(["build", "--watch", "--config", "vite.preload.config.ts"]),
+  runVp(["build", "--watch", "--config", "vite.agent.config.ts"]),
+];
+
 // ── 6. Cleanup ──
 let cleaning = false;
 async function cleanup() {
@@ -219,7 +222,12 @@ async function cleanup() {
   await killElectron();
   for (const proc of [rendererDev, ...buildProcs]) {
     try {
-      proc.kill("SIGTERM");
+      if (isWin) {
+        const { execSync: exec } = require("node:child_process");
+        exec(`taskkill /pid ${proc.pid} /T /F 2>nul`, { stdio: "ignore" });
+      } else {
+        proc.kill("SIGTERM");
+      }
     } catch {
       // ignore
     }
