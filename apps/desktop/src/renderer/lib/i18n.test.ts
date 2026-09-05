@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { DEFAULT_LOCALE, isLocale, t } from "./i18n.ts";
+import { DEFAULT_LOCALE, isLocale, messages, t } from "./i18n.ts";
 
 describe("i18n", () => {
   it("defaults to Chinese", () => {
@@ -36,5 +36,21 @@ describe("i18n", () => {
     expect(t("zh", "piSettings.queueSectionHint")).toContain("引导");
     expect(t("zh", "slash.builtin.tree")).toContain("会话树");
     expect(t("en", "slash.builtin.tree").toLowerCase()).toContain("tree");
+  });
+});
+
+describe("i18n key sync", () => {
+  it("keeps zh and en keys in lockstep", () => {
+    const zh = Object.keys(messages.zh);
+    const en = Object.keys(messages.en);
+    const enSet = new Set(en);
+    const zhSet = new Set(zh);
+
+    const onlyInZh = zh.filter((key) => !enSet.has(key));
+    const onlyInEn = en.filter((key) => !zhSet.has(key));
+
+    // 任何一侧缺键/多键都会让 CI 直接失败，防止新增文案只改一种语言。
+    expect(onlyInEn, `keys missing from zh (present in en): ${onlyInEn.join(", ")}`).toEqual([]);
+    expect(onlyInZh, `keys missing from en (present in zh): ${onlyInZh.join(", ")}`).toEqual([]);
   });
 });

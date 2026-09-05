@@ -1,6 +1,6 @@
 export type Locale = "zh" | "en";
 
-const messages = {
+export const messages = {
   zh: {
     "app.name": "Zeno",
     "timeline.thinking": "思考过程",
