@@ -109,6 +109,7 @@ import {
   listPiConfigFiles,
   normalizePiSdkPrefs,
   normalizePiSdkSource,
+  npmRegistryBaseUrl,
   piSdkSpawnEnv,
   resolveActiveCliPath,
   resolveBuiltinSdk,
@@ -1714,7 +1715,7 @@ async function searchPiPackageCatalog(
   const text = q ? `keywords:pi-package ${q}` : "keywords:pi-package";
   const limit = Math.min(100, Math.max(1, Math.floor(size)));
   const offset = Math.max(0, Math.floor(from));
-  const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
+  const url = `${npmRegistryBaseUrl()}/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "zeno-desktop" },
   });
@@ -1821,7 +1822,7 @@ async function searchMcpCatalog(
   const text = q ? `mcp server ${q}` : "mcp server";
   const limit = Math.min(100, Math.max(1, Math.floor(size)));
   const offset = Math.max(0, Math.floor(from));
-  const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
+  const url = `${npmRegistryBaseUrl()}/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "zeno-desktop" },
   });

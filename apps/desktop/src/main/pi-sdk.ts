@@ -433,6 +433,27 @@ export type LatestPiSdkVersionResult = {
 };
 
 /**
+ * Resolve the npm registry base URL from `npm_config_registry` env or `~/.npmrc`,
+ * falling back to `https://registry.npmjs.org`. Honors regional mirrors (e.g.
+ * `registry.npmmirror.com`) so version/catalog lookups don't fail behind a
+ * network where npmjs.org is unreachable.
+ */
+export function npmRegistryBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+  const override = env.npm_config_registry?.trim();
+  if (override) return override.replace(/\/+$/, "");
+  try {
+    const npmrcPath = join(env.HOME || env.USERPROFILE || homedir(), ".npmrc");
+    if (existsSync(npmrcPath)) {
+      const match = /^\s*registry\s*=\s*(\S+)\s*$/m.exec(readFileSync(npmrcPath, "utf8"));
+      if (match?.[1]) return match[1].replace(/\/+$/, "");
+    }
+  } catch {
+    // fall through to default
+  }
+  return "https://registry.npmjs.org";
+}
+
+/**
  * Fetch latest `@earendil-works/pi-coding-agent` from the npm registry.
  * Cached briefly so Settings refresh is snappy.
  */
@@ -464,7 +485,7 @@ export async function fetchLatestPiSdkVersion(
   }
 
   try {
-    const url = `https://registry.npmjs.org/${encodeURIComponent(PI_SDK_PACKAGE)}/latest`;
+    const url = `${npmRegistryBaseUrl()}/${encodeURIComponent(PI_SDK_PACKAGE)}/latest`;
     const res = await fetchFn(url, {
       headers: { accept: "application/json" },
       signal: AbortSignal.timeout(12_000),
