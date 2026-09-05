@@ -138,22 +138,48 @@ async function launchElectron() {
   // Brief pause so OS releases file locks (disk cache, GPU cache).
   await new Promise((r) => setTimeout(r, 400));
   console.log("[watch] Launching Electron ...");
-  electronProc = run(electron, [desktopDir], {
+  const child = spawn(electron, [desktopDir], {
+    cwd: desktopDir,
+    stdio: ["inherit", "pipe", "inherit"],
     env: {
       ...prepared.environment,
       VITE_DEV_SERVER_URL: devServerUrl,
     },
   });
-  electronProc.on("exit", (code, signal) => {
+  electronProc = child;
+  child.on("exit", (code, signal) => {
     if (!pendingRestart) {
       console.log(`[watch] Electron exited (code ${code ?? signal})`);
     }
-    electronProc = null;
+    if (electronProc === child) electronProc = null;
   });
-  electronProc.on("error", (err) => {
+  child.on("error", (err) => {
     console.error("[watch] Electron failed to start:", err.message);
-    electronProc = null;
+    if (electronProc === child) electronProc = null;
   });
+
+  // Wait for the main bundle to load (the "[zeno:main-ready]" sentinel printed
+  // by dist/main/main.mjs) before returning. This lets the caller start build
+  // watchers only after Electron has read the bundle, so the watchers' initial
+  // emptyOutDir rebuild cannot delete dist/main under a still-loading Electron.
+  await new Promise((resolve) => {
+    let settled = false;
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    let stdout = "";
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+      if (stdout.includes("[zeno:main-ready]")) settle();
+    });
+    child.once("error", settle);
+    child.once("exit", settle);
+    // Fallback so a hung or crashed launch never blocks the watchers forever.
+    setTimeout(settle, 15_000);
+  });
+
   // Block restarts for a grace period so build-watcher initial builds don't trigger a second window.
   startupGraceUntil = Date.now() + STARTUP_GRACE_MS;
 }
@@ -191,19 +217,22 @@ for (const file of distOutputs) {
   }
 }
 
-// ── 5. Launch Electron ──
-void launchElectron();
+// ── 5. Launch Electron (awaits main-bundle load) ──
+await launchElectron();
 
 // ── 6. Start build watchers (after Electron has loaded its main bundle) ──
-// Started AFTER launchElectron so the watchers' initial rebuild cannot race
-// Electron's first read of dist/main/main.mjs (the intermittent "Cannot find
-// module" failure on alternate runs).
+// Started only after Electron signals its main bundle is loaded, so the
+// watchers' initial emptyOutDir rebuild cannot race Electron's first read of
+// dist/main/main.mjs (the intermittent "Cannot find module" failure).
 console.log("[watch] Starting build watchers for main / preload / agent ...");
 const buildProcs = [
   runVp(["build", "--watch", "--config", "vite.main.config.ts"]),
   runVp(["build", "--watch", "--config", "vite.preload.config.ts"]),
   runVp(["build", "--watch", "--config", "vite.agent.config.ts"]),
 ];
+// The watchers' initial rebuild empties + rewrites dist outputs; suppress the
+// spurious restart it would otherwise trigger right after launch.
+startupGraceUntil = Date.now() + STARTUP_GRACE_MS;
 
 // ── 6. Cleanup ──
 let cleaning = false;

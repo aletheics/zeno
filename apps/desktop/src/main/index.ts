@@ -207,6 +207,11 @@ function bootstrapBundledRuntimesAndPath(): void {
   applyManagedRuntimeToProcessEnv(process.env);
 }
 
+// Signal the dev watch launcher (scripts/watch.mjs) that the main bundle has
+// loaded, so it starts build watchers only after Electron has read this module.
+// Avoids the intermittent "Cannot find module" race on launch.
+process.stdout.write("[zeno:main-ready]\n");
+
 // Prefs helpers below are function declarations (hoisted). Configure bundled
 // runtimes + PATH before LAUNCH_ENV snapshots / child spawns.
 bootstrapBundledRuntimesAndPath();
