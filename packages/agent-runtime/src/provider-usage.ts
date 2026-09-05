@@ -6,6 +6,7 @@ import {
   parseCodexUsage,
   parseCopilotUsage,
   parseDeepSeekUsage,
+  parseMoonshotUsage,
   parseOpenRouterUsage,
   parseZaiUsage,
   type ParsedProviderUsage,
@@ -36,6 +37,16 @@ interface HostUsageEndpoint {
 /** Balance endpoints that can be inferred from a custom provider's base URL host. */
 const HOST_USAGE_ENDPOINTS: HostUsageEndpoint[] = [
   { host: "api.deepseek.com", endpoint: ENDPOINTS.deepseekBalance, parse: parseDeepSeekUsage },
+  {
+    host: "api.moonshot.cn",
+    endpoint: "https://api.moonshot.cn/v1/users/me/balance",
+    parse: parseMoonshotUsage,
+  },
+  {
+    host: "api.moonshot.ai",
+    endpoint: "https://api.moonshot.ai/v1/users/me/balance",
+    parse: parseMoonshotUsage,
+  },
 ];
 
 function matchUsageEndpoint(baseUrl: string): HostUsageEndpoint | undefined {

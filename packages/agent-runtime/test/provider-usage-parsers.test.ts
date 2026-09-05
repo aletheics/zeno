@@ -4,6 +4,7 @@ import {
   parseCodexUsage,
   parseCopilotUsage,
   parseDeepSeekUsage,
+  parseMoonshotUsage,
   parseOpenRouterUsage,
   parseZaiUsage,
 } from "../src/provider-usage-parsers.ts";
@@ -235,6 +236,22 @@ describe("provider usage parsers", () => {
     expect(usage.limits).toEqual([]);
     expect(usage.usageLines).toEqual([
       { label: "Balance", value: expect.stringContaining("110.00") },
+    ]);
+  });
+
+  it("maps Moonshot account balance", () => {
+    const usage = parseMoonshotUsage({
+      code: 0,
+      data: {
+        available_balance: 49.58894,
+        voucher_balance: 46.58893,
+        cash_balance: 3.00001,
+      },
+    });
+
+    expect(usage.limits).toEqual([]);
+    expect(usage.usageLines).toEqual([
+      { label: "Balance", value: expect.stringContaining("$49.59") },
     ]);
   });
 });

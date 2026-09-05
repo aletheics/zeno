@@ -343,3 +343,23 @@ export function parseDeepSeekUsage(json: unknown): ParsedProviderUsage {
   }
   return { limits: [], usageLines };
 }
+
+export function parseMoonshotUsage(json: unknown): ParsedProviderUsage {
+  const root = asRecord(json);
+  const data = asRecord(root?.data);
+  const available = asNumber(data?.available_balance);
+  const voucher = asNumber(data?.voucher_balance);
+  const cash = asNumber(data?.cash_balance);
+  const usageLines: ProviderUsageLine[] = [];
+  if (available !== undefined) {
+    const breakdown =
+      voucher !== undefined && cash !== undefined
+        ? ` (cash ${formatUsd(cash)} + voucher ${formatUsd(voucher)})`
+        : "";
+    usageLines.push({
+      label: "Balance",
+      value: `${formatUsd(available)} remaining${breakdown}`,
+    });
+  }
+  return { limits: [], usageLines };
+}
