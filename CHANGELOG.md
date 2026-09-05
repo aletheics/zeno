@@ -3,6 +3,32 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
+## [0.1.6] - 2026-09-05
+
+### Added
+
+- A living desktop pet ("bloub") now accompanies Zeno: a morphing SVG companion
+  with its own engine, tuned from Settings → Pet (look and bubbles tabs, with
+  size / color / shape / expression / eye pickers) and toggled with the `/pet`
+  slash command. Its overlay window never steals focus and boots straight into
+  your chosen color without a flash.
+
+### Changed
+
+- Bundled pi runtime upgraded to 0.85.0.
+- Native `window.confirm`/`alert` dialogs (pi SDK switch, theme studio,
+  archive, custom-model removal) are replaced with the in-app ConfirmDialog.
+
+### Fixed
+
+- `target=_blank` links — the plugin catalog and "open in web" actions — now
+  open in the system browser instead of an in-app window that goes nowhere.
+- Reply streaming no longer stalls on a sequence gap, and the live tail is
+  preserved when you re-open a session.
+- The dev watch launcher no longer intermittently fails at launch with
+  "Cannot find module": build watchers now start only after Electron has loaded
+  the main bundle.
+
 ## [0.1.5] - 2026-08-26
 
 ### Fixed
