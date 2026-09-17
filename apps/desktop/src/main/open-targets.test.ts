@@ -11,16 +11,31 @@ const h = vi.hoisted(() => ({
   tmp: "",
   /** `"cmd arg0"` pairs that should resolve, e.g. `"which code"`. */
   resolvable: new Set<string>(),
+  /**
+   * stdout for a resolvable command. Windows discovery reads `where.exe` output as a list
+   * of paths and keeps the first that exists, so success alone is not enough there.
+   */
+  stdout: new Map<string, string>(),
+  /** Same keys, but failing on the first call so a fallback path can be exercised. */
+  failOnce: new Set<string>(),
   /** Absolute paths whose icon lookup should fail. */
   iconFails: new Set<string>(),
+  /** Every spawn, with argv and the `cwd` option kept apart — see the openInApp tests. */
+  calls: [] as Array<{ cmd: string; args: string[]; cwd: string | undefined }>,
 }));
 
 vi.mock("node:os", () => ({ homedir: () => h.home, tmpdir: () => h.tmp }));
 
 vi.mock("node:child_process", async () => {
   const { promisify } = await import("node:util");
-  const run = async (cmd: string, args: string[] = []) => {
-    if (h.resolvable.has(`${cmd} ${args[0] ?? ""}`.trim())) return { stdout: "", stderr: "" };
+  const run = async (cmd: string, args: string[] = [], opts?: { cwd?: string }) => {
+    h.calls.push({ cmd, args, cwd: opts?.cwd });
+    const key = `${cmd} ${args[0] ?? ""}`.trim();
+    if (h.failOnce.has(key)) {
+      h.failOnce.delete(key);
+      throw new Error(`${cmd} failed once`);
+    }
+    if (h.resolvable.has(key)) return { stdout: h.stdout.get(key) ?? "", stderr: "" };
     throw new Error(`${cmd} not found`);
   };
   // open-targets.ts builds its promisified form via `promisify(execFile)`, which resolves
@@ -29,7 +44,8 @@ vi.mock("node:child_process", async () => {
   const execFile = (() => {
     throw new Error("callback form unused");
   }) as unknown as Record<PropertyKey, unknown> & ((...a: unknown[]) => void);
-  execFile[promisify.custom] = (cmd: string, args: string[]) => run(cmd, args);
+  execFile[promisify.custom] = (cmd: string, args: string[], opts?: { cwd?: string }) =>
+    run(cmd, args, opts);
   return { execFile };
 });
 
@@ -57,7 +73,7 @@ vi.mock("electron", () => {
   };
 });
 
-import { listOpenTargets } from "./open-targets.ts";
+import { listOpenTargets, openInApp } from "./open-targets.ts";
 
 let root = "";
 
@@ -78,7 +94,10 @@ beforeEach(() => {
   h.tmp = join(root, "tmp");
   mkdirSync(h.tmp, { recursive: true });
   h.resolvable.clear();
+  h.stdout.clear();
+  h.failOnce.clear();
   h.iconFails.clear();
+  h.calls.length = 0;
 });
 
 afterEach(() => {
@@ -146,5 +165,106 @@ describe("listOpenTargets", () => {
 
     const ids = (await listOpenTargets("/work")).map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("openInApp", () => {
+  /** Spawns that are actually the requested launch (not discovery probes). */
+  const launches = (cmd: string) => h.calls.filter((c) => c.cmd === cmd);
+
+  it("rejects an unknown app id without spawning anything", async () => {
+    setPlatform("darwin");
+    h.resolvable.add("which x"); // keep the probe from masking the assertion
+    await expect(openInApp("not-installed", "/work")).rejects.toThrow();
+    expect(h.calls.filter((c) => c.cmd === "open")).toHaveLength(0);
+  });
+
+  it("opens the folder itself for a finder-kind app on each platform", async () => {
+    for (const [platform, appId, cmd] of [
+      ["darwin", "finder", "open"],
+      ["win32", "explorer", "explorer"],
+      ["linux", "files", "xdg-open"],
+    ] as const) {
+      setPlatform(platform);
+      h.calls.length = 0;
+      // Finder is only offered when its bundle resolves.
+      if (platform === "darwin") makeApp("Finder");
+      h.resolvable.add(`${cmd} /work`);
+      await openInApp(appId, "/work");
+      // Path is an argv element, never interpolated into a shell string.
+      expect(launches(cmd)[0]?.args).toEqual(["/work"]);
+    }
+  });
+
+  it("never concatenates the path into a shell command string", async () => {
+    setPlatform("win32");
+    for (const exe of ["wt", "cmd", "powershell"]) {
+      const exePath = join(root, "bin", `${exe}.exe`);
+      mkdirSync(join(root, "bin"), { recursive: true });
+      writeFileSync(exePath, "");
+      const key = `where.exe ${exe}`;
+      h.resolvable.add(key);
+      h.stdout.set(
+        key,
+        `${exePath}
+`,
+      );
+      h.resolvable.add(exe === "wt" ? "wt -d" : exe === "cmd" ? "cmd /c" : "powershell -NoExit");
+    }
+    // Every character that would matter if the path were ever interpolated into a string.
+    const hostile = '/work; calc & `id` $(whoami) "x"';
+
+    for (const [appId, cmd] of [
+      ["wt", "wt"],
+      ["cmd", "cmd"],
+      ["powershell", "powershell"],
+    ] as const) {
+      h.calls.length = 0;
+      await openInApp(appId, hostile);
+      const call = launches(cmd)[0];
+
+      // The path may only ever be its own argv element or the cwd option — never a
+      // substring of a longer element, which is what string-building a command looks like.
+      expect(call?.args.some((a) => a !== hostile && a.includes(hostile))).toBe(false);
+      const asArgv = call?.args.includes(hostile) ?? false;
+      if (appId === "wt") {
+        // `wt -d <path>`: the path is argv[1].
+        expect(asArgv).toBe(true);
+      } else {
+        // `cmd` / `powershell`: the path travels in the cwd option, absent from argv.
+        expect(call?.cwd).toBe(hostile);
+        expect(asArgv).toBe(false);
+      }
+    }
+  });
+
+  it("escapes the path inside the AppleScript instead of interpolating it raw", async () => {
+    setPlatform("darwin");
+    makeApp("Terminal");
+    h.resolvable.add("osascript -e");
+    const hostile = '/tmp/He said "hi"; rm -rf /';
+
+    await openInApp("terminal", hostile);
+
+    const script = launches("osascript")[0]?.args[1] ?? "";
+    // The raw path cannot appear verbatim once its quotes are escaped...
+    expect(script).not.toContain(hostile);
+    expect(script).toContain('\\"');
+    // ...and it is handed to AppleScript's own shell-safe quoting.
+    expect(script).toContain("quoted form of");
+  });
+
+  it("retries a Linux terminal without --working-directory when the first form fails", async () => {
+    setPlatform("linux");
+    h.resolvable.add("which gnome-terminal");
+    // First form fails; the plain-cwd retry must be what actually succeeds.
+    h.failOnce.add("gnome-terminal --working-directory");
+    h.resolvable.add("gnome-terminal /work");
+
+    await openInApp("gnome-terminal", "/work");
+
+    const attempts = launches("gnome-terminal").map((c) => c.args);
+    expect(attempts[0]).toEqual(["--working-directory", "/work"]);
+    expect(attempts[1]).toEqual(["/work"]);
   });
 });

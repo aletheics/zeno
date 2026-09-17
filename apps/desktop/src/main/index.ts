@@ -126,7 +126,7 @@ import {
   type ProxyPrefs,
 } from "./proxy-prefs.ts";
 import { discoverLocalProxies } from "./proxy-discover.ts";
-import { listOpenTargets } from "./open-targets.ts";
+import { listOpenTargets, openInApp } from "./open-targets.ts";
 import {
   applyManagedRuntimeToProcessEnv,
   captureManagedPathBase,
@@ -1462,91 +1462,6 @@ async function resolveMcpNodeEntry(
   } catch {
     return null;
   }
-}
-
-async function openInApp(appId: string, cwd: string): Promise<void> {
-  const apps = await listOpenTargets(cwd);
-  const found = apps.find((a) => a.id === appId);
-  if (!found) throw new Error(`未找到应用: ${appId}`);
-
-  if (found.kind === "finder") {
-    // Open folder itself (not "reveal file") for project roots.
-    if (process.platform === "darwin") {
-      await execFileAsync("open", [cwd], { windowsHide: true });
-      return;
-    }
-    if (process.platform === "win32") {
-      await execFileAsync("explorer", [cwd], { windowsHide: true });
-      return;
-    }
-    await execFileAsync("xdg-open", [cwd], { windowsHide: true });
-    return;
-  }
-
-  if (process.platform === "darwin") {
-    // Terminal apps: open with working directory
-    if (found.kind === "terminal") {
-      if (found.id === "terminal") {
-        // Apple Terminal via AppleScript so cwd is applied.
-        // `quoted form of` 让 shell 安全引用路径，杜绝 `$()` / 反引号 / `;` 等注入。
-        const script = `tell application "Terminal" to do script "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-        await execFileAsync("osascript", ["-e", script], { windowsHide: true });
-        return;
-      }
-      if (found.id === "iterm" || found.id === "iterm2") {
-        const script = `tell application "iTerm"
-  activate
-  try
-    tell current window
-      create tab with default profile
-      tell current session
-        write text "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
-      end tell
-    end tell
-  on error
-    create window with default profile
-    tell current session of current window
-      write text "cd " & quoted form of "${cwd.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"
-    end tell
-  end try
-end tell`;
-        await execFileAsync("osascript", ["-e", script], { windowsHide: true });
-        return;
-      }
-    }
-    await execFileAsync("open", ["-a", found.target, cwd], { windowsHide: true });
-    return;
-  }
-  if (process.platform === "win32") {
-    if (found.id === "wt") {
-      await execFileAsync("wt", ["-d", cwd], { windowsHide: true });
-      return;
-    }
-    if (found.id === "cmd") {
-      // 用 cwd 选项让新窗口继承工作目录，避免把路径拼进 shell 命令。
-      await execFileAsync("cmd", ["/c", "start", "", "cmd", "/k"], {
-        cwd,
-        windowsHide: true,
-      });
-      return;
-    }
-    if (found.id === "powershell") {
-      // 用 cwd 选项设置工作目录，去掉 -Command + shell 拼接。
-      await execFileAsync("powershell", ["-NoExit"], { cwd, windowsHide: true });
-      return;
-    }
-    await execFileAsync(found.target, [cwd], { windowsHide: true });
-    return;
-  }
-  if (found.kind === "terminal") {
-    await execFileAsync(found.target, ["--working-directory", cwd], { windowsHide: true }).catch(
-      async () => {
-        await execFileAsync(found.target, [cwd], { windowsHide: true });
-      },
-    );
-    return;
-  }
-  await execFileAsync(found.target, [cwd], { windowsHide: true });
 }
 
 /** Restored BrowserWindow geometry (userData/zeno-desktop.json). */
