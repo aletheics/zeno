@@ -141,7 +141,7 @@ import {
   workspaceLabel,
 } from "./lib/workspace.ts";
 import { appendHostEvent } from "./lib/host-events.ts";
-import { deriveRunState, historyToTimeline, type TimelineItem } from "./lib/timeline.ts";
+import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
 import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
@@ -608,16 +608,16 @@ function App() {
     );
     return () => bridge.stop();
   }, []);
-  const timeline = useMemo(() => {
-    // history = session JSONL at open; liveStream = append-only log for this session
-    // (streamed text only grows). Do not re-project deltas from the events ring.
-    const items = [...historyToTimeline(history), ...liveStream.items].filter(
-      (item) => !(snapshot?.hideThinkingBlock && item.kind === "thinking"),
-    );
-    // Prefix ids with session so React does not reuse rows across switches.
-    if (!sessionKey) return items;
-    return items.map((item) => ({ ...item, id: `${sessionKey}:${item.id}` }));
-  }, [history, liveStream, sessionKey, snapshot?.hideThinkingBlock]);
+  const timeline = useMemo(
+    () =>
+      projectTimeline({
+        history,
+        liveItems: liveStream.items,
+        sessionKey,
+        hideThinkingBlock: snapshot?.hideThinkingBlock,
+      }),
+    [history, liveStream, sessionKey, snapshot?.hideThinkingBlock],
+  );
   const hasActivity = timeline.length > 0;
   const waitingForInput = runState === "waiting" || foregroundMarkerState === "waiting";
   const activeThread = threads.find((thread) => thread.active);

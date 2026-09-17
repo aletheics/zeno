@@ -1,4 +1,5 @@
 import type { HostEvent, RuntimeEvent } from "@zeno/contracts";
+import type { TimelineItem } from "./timeline.ts";
 import { IPC_PROTOCOL_VERSION } from "@zeno/contracts";
 import { describe, expect, it } from "vite-plus/test";
 import {
@@ -10,6 +11,7 @@ import {
   historyToTimeline,
   processBlockCoversLiveActivity,
   projectEventsToTimeline,
+  projectTimeline,
   splitAttachedPaths,
   groupDurationMs,
   hasIndependentToolDuration,
@@ -561,5 +563,75 @@ describe("process activity", () => {
       },
     ]);
     expect(processBlockCoversLiveActivity(blocks, { phase: "compacting" })).toBe(true);
+  });
+});
+
+describe("projectTimeline", () => {
+  const user = (id: string, text: string): TimelineItem => ({ id, kind: "user", text });
+  const assistant = (id: string, text: string): TimelineItem => ({ id, kind: "assistant", text });
+  const thinking = (id: string, text: string): TimelineItem => ({ id, kind: "thinking", text });
+
+  it("appends this session's live items after the opened history", () => {
+    const items = projectTimeline({
+      // historyToTimeline projects SessionHistoryMessage rows; two turns keep it simple.
+      history: [
+        { role: "user", text: "hi" },
+        { role: "assistant", text: "hello" },
+      ] as never,
+      liveItems: [assistant("live-1", "streaming")],
+      sessionKey: "s1",
+    });
+
+    expect(items.map((i) => i.kind)).toEqual(["user", "assistant", "assistant"]);
+    expect(items.at(-1)).toMatchObject({ kind: "assistant", text: "streaming" });
+  });
+
+  it("drops thinking rows only when hideThinkingBlock is set", () => {
+    const options = {
+      history: [] as never[],
+      liveItems: [thinking("t1", "hmm"), assistant("a1", "answer")],
+      sessionKey: "s1",
+    };
+
+    expect(projectTimeline({ ...options, hideThinkingBlock: true }).map((i) => i.kind)).toEqual([
+      "assistant",
+    ]);
+    expect(projectTimeline({ ...options, hideThinkingBlock: false }).map((i) => i.kind)).toEqual([
+      "thinking",
+      "assistant",
+    ]);
+    // Absent is not the same as false, but must behave as "show".
+    expect(projectTimeline(options).map((i) => i.kind)).toEqual(["thinking", "assistant"]);
+  });
+
+  it("scopes ids to the session so React cannot reuse a row across a switch", () => {
+    const liveItems = [user("u1", "hi")];
+
+    const first = projectTimeline({ history: [], liveItems, sessionKey: "s1" });
+    const second = projectTimeline({ history: [], liveItems, sessionKey: "s2" });
+
+    expect(first[0]?.id).toBe("s1:u1");
+    expect(second[0]?.id).toBe("s2:u1");
+    // The same logical row must not keep its identity when the session changes.
+    expect(first[0]?.id).not.toBe(second[0]?.id);
+  });
+
+  it("leaves ids alone when no session is bound yet", () => {
+    const items = projectTimeline({
+      history: [],
+      liveItems: [user("u1", "hi")],
+      sessionKey: "",
+    });
+    expect(items[0]?.id).toBe("u1");
+  });
+
+  it("does not mutate the items it was given", () => {
+    // The live stream is store state; mutating it here would corrupt it for later renders.
+    const liveItems = [user("u1", "hi")];
+    const snapshot = structuredClone(liveItems);
+
+    projectTimeline({ history: [], liveItems, sessionKey: "s1", hideThinkingBlock: true });
+
+    expect(liveItems).toEqual(snapshot);
   });
 });

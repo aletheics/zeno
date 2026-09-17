@@ -121,6 +121,34 @@ export function deriveRunState(input: {
   return "idle";
 }
 
+/**
+ * The rows the chat renders: opened history, then this session's live items appended.
+ *
+ * Two contracts live here rather than inline in the shell:
+ * - `hideThinkingBlock` drops thinking rows.
+ * - Ids are prefixed with the session key so React cannot reuse a row across a session
+ *   switch — which would briefly render the *previous* session's content under the new
+ *   one. An empty key means no session is bound yet, so ids are left alone.
+ *
+ * Deltas are deliberately not re-projected from the event ring: `history` is the JSONL as
+ * opened and `liveItems` is append-only for this session, so streamed text only grows.
+ *
+ * Returns new item objects; the inputs are never mutated.
+ */
+export function projectTimeline(options: {
+  history: SessionHistoryMessage[];
+  liveItems: TimelineItem[];
+  sessionKey: string;
+  hideThinkingBlock?: boolean | undefined;
+}): TimelineItem[] {
+  const { history, liveItems, sessionKey, hideThinkingBlock } = options;
+  const items = [...historyToTimeline(history), ...liveItems].filter(
+    (item) => !(hideThinkingBlock && item.kind === "thinking"),
+  );
+  if (!sessionKey) return items;
+  return items.map((item) => ({ ...item, id: `${sessionKey}:${item.id}` }));
+}
+
 export function historyToTimeline(history: SessionHistoryMessage[]): TimelineItem[] {
   const items: TimelineItem[] = [];
   for (const [index, item] of history.entries()) {
