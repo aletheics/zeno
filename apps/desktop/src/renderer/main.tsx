@@ -84,6 +84,7 @@ import {
   isAlreadyProcessingError,
   unknownErrorMessage,
 } from "./lib/host-signals.ts";
+import { resolveNotification, type NotificationKind } from "./lib/notifications.ts";
 import { isExtensionUiDialogMethod, promptExtensionUiDialog } from "./lib/extension-ui-prompt.ts";
 import {
   applyExtensionUiFireForget,
@@ -174,28 +175,17 @@ function reportAppError(error: unknown, fallback: string): string {
   return message;
 }
 
-function maybeNotify(kind: "complete" | "error" | "crash", body?: string): void {
-  const prefs = loadNotificationPrefs();
-  if (!prefs.enabled) return;
-  if (kind === "complete" && !prefs.onComplete) return;
-  if (kind === "error" && !prefs.onError) return;
-  if (kind === "crash" && !prefs.onHostCrash) return;
-  const locale = useShellStore.getState().locale;
-  const title =
-    kind === "complete"
-      ? t(locale, "notify.completeTitle")
-      : kind === "error"
-        ? t(locale, "notify.errorTitle")
-        : t(locale, "notify.crashTitle");
+function maybeNotify(kind: NotificationKind, body?: string): void {
+  // Decision is pure (lib/notifications.ts); only the locale read and the IPC are here.
+  const payload = resolveNotification({
+    kind,
+    body,
+    prefs: loadNotificationPrefs(),
+    locale: useShellStore.getState().locale,
+  });
+  if (!payload) return;
   // Focus check runs in main via requireUnfocused (document.hasFocus is unreliable in Electron).
-  void window.zeno.notifications
-    .show({
-      title,
-      body: body?.trim() || title,
-      silent: !prefs.sound,
-      requireUnfocused: prefs.onlyWhenUnfocused,
-    })
-    .catch(() => undefined);
+  void window.zeno.notifications.show(payload).catch(() => undefined);
 }
 
 /**
