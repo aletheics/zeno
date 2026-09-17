@@ -17,6 +17,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -3419,7 +3420,13 @@ function App() {
                   ) : null}
                 </div>
               ) : (
-                <div className="thread-pane">
+                <div
+                  className="thread-pane"
+                  // Publish the measured dock height so the conversation minimap can keep
+                  // its dashes clear of the composer, which is sticky inside the scrollport
+                  // and therefore has no fixed height of its own.
+                  style={{ "--composer-dock-height": `${composerDockHeight}px` } as CSSProperties}
+                >
                   <SessionTimelineScroller
                     autoScroll={timelineReady && hasActivity}
                     viewportRef={timelineScrollRef}

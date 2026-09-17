@@ -1278,6 +1278,104 @@ html[data-custom-window-controls="true"] .page-header {
   flex: 0 0 auto;
   min-height: min-content;
 }
+
+/*
+ * Conversation minimap (Codex-style): one dash per user turn / assistant reply, down the
+ * left edge of the thread. Dashes magnify horizontally with a Dock-style falloff driven
+ * by --magnify (set from JS), so magnification never reflows the stack.
+ *
+ * Anchored to MessageScroller's relative box, so it stays put while the transcript
+ * scrolls. The bottom offset clears the composer, which is sticky *inside* the scrollport
+ * and so publishes its measured height as --composer-dock-height from main.tsx.
+ */
+.minimap-rail {
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: calc(var(--composer-dock-height, 200px) + 16px);
+  z-index: 6;
+  display: flex;
+  width: 26px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  /* Tighten the pitch as the stack grows so long threads still fit the rail's span. */
+  gap: clamp(0px, calc(4px - var(--minimap-marker-count, 0) * 0.05px), 2px);
+  -webkit-app-region: no-drag;
+}
+
+.minimap-marker {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  width: 100%;
+  height: 8px;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.minimap-marker::before {
+  content: "";
+  height: min(2px, 100%);
+  width: calc(var(--dash-w) * var(--magnify, 1));
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 14%, transparent);
+  transition:
+    width 90ms ease,
+    background 0.15s ease;
+}
+
+.minimap-marker.user {
+  --dash-w: 13px;
+}
+
+.minimap-marker.assistant {
+  --dash-w: 8px;
+}
+
+.minimap-marker:hover::before,
+.minimap-marker:focus-visible::before {
+  background: var(--muted-foreground);
+}
+
+.minimap-marker.active::before {
+  background: var(--foreground);
+}
+
+.minimap-popover {
+  position: absolute;
+  left: 34px;
+  z-index: 7;
+  width: 248px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--popover);
+  box-shadow: var(--shadow-soft);
+  pointer-events: none;
+}
+
+.minimap-popover-role {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+}
+
+.minimap-popover-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
 /*
  * Composer sits after messages. `mt-auto` consumes free space in the min-h-full
  * column so the dock stays at the visual bottom when the thread is short.
