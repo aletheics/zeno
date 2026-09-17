@@ -55,41 +55,20 @@ export function RuntimesSection(props: { locale: Locale }) {
   const pythonAvailable = Boolean(status?.python?.path);
 
   /**
-   * A runtime that is not installed cannot be switched on or off, so the row reports that
-   * instead of drawing a toggle. An enabled-looking switch that silently refuses every
-   * click — which is what a `disabled` toggle defaulting to `checked` renders as — tells
-   * the user nothing about why.
+   * The switch stays visible when a runtime is missing, but it is disabled — so the row
+   * carries the reason. Without it the row reads as an ON switch that silently refuses
+   * every click; developers run with no bundled runtimes by default, so this is the
+   * common case, not an edge one.
    */
-  function runtimeControl(options: {
-    available: boolean;
-    checked: boolean;
-    testId: string;
-    label: string;
-    onChange: (on: boolean) => void;
-  }) {
-    if (loading) {
-      // State still unknown: show neither a switch nor a verdict.
-      return <span className="block min-w-[1px]" aria-hidden />;
-    }
-    if (!options.available) {
-      return (
-        <span
-          className="whitespace-nowrap text-[12px] text-[var(--muted-foreground)]"
-          title={tr("settings.runtimes.notInstalledHint")}
-          data-testid={`${options.testId}-missing`}
-        >
-          {tr("settings.runtimes.notInstalled")}
-        </span>
-      );
-    }
+  function runtimeDescription(desc: string, available: boolean, testId: string) {
+    if (loading || available) return desc;
     return (
-      <SettingsToggle
-        checked={options.checked}
-        disabled={busy}
-        onChange={options.onChange}
-        testId={options.testId}
-        aria-label={options.label}
-      />
+      <span className="flex flex-col gap-0.5">
+        <span>{desc}</span>
+        <span className="text-[var(--warning)]" data-testid={`${testId}-missing`}>
+          {tr("settings.runtimes.notInstalledHint")}
+        </span>
+      </span>
     );
   }
 
@@ -109,25 +88,37 @@ export function RuntimesSection(props: { locale: Locale }) {
       <SettingsSectionBlock label={tr("settings.runtimes.prefs")} testId="settings-runtimes-prefs">
         <SettingsRow
           title={tr("settings.runtimes.useNode")}
-          description={tr("settings.runtimes.nodeDesc")}
-          control={runtimeControl({
-            available: nodeAvailable,
-            checked: status?.prefs.useBundledNode ?? true,
-            testId: "settings-runtimes-node",
-            label: tr("settings.runtimes.useNode"),
-            onChange: (on) => void setPref({ useBundledNode: on }),
-          })}
+          description={runtimeDescription(
+            tr("settings.runtimes.nodeDesc"),
+            nodeAvailable,
+            "settings-runtimes-node",
+          )}
+          control={
+            <SettingsToggle
+              checked={status?.prefs.useBundledNode ?? true}
+              disabled={busy || loading || !nodeAvailable}
+              onChange={(on) => void setPref({ useBundledNode: on })}
+              testId="settings-runtimes-node"
+              aria-label={tr("settings.runtimes.useNode")}
+            />
+          }
         />
         <SettingsRow
           title={tr("settings.runtimes.usePython")}
-          description={tr("settings.runtimes.pythonDesc")}
-          control={runtimeControl({
-            available: pythonAvailable,
-            checked: status?.prefs.useBundledPython ?? true,
-            testId: "settings-runtimes-python",
-            label: tr("settings.runtimes.usePython"),
-            onChange: (on) => void setPref({ useBundledPython: on }),
-          })}
+          description={runtimeDescription(
+            tr("settings.runtimes.pythonDesc"),
+            pythonAvailable,
+            "settings-runtimes-python",
+          )}
+          control={
+            <SettingsToggle
+              checked={status?.prefs.useBundledPython ?? true}
+              disabled={busy || loading || !pythonAvailable}
+              onChange={(on) => void setPref({ useBundledPython: on })}
+              testId="settings-runtimes-python"
+              aria-label={tr("settings.runtimes.usePython")}
+            />
+          }
           last
         />
       </SettingsSectionBlock>

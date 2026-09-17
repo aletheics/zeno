@@ -31,11 +31,10 @@ describe("i18n", () => {
     expect(t("en", "appearance.languageAuto")).toBe("Follow system");
   });
 
-  it("labels the runtimes missing state", () => {
-    expect(t("zh", "settings.runtimes.notInstalled")).toBe("未安装");
-    expect(t("en", "settings.runtimes.notInstalled")).toBe("Not installed");
-    expect(t("zh", "settings.runtimes.notInstalledHint")).toContain("刷新");
-    expect(t("en", "settings.runtimes.notInstalledHint")).toContain("Refresh");
+  it("states that the bundled runtime is not installed", () => {
+    // Points at the fix, since running without bundled runtimes is the dev default.
+    expect(t("zh", "settings.runtimes.notInstalledHint")).toContain("runtimes:fetch");
+    expect(t("en", "settings.runtimes.notInstalledHint")).toContain("runtimes:fetch");
   });
 
   it("labels the conversation minimap", () => {

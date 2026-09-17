@@ -5,10 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import type { BundledRuntimeStatus } from "@zeno/contracts";
 import { RuntimesSection } from "./RuntimesSection.tsx";
 
-/* A runtime that is not installed cannot be switched, so the row must say so rather than
- * draw a toggle. The bug this guards: `checked` defaulted to true while `disabled` was
- * forced on by the missing path, so the row rendered as an ON switch that silently
- * refused every click. */
+/* The switch stays visible when a runtime is missing, but it is disabled — so the row has
+ * to carry the reason. The bug this guards: `checked` defaulted to true while `disabled`
+ * was forced on by the missing path, so the row rendered as an ON switch that silently
+ * refused every click, with nothing on screen saying why. */
 
 const getStatus = vi.fn();
 
@@ -50,32 +50,40 @@ describe("RuntimesSection", () => {
 
     expect(await screen.findByTestId("settings-runtimes-node")).toBeEnabled();
     expect(screen.getByTestId("settings-runtimes-python")).toBeEnabled();
+    // Nothing to explain when the runtime is there.
     expect(screen.queryByTestId("settings-runtimes-node-missing")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("settings-runtimes-python-missing")).not.toBeInTheDocument();
   });
 
-  it("reports an uninstalled runtime instead of drawing a dead switch", async () => {
-    // Neither bundled runtime present — the state this checkout was actually in.
+  it("explains the disabled switch when a runtime is not installed", async () => {
+    // Neither bundled runtime present — the state this checkout was actually in, and the
+    // default for anyone who has not run `runtimes:fetch`.
     await renderWith(status({}));
 
-    expect(await screen.findByTestId("settings-runtimes-node-missing")).toHaveTextContent("未安装");
+    // The switch stays, but cannot move...
+    expect(await screen.findByTestId("settings-runtimes-node")).toBeDisabled();
+    expect(screen.getByTestId("settings-runtimes-python")).toBeDisabled();
+    // ...so the row states the fact, and how to fix it.
+    expect(screen.getByTestId("settings-runtimes-node-missing")).toHaveTextContent(
+      "runtimes:fetch",
+    );
     expect(screen.getByTestId("settings-runtimes-python-missing")).toBeInTheDocument();
-    // No switch at all, so nothing can look operable and refuse input.
-    expect(screen.queryByTestId("settings-runtimes-node")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("settings-runtimes-python")).not.toBeInTheDocument();
   });
 
   it("resolves each runtime independently", async () => {
     await renderWith(status({ nodePath: "/runtimes/node" }));
 
     expect(await screen.findByTestId("settings-runtimes-node")).toBeEnabled();
+    // Only the missing one carries the note.
+    expect(screen.queryByTestId("settings-runtimes-node-missing")).not.toBeInTheDocument();
     expect(screen.getByTestId("settings-runtimes-python-missing")).toBeInTheDocument();
   });
 
-  it("shows neither a switch nor a verdict while the status is still loading", async () => {
+  it("does not claim a runtime is missing while the status is still loading", async () => {
     getStatus.mockReturnValue(new Promise(() => {}));
     render(<RuntimesSection locale="zh" />);
 
-    expect(screen.queryByTestId("settings-runtimes-node")).not.toBeInTheDocument();
+    expect(screen.getByTestId("settings-runtimes-node")).toBeDisabled();
     expect(screen.queryByTestId("settings-runtimes-node-missing")).not.toBeInTheDocument();
   });
 });
