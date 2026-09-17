@@ -18,7 +18,7 @@
     "electron:install": "install-electron",
     "runtimes:fetch": "node scripts/fetch-runtimes.mjs",
     "package": "node scripts/fetch-runtimes.mjs && pnpm run build && electron-builder --config electron-builder.yml --publish never",
-    "test": "vp test --run --config vite.renderer.config.ts && node scripts/fetch-runtimes.test.mjs && node scripts/after-pack.test.mjs",
+    "test": "vp test --run --config vite.renderer.config.ts && node scripts/fetch-runtimes.test.mjs && node scripts/after-pack.test.mjs && node scripts/file-budget.test.mjs",
     "test:after-pack": "node scripts/after-pack.test.mjs",
     "test:runtimes": "node scripts/fetch-runtimes.test.mjs"
   },
