@@ -78,6 +78,12 @@ import {
   resolveSkinColorMode,
 } from "./lib/theme-packs.ts";
 import { cn } from "./lib/utils.ts";
+import {
+  hostPillState,
+  isAbortRecycleError,
+  isAlreadyProcessingError,
+  unknownErrorMessage,
+} from "./lib/host-signals.ts";
 import { isExtensionUiDialogMethod, promptExtensionUiDialog } from "./lib/extension-ui-prompt.ts";
 import {
   applyExtensionUiFireForget,
@@ -168,22 +174,6 @@ function reportAppError(error: unknown, fallback: string): string {
   return message;
 }
 
-function unknownErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : typeof error === "string" ? error : "";
-}
-
-/** Host still mid-turn while UI thought it was idle (stale running flag / prior IPC orphan). */
-function isAlreadyProcessingError(error: unknown): boolean {
-  const message = unknownErrorMessage(error);
-  return /already processing/i.test(message);
-}
-
-/** Abort timed out and main recycled the host — in-flight prompt IPC is expected to die. */
-function isAbortRecycleError(error: unknown): boolean {
-  const message = unknownErrorMessage(error);
-  return /recycled after abort|timed out handling agent\.abort/i.test(message);
-}
-
 function maybeNotify(kind: "complete" | "error" | "crash", body?: string): void {
   const prefs = loadNotificationPrefs();
   if (!prefs.enabled) return;
@@ -248,15 +238,6 @@ function applyExtensionNotify(
   } else if (notify.type === "warning") {
     maybeNotify("error", notify.message);
   }
-}
-
-function hostPillState(status: string, running: boolean): string {
-  if (running) return "running";
-  const lower = status.toLowerCase();
-  if (lower.includes("ready") || lower.includes("settled") || lower.includes("restarted"))
-    return "ready";
-  if (lower.includes("exit") || lower.includes("fail") || lower.includes("crash")) return "error";
-  return "idle";
 }
 
 function App() {
