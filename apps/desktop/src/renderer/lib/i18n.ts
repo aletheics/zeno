@@ -1089,6 +1089,7 @@ export const messages = {
     "appearance.themeSkinCreate": "创建主题",
     "appearance.themeSkinSave": "保存",
     "appearance.language": "语言",
+    "appearance.languageAuto": "跟随系统",
     "appearance.languageZh": "中文",
     "appearance.languageEn": "English",
     "appearance.sidebarTranslucent": "侧边栏半透明",
@@ -1161,7 +1162,6 @@ export const messages = {
     "settings.learnMore": "了解更多",
     "settings.language": "语言",
     "settings.languageHint": "界面显示语言",
-    "settings.languageAuto": "自动检测",
     "settings.preventSleep": "运行时防止系统休眠",
     "settings.preventSleepHint": "任务运行期间防止系统休眠或合盖睡眠",
     "settings.behavior": "行为",
@@ -2476,6 +2476,7 @@ export const messages = {
     "appearance.themeSkinCreate": "Create theme",
     "appearance.themeSkinSave": "Save",
     "appearance.language": "Language",
+    "appearance.languageAuto": "Follow system",
     "appearance.languageZh": "中文",
     "appearance.languageEn": "English",
     "appearance.sidebarTranslucent": "Translucent sidebar",
@@ -2553,7 +2554,6 @@ export const messages = {
     "settings.learnMore": "Learn more",
     "settings.language": "Language",
     "settings.languageHint": "Language used throughout the app",
-    "settings.languageAuto": "Auto-detect",
     "settings.preventSleep": "Prevent sleep while running",
     "settings.preventSleepHint": "Prevent sleep while a task is running",
     "settings.behavior": "Behavior",
@@ -2772,8 +2772,18 @@ export type MessageKey = keyof (typeof messages)["zh"];
 
 export const DEFAULT_LOCALE: Locale = "zh";
 
+/**
+ * What the user picked in settings. `auto` defers to environment detection
+ * (see lib/locale-detect.ts); the resolved `Locale` is what `t()` consumes.
+ */
+export type LocalePreference = "auto" | Locale;
+
 export function isLocale(value: unknown): value is Locale {
   return value === "zh" || value === "en";
+}
+
+export function isLocalePreference(value: unknown): value is LocalePreference {
+  return value === "auto" || isLocale(value);
 }
 
 export function t(locale: Locale, key: MessageKey, vars?: Record<string, string>): string {

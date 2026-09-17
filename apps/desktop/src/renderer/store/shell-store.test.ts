@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { loadContentModeForSession, saveContentModeForSession } from "../lib/content-mode-prefs.ts";
 import { COMPLETED_MARKER_MS, isBusyRunState } from "../lib/session-markers.ts";
 import { emptyLiveStream } from "../lib/live-stream.ts";
+import { detectLocaleFromEnvironment } from "../lib/locale-detect.ts";
 import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
@@ -469,5 +470,91 @@ describe("per-session running", () => {
     expect(items.some((item) => item.kind === "assistant" && item.text.includes("partial"))).toBe(
       true,
     );
+  });
+});
+
+describe("locale preference", () => {
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, String(v));
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+    });
+  });
+
+  it("persists an explicit pick and resolves it to the same locale", () => {
+    useShellStore.getState().setLocalePreference("en");
+    expect(useShellStore.getState().localePreference).toBe("en");
+    expect(useShellStore.getState().locale).toBe("en");
+    expect(localStorage.getItem("zeno.locale")).toBe("en");
+
+    useShellStore.getState().setLocalePreference("zh");
+    expect(useShellStore.getState().localePreference).toBe("zh");
+    expect(useShellStore.getState().locale).toBe("zh");
+    expect(localStorage.getItem("zeno.locale")).toBe("zh");
+  });
+
+  it("resolves auto from the environment and persists the raw preference", () => {
+    useShellStore.getState().setLocalePreference("auto");
+    expect(useShellStore.getState().localePreference).toBe("auto");
+    expect(useShellStore.getState().locale).toBe(detectLocaleFromEnvironment());
+    // The stored value stays "auto", so detection re-runs on the next launch.
+    expect(localStorage.getItem("zeno.locale")).toBe("auto");
+  });
+
+  it("switches back from an explicit locale to auto", () => {
+    useShellStore.getState().setLocalePreference("en");
+    expect(useShellStore.getState().locale).toBe("en");
+
+    useShellStore.getState().setLocalePreference("auto");
+    expect(useShellStore.getState().locale).toBe(detectLocaleFromEnvironment());
+  });
+});
+
+describe("locale preference loading", () => {
+  /** Re-import the store with `stored` already in localStorage (it reads at module load). */
+  async function loadStoreWith(stored: Record<string, string>) {
+    vi.resetModules();
+    const store = new Map(Object.entries(stored));
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, String(v));
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+    });
+    const { useShellStore } = await import("./shell-store.ts");
+    return useShellStore;
+  }
+
+  it("keeps an existing user's explicit locale rather than switching to auto", async () => {
+    const store = await loadStoreWith({ "zeno.locale": "en" });
+    expect(store.getState().localePreference).toBe("en");
+    expect(store.getState().locale).toBe("en");
+  });
+
+  it("defaults a fresh install to auto and detects the locale", async () => {
+    const store = await loadStoreWith({});
+    expect(store.getState().localePreference).toBe("auto");
+    expect(store.getState().locale).toBe(detectLocaleFromEnvironment());
+  });
+
+  it("treats a corrupt stored value as auto instead of throwing", async () => {
+    const store = await loadStoreWith({ "zeno.locale": "fr" });
+    expect(store.getState().localePreference).toBe("auto");
+    expect(store.getState().locale).toBe(detectLocaleFromEnvironment());
   });
 });

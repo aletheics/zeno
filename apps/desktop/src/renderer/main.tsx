@@ -307,6 +307,7 @@ function App() {
   /** Electron chrome source — keep "system" when following OS so matchMedia can update. */
   const nativeThemeSource = resolveNativeThemeSource(themePreference, activeSkinPack?.appearance);
   const locale = useShellStore((s) => s.locale);
+  const localePreference = useShellStore((s) => s.localePreference);
   const sidebarCollapsed = useShellStore((s) => s.sidebarCollapsed);
   const sidebarWidthPx = useShellStore((s) => s.sidebarWidthPx);
   const settingsSection = useShellStore((s) => s.settingsSection);
@@ -438,7 +439,7 @@ function App() {
   const toggleSidebarCollapsed = useShellStore((s) => s.toggleSidebarCollapsed);
   const setSidebarWidthPx = useShellStore((s) => s.setSidebarWidthPx);
   const setSidebarTranslucent = useShellStore((s) => s.setSidebarTranslucent);
-  const setLocale = useShellStore((s) => s.setLocale);
+  const setLocalePreference = useShellStore((s) => s.setLocalePreference);
   const setSettingsSection = useShellStore((s) => s.setSettingsSection);
   const setPaletteOpen = useShellStore((s) => s.setPaletteOpen);
   const setRuntimeId = useShellStore((s) => s.setRuntimeId);
@@ -3675,7 +3676,8 @@ function App() {
             onServiceTierChange={(tier) => void changeServiceTier(tier)}
             onEnsureHost={() => ensureHost()}
             onSnapshot={acceptSnapshot}
-            onLocale={setLocale}
+            localePreference={localePreference}
+            onLocalePreference={setLocalePreference}
             onThemePreference={setThemePreference}
             onThemeSelection={setThemeSelection}
             onThemeLibrary={setThemeLibrary}

@@ -16,7 +16,8 @@ import type {
   ThemeLibrarySnapshot,
 } from "@zeno/contracts";
 import { create } from "zustand";
-import { DEFAULT_LOCALE, isLocale, type Locale } from "../lib/i18n.ts";
+import { isLocalePreference, type Locale, type LocalePreference } from "../lib/i18n.ts";
+import { resolveLocale } from "../lib/locale-detect.ts";
 import { SHELL_SIDEBAR } from "../lib/layout.ts";
 import { SIDEBAR_DEFAULT_TRANSLUCENT, clampSidebarWidth } from "../lib/sidebar-prefs.ts";
 import {
@@ -154,6 +155,9 @@ export interface ShellState {
   sidebarWidthPx: number;
   /** Original shell's native frosted rail preference, used by the unskinned default mode. */
   sidebarTranslucent: boolean;
+  /** What the user picked in settings, including `auto`. Persisted. */
+  localePreference: LocalePreference;
+  /** Resolved locale handed to `t()`. Derived from `localePreference`. */
   locale: Locale;
   settingsSection: SettingsSection;
   lastFailure: string | undefined;
@@ -254,7 +258,7 @@ export interface ShellState {
   toggleSidebarCollapsed: () => void;
   setSidebarWidthPx: (px: number) => void;
   setSidebarTranslucent: (value: boolean) => void;
-  setLocale: (locale: Locale) => void;
+  setLocalePreference: (localePreference: LocalePreference) => void;
   setSettingsSection: (section: SettingsSection) => void;
   setLastFailure: (failure: string | undefined) => void;
   /** Remember a model error for a runtime until settle / successful recovery. */
@@ -373,8 +377,14 @@ function savePref(key: string, value: string): void {
   }
 }
 
-function loadLocale(): Locale {
-  return loadPref("zeno.locale", (raw) => (isLocale(raw) ? raw : undefined), DEFAULT_LOCALE);
+function loadLocalePreference(): LocalePreference {
+  // A stored value is an explicit choice and always wins. A never-set preference
+  // means `auto`, which resolves from the environment (see lib/locale-detect.ts).
+  return loadPref(
+    "zeno.locale",
+    (raw) => (isLocalePreference(raw) ? raw : undefined),
+    "auto" satisfies LocalePreference,
+  );
 }
 
 function loadThemePreference(): ThemePreference {
@@ -421,6 +431,9 @@ function loadSidebarTranslucent(): boolean {
   );
 }
 
+/** Read once so the persisted preference and its resolved locale stay consistent. */
+const initialLocalePreference = loadLocalePreference();
+
 export const useShellStore = create<ShellState>((set, get) => ({
   status: "Agent Host is stopped",
   snapshot: undefined,
@@ -443,7 +456,8 @@ export const useShellStore = create<ShellState>((set, get) => ({
   sidebarCollapsed: loadSidebarCollapsed(),
   sidebarWidthPx: loadSidebarWidth(),
   sidebarTranslucent: loadSidebarTranslucent(),
-  locale: loadLocale(),
+  localePreference: initialLocalePreference,
+  locale: resolveLocale(initialLocalePreference),
   settingsSection: "general",
   lastFailure: undefined,
   pendingFailureByRuntime: {},
@@ -748,9 +762,9 @@ export const useShellStore = create<ShellState>((set, get) => ({
     savePref("zeno.sidebarTranslucent", sidebarTranslucent ? "1" : "0");
     set({ sidebarTranslucent });
   },
-  setLocale: (locale) => {
-    savePref("zeno.locale", locale);
-    set({ locale });
+  setLocalePreference: (localePreference) => {
+    savePref("zeno.locale", localePreference);
+    set({ localePreference, locale: resolveLocale(localePreference) });
   },
   setSettingsSection: (settingsSection) => set({ settingsSection }),
   setLastFailure: (lastFailure) => set({ lastFailure }),
