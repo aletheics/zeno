@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  errorMessageOrFallback,
   hostPillState,
   isAbortRecycleError,
   isAlreadyProcessingError,
@@ -17,6 +18,27 @@ describe("unknownErrorMessage", () => {
     expect(unknownErrorMessage("boom")).toBe("boom");
     expect(unknownErrorMessage(undefined)).toBe("");
     expect(unknownErrorMessage({ message: "boom" })).toBe("");
+  });
+});
+
+describe("errorMessageOrFallback", () => {
+  it("prefers a non-blank Error message", () => {
+    expect(errorMessageOrFallback(new Error("boom"), "fallback")).toBe("boom");
+    expect(errorMessageOrFallback(new Error("  boom  "), "fallback")).toBe("  boom  ");
+  });
+
+  it("falls back when the Error carries no usable message", () => {
+    expect(errorMessageOrFallback(new Error("   "), "fallback")).toBe("fallback");
+    expect(errorMessageOrFallback(new Error(""), "fallback")).toBe("fallback");
+  });
+
+  it("ignores a thrown string rather than using it as the message", () => {
+    // Not the same as `unknownErrorMessage(error) || fallback`, which would return "boom".
+    // Callers are catch blocks around IPC, where only an Error counts as a message.
+    expect(errorMessageOrFallback("boom", "fallback")).toBe("fallback");
+    expect(errorMessageOrFallback(undefined, "fallback")).toBe("fallback");
+    expect(errorMessageOrFallback(null, "fallback")).toBe("fallback");
+    expect(errorMessageOrFallback({ message: "boom" }, "fallback")).toBe("fallback");
   });
 });
 

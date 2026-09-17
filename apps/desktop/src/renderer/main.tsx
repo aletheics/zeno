@@ -79,6 +79,7 @@ import {
 } from "./lib/theme-packs.ts";
 import { cn } from "./lib/utils.ts";
 import {
+  errorMessageOrFallback,
   hostPillState,
   isAbortRecycleError,
   isAlreadyProcessingError,
@@ -169,8 +170,7 @@ const NEW_SESSION_OP_TIMEOUT_MS = 30_000;
 
 /** Surface app-level errors as a modal (agent timeline errors stay in-chat). */
 function reportAppError(error: unknown, fallback: string): string {
-  const raw = error instanceof Error && error.message.trim() ? error.message : fallback;
-  const message = unwrapRemoteIpcError(raw);
+  const message = unwrapRemoteIpcError(errorMessageOrFallback(error, fallback));
   useShellStore.getState().showAppError(message);
   return message;
 }

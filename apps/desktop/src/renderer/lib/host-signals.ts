@@ -14,6 +14,17 @@ export function unknownErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : typeof error === "string" ? error : "";
 }
 
+/**
+ * The message to show for a caught value, or `fallback` when there is nothing usable.
+ *
+ * Deliberately not `unknownErrorMessage(error) || fallback`: a thrown *string* is ignored
+ * here and yields the fallback. Callers are catch blocks around IPC, where a usable
+ * message is expected to be an `Error`; a bare string is treated as "no message".
+ */
+export function errorMessageOrFallback(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /** Host still mid-turn while UI thought it was idle (stale running flag / prior IPC orphan). */
 export function isAlreadyProcessingError(error: unknown): boolean {
   const message = unknownErrorMessage(error);
