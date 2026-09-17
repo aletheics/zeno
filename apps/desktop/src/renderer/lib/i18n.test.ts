@@ -31,6 +31,13 @@ describe("i18n", () => {
     expect(t("en", "appearance.languageAuto")).toBe("Follow system");
   });
 
+  it("labels the runtimes missing state", () => {
+    expect(t("zh", "settings.runtimes.notInstalled")).toBe("未安装");
+    expect(t("en", "settings.runtimes.notInstalled")).toBe("Not installed");
+    expect(t("zh", "settings.runtimes.notInstalledHint")).toContain("刷新");
+    expect(t("en", "settings.runtimes.notInstalledHint")).toContain("Refresh");
+  });
+
   it("labels the conversation minimap", () => {
     expect(t("zh", "timeline.minimap")).toBe("对话导航");
     expect(t("en", "timeline.minimap")).toBe("Conversation minimap");

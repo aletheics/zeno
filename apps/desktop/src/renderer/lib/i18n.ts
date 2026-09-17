@@ -1160,6 +1160,9 @@ export const messages = {
     "settings.runtimes.refresh": "刷新",
     "settings.runtimes.nodeDesc": "基于 Chrome V8 引擎的 JavaScript 运行时，用于服务端开发",
     "settings.runtimes.pythonDesc": "通用编程语言，适用于脚本编写、自动化和数据处理",
+    "settings.runtimes.notInstalled": "未安装",
+    "settings.runtimes.notInstalledHint":
+      "本次安装未提供内置运行时，因此无法启用或关闭。可点「刷新」重新检测。",
     "settings.runtimes.useNode": "使用随附 Node.js",
     "settings.runtimes.usePython": "使用随附 Python",
     "settings.learnMore": "了解更多",
@@ -2555,6 +2558,9 @@ export const messages = {
       "JavaScript runtime built on Chrome’s V8 engine, for server-side development",
     "settings.runtimes.pythonDesc":
       "General-purpose language for scripting, automation, and data processing",
+    "settings.runtimes.notInstalled": "Not installed",
+    "settings.runtimes.notInstalledHint":
+      "This install did not include the bundled runtime, so it cannot be enabled or disabled. Refresh to check again.",
     "settings.runtimes.useNode": "Use bundled Node.js",
     "settings.runtimes.usePython": "Use bundled Python",
     "settings.learnMore": "Learn more",
