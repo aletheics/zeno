@@ -3,6 +3,14 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
+## [Unreleased]
+
+### Changed
+
+- Bundled pi runtime upgraded to 0.85.1. The `@earendil-works/pi-server`
+  workaround added for 0.85.0 is no longer needed: upstream moved it to a
+  dev dependency and dropped the runtime import.
+
 ## [0.1.6] - 2026-09-05
 
 ### Added

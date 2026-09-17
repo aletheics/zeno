@@ -4,16 +4,6 @@
 
 Zeno is a desktop shell for the [pi](https://pi.dev) coding agent: a Codex-style UI that keeps configuration, packages, sessions, and tools on the native pi side (`~/.pi/agent`).
 
-## 🤝 Community
-
-<p align="center">
-  <img src="./assets/screenshots/qq.jpg" alt="Zeno community" width="300" />
-</p>
-
-<p align="center">
-  Scan the QR code to join the Zeno community:
-</p>
-
 ## Screenshots
 
 Zeno desktop shell — sidebar, session workspace, and composer:
