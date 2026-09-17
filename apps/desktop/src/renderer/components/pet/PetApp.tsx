@@ -14,7 +14,8 @@ import {
   type PetPrefs,
 } from "@/lib/api/pet";
 import { fallbackPetOverlayPolicy, type PetFocus, type PetTask } from "@/lib/pet";
-import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { isLocale, type Locale } from "@/lib/i18n";
+import { detectLocaleFromEnvironment } from "@/lib/locale-detect";
 import { PetOverlay } from "./PetOverlay";
 
 const IDLE: PetFocus = {
@@ -29,16 +30,16 @@ const IDLE: PetFocus = {
 function readBootLocale(): Locale {
   try {
     const w = window as Window & { __GROK_BOOT_LOCALE__?: string };
-    const raw =
-      (typeof w.__GROK_BOOT_LOCALE__ === "string" && w.__GROK_BOOT_LOCALE__.trim()) ||
-      document.documentElement.lang ||
-      "";
+    const raw = (typeof w.__GROK_BOOT_LOCALE__ === "string" && w.__GROK_BOOT_LOCALE__.trim()) || "";
     const norm = raw.toLowerCase();
     if (norm.startsWith("zh")) return "zh";
     if (norm.startsWith("en")) return "en";
-    return DEFAULT_LOCALE;
+    // The pet window shares an origin with the main window, so an explicit pick
+    // made there is authoritative; only an unset locale falls through to detection.
+    const stored = localStorage.getItem("zeno.locale");
+    return isLocale(stored) ? stored : detectLocaleFromEnvironment();
   } catch {
-    return DEFAULT_LOCALE;
+    return detectLocaleFromEnvironment();
   }
 }
 

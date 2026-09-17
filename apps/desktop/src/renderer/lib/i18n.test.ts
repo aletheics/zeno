@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { DEFAULT_LOCALE, isLocale, messages, t } from "./i18n.ts";
+import { DEFAULT_LOCALE, isLocale, isLocalePreference, messages, t } from "./i18n.ts";
 
 describe("i18n", () => {
   it("defaults to Chinese", () => {
@@ -13,6 +13,22 @@ describe("i18n", () => {
     expect(t("zh", "empty.titleNoWorkspace")).toBe("打开工作区以开始");
     expect(isLocale("zh")).toBe(true);
     expect(isLocale("fr")).toBe(false);
+  });
+
+  it("guards locale preferences, which extend locales with auto", () => {
+    expect(isLocalePreference("auto")).toBe(true);
+    expect(isLocalePreference("zh")).toBe(true);
+    expect(isLocalePreference("en")).toBe(true);
+    expect(isLocalePreference("fr")).toBe(false);
+    expect(isLocalePreference(undefined)).toBe(false);
+    expect(isLocalePreference("")).toBe(false);
+    // `auto` is a preference but never a resolved locale.
+    expect(isLocale("auto")).toBe(false);
+  });
+
+  it("labels the follow-system option", () => {
+    expect(t("zh", "appearance.languageAuto")).toBe("跟随系统");
+    expect(t("en", "appearance.languageAuto")).toBe("Follow system");
   });
 
   it("localizes packages and resources pages", () => {

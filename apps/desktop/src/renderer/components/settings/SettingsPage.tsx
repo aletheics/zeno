@@ -36,7 +36,13 @@ import {
 import type { FormEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { t, thinkingLevelLabel, type Locale, type MessageKey } from "../../lib/i18n.ts";
+import {
+  t,
+  thinkingLevelLabel,
+  type Locale,
+  type LocalePreference,
+  type MessageKey,
+} from "../../lib/i18n.ts";
 import { groupModelsByProvider } from "../../lib/model-groups.ts";
 import type { ServiceTierId } from "../../lib/service-tier.ts";
 import {
@@ -174,7 +180,10 @@ import { PetSection } from "./PetSection.tsx";
 export interface SettingsPageProps {
   snapshot: HostSnapshot | undefined;
   status: string;
+  /** Resolved locale driving `tr()`. */
   locale: Locale;
+  /** Raw setting behind `locale`, so the picker can show `auto`. */
+  localePreference: LocalePreference;
   section: SettingsSection;
   colorMode: "light" | "dark";
   themePreference: ThemePreference;
@@ -195,7 +204,7 @@ export interface SettingsPageProps {
   onServiceTierChange: (tier: ServiceTierId) => void;
   onEnsureHost: () => Promise<HostSnapshot>;
   onSnapshot: (snapshot: HostSnapshot) => void;
-  onLocale: (locale: Locale) => void;
+  onLocalePreference: (localePreference: LocalePreference) => void;
   onThemePreference: (mode: ThemePreference) => void;
   onThemeSelection: (selection: ThemeSelection) => void;
   onThemeLibrary: (library: ThemeLibrarySnapshot) => void;
@@ -2479,9 +2488,10 @@ function GeneralSection(
           control={
             <SettingsSelect
               testId="appearance-locale"
-              value={props.locale}
-              onChange={(v) => props.onLocale(v as Locale)}
+              value={props.localePreference}
+              onChange={(v) => props.onLocalePreference(v as LocalePreference)}
               options={[
+                { value: "auto", label: tr("appearance.languageAuto") },
                 { value: "zh", label: tr("appearance.languageZh") },
                 { value: "en", label: tr("appearance.languageEn") },
               ]}
