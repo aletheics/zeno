@@ -117,6 +117,7 @@ import {
   type PiSdkPrefs,
   type ResolvedPiSdk,
 } from "./pi-sdk.ts";
+import { searchPiPackageCatalog } from "./package-catalog.ts";
 import { createNodePtySpawn, PiTuiPtyController } from "./pi-tui-pty.ts";
 import { PiTuiExclusiveGuard, planPiTuiLaunch } from "./pi-tui-session.ts";
 import {
@@ -1703,61 +1704,6 @@ async function listOpenTargets(cwd: string): Promise<DetectedApp[]> {
 
   void cwd;
   return apps;
-}
-
-/** Official gallery: npm registry search for keyword `pi-package` (same as pi.dev/packages). */
-async function searchPiPackageCatalog(
-  query?: string,
-  size = 20,
-  from = 0,
-): Promise<{ packages: CatalogPackage[]; total: number }> {
-  const q = query?.trim() ?? "";
-  const text = q ? `keywords:pi-package ${q}` : "keywords:pi-package";
-  const limit = Math.min(100, Math.max(1, Math.floor(size)));
-  const offset = Math.max(0, Math.floor(from));
-  const url = `${npmRegistryBaseUrl()}/-/v1/search?text=${encodeURIComponent(text)}&size=${limit}&from=${offset}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "zeno-desktop" },
-  });
-  if (!res.ok) {
-    throw new Error(`插件目录请求失败 (${res.status})`);
-  }
-  const data = (await res.json()) as {
-    total?: number;
-    objects?: Array<{
-      package?: {
-        name?: string;
-        description?: string;
-        version?: string;
-        date?: string;
-        keywords?: string[];
-        publisher?: { username?: string };
-      };
-      downloads?: { weekly?: number };
-    }>;
-  };
-  const items: CatalogPackage[] = [];
-  for (const obj of data.objects ?? []) {
-    const pkg = obj.package;
-    if (!pkg?.name) continue;
-    const entry: CatalogPackage = {
-      name: pkg.name,
-      description: pkg.description?.trim() || "",
-      version: pkg.version || "latest",
-      source: `npm:${pkg.name}`,
-    };
-    if (pkg.publisher?.username) entry.publisher = pkg.publisher.username;
-    if (typeof obj.downloads?.weekly === "number") entry.weeklyDownloads = obj.downloads.weekly;
-    if (pkg.date) entry.updatedAt = pkg.date;
-    if (Array.isArray(pkg.keywords))
-      entry.keywords = pkg.keywords.filter((k) => typeof k === "string");
-    items.push(entry);
-  }
-  const total =
-    typeof data.total === "number" && Number.isFinite(data.total)
-      ? Math.max(data.total, items.length + offset)
-      : offset + items.length;
-  return { packages: items, total };
 }
 
 /** API types whose model list is exposed via the de-facto `GET {baseUrl}/models` endpoint. */
@@ -6413,7 +6359,7 @@ void app
     ipcMain.handle(
       "zeno:packages:search-catalog",
       (_event, query?: string, size?: number, from?: number) =>
-        searchPiPackageCatalog(query, size, from),
+        searchPiPackageCatalog({ query, size, from }),
     );
     ipcMain.handle("zeno:resources:list", () => supervisor?.listResources());
 
