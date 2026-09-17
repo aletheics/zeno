@@ -7,7 +7,7 @@
     "check": "vp check",
     "check:types": "vp check --no-fmt",
     "fmt": "vp check --fix",
-    "test": "vp run --no-cache -r test",
+    "test": "vp run --no-cache -r test && pnpm --filter @zeno/desktop run test",
     "build": "vp run -r build",
     "dev": "pnpm dev:desktop",
     "watch": "pnpm watch:desktop",
