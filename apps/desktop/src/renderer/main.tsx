@@ -139,6 +139,7 @@ import {
   workspaceLabel,
 } from "./lib/workspace.ts";
 import { appendHostEvent } from "./lib/host-events.ts";
+import { addAttachments, removeAttachment, restoreAttachments } from "./lib/attachments.ts";
 import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
 import { useBootstrapGate } from "./hooks/useBootstrapGate.ts";
 import { useSessionPanels } from "./hooks/useSessionPanels.ts";
@@ -1757,7 +1758,7 @@ function App() {
         if (!stillSameSession()) return;
         useShellStore.getState().setQueuedMessages(prevQueue);
         setPrompt(draft);
-        setAttachments((current) => [...new Set([...attachedPaths, ...current])].slice(0, 12));
+        setAttachments((current) => restoreAttachments(current, attachedPaths));
         reportAppError(error, "排队失败");
       }
       return;
@@ -1854,7 +1855,7 @@ function App() {
       // Host/workspace/IPC failures → modal + restore draft for retry.
       useShellStore.getState().retractOptimisticUserMessage(displayMessage);
       setPrompt(draft);
-      setAttachments((current) => [...new Set([...attachedPaths, ...current])].slice(0, 12));
+      setAttachments((current) => restoreAttachments(current, attachedPaths));
       setSentPrompts((current) => {
         const idx = current.lastIndexOf(displayMessage);
         if (idx < 0) return current;
@@ -1898,7 +1899,7 @@ function App() {
       // Windows/Linux require separate dialogs for files vs folders (Electron limitation).
       const paths = await window.zeno.workspace.pickAttachments({ mode });
       if (paths.length === 0) return;
-      setAttachments((current) => [...new Set([...current, ...paths])].slice(0, 12));
+      setAttachments((current) => addAttachments(current, paths));
     } catch (error) {
       reportAppError(error, mode === "folders" ? "添加文件夹失败" : "添加文件失败");
     }
@@ -3446,12 +3447,10 @@ function App() {
                             attachments={attachments}
                             onPickAttachments={pickComposerAttachments}
                             onRemoveAttachment={(path) =>
-                              setAttachments((current) => current.filter((item) => item !== path))
+                              setAttachments((current) => removeAttachment(current, path))
                             }
                             onAddAttachments={(paths) =>
-                              setAttachments((current) =>
-                                [...new Set([...current, ...paths])].slice(0, 12),
-                              )
+                              setAttachments((current) => addAttachments(current, paths))
                             }
                             packages={packages}
                             slashCommands={buildUnifiedSlashCatalog(snapshot, locale).map(
