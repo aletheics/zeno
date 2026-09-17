@@ -6,9 +6,7 @@ import type {
   McpConfig,
   PackageSummary,
   ResourceSummary,
-  SessionInfoView,
   SessionThreadSummary,
-  SessionTreeView,
 } from "@zeno/contracts";
 import {
   StrictMode,
@@ -142,6 +140,7 @@ import {
 } from "./lib/workspace.ts";
 import { appendHostEvent } from "./lib/host-events.ts";
 import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
+import { useSessionPanels } from "./hooks/useSessionPanels.ts";
 import {
   classifyRuntimeEventDelivery,
   sessionKeyFromSnapshot,
@@ -372,17 +371,13 @@ function App() {
 
   /** float = overlay without squeeze; dock = flex squeeze. */
   const [envPanelLayout, setEnvPanelLayout] = useState<Exclude<EnvPanelLayoutMode, "none">>("dock");
-  const [sessionTreeOpen, setSessionTreeOpen] = useState(false);
-  const [sessionTreeMode, setSessionTreeMode] = useState<"navigate" | "fork">("navigate");
-  const [sessionTree, setSessionTree] = useState<SessionTreeView | undefined>();
-  const [sessionTreeLoading, setSessionTreeLoading] = useState(false);
-  const [sessionTreeError, setSessionTreeError] = useState<string | undefined>();
-  const [sessionInfoOpen, setSessionInfoOpen] = useState(false);
-  const [sessionInfo, setSessionInfo] = useState<SessionInfoView | undefined>();
-  const [sessionInfoLoading, setSessionInfoLoading] = useState(false);
-  const [sessionInfoError, setSessionInfoError] = useState<string | undefined>();
-  /** `/name` with no args → rename dialog for pi session display name. */
-  const [sessionNameDialogOpen, setSessionNameDialogOpen] = useState(false);
+  /** Session tree / info panels: state and loading live in the hook. */
+  const sessionPanels = useSessionPanels({
+    locale,
+    // Hoisted declaration below; the panels only start the host when it is down.
+    ensureHost,
+    hasHost: () => Boolean(useShellStore.getState().snapshot),
+  });
   /**
    * Cold-start gate: full-window overlay until pi is ensured and host config is loaded.
    * Main process may already be running ensure; we join that work and show live status.
@@ -1498,43 +1493,6 @@ function App() {
     }
   }
 
-  async function refreshSessionTree() {
-    setSessionTreeLoading(true);
-    setSessionTreeError(undefined);
-    try {
-      if (!useShellStore.getState().snapshot) await ensureHost();
-      setSessionTree(await window.zeno.session.tree());
-    } catch (error) {
-      setSessionTreeError(error instanceof Error ? error.message : "Failed to load session tree");
-    } finally {
-      setSessionTreeLoading(false);
-    }
-  }
-
-  async function openSessionTree(mode: "navigate" | "fork" = "navigate") {
-    setSessionTreeMode(mode);
-    setSessionTreeOpen(true);
-    await refreshSessionTree();
-  }
-
-  async function refreshSessionInfo() {
-    setSessionInfoLoading(true);
-    setSessionInfoError(undefined);
-    try {
-      if (!useShellStore.getState().snapshot) await ensureHost();
-      setSessionInfo(await window.zeno.session.info());
-    } catch (error) {
-      setSessionInfoError(error instanceof Error ? error.message : "Failed to load session info");
-    } finally {
-      setSessionInfoLoading(false);
-    }
-  }
-
-  async function openSessionInfo() {
-    setSessionInfoOpen(true);
-    await refreshSessionInfo();
-  }
-
   async function runBuiltinSlash(name: string, args: string, source?: string): Promise<boolean> {
     const action = resolveBuiltinSlash(name, args, source);
     switch (action.type) {
@@ -1550,13 +1508,13 @@ function App() {
         setView("settings");
         return true;
       case "session":
-        await openSessionInfo();
+        await sessionPanels.info.openPanel();
         return true;
       case "name": {
         const nextName = action.name.trim();
         if (!nextName) {
           // No argument → open rename dialog (visual /name, like CLI prompting for a name).
-          setSessionNameDialogOpen(true);
+          sessionPanels.rename.start();
           return true;
         }
         acceptSnapshot(await window.zeno.session.setName(nextName));
@@ -1565,10 +1523,10 @@ function App() {
         return true;
       }
       case "tree":
-        await openSessionTree();
+        await sessionPanels.tree.openPanel();
         return true;
       case "fork":
-        await openSessionTree("fork");
+        await sessionPanels.tree.openPanel("fork");
         return true;
       case "clone": {
         const opened = await window.zeno.session.clone();
@@ -2733,7 +2691,7 @@ function App() {
   async function forkThread(entryId?: string) {
     if (running) return;
     if (!entryId) {
-      await openSessionTree("fork");
+      await sessionPanels.tree.openPanel("fork");
       return;
     }
     try {
@@ -3080,7 +3038,7 @@ function App() {
       if (!double) return;
       event.preventDefault();
       const action = snapshot?.doubleEscapeAction ?? "fork";
-      if (action === "tree") void openSessionTree();
+      if (action === "tree") void sessionPanels.tree.openPanel();
       else if (action === "fork") void forkThread();
     }
   }
@@ -3718,20 +3676,20 @@ function App() {
         onClose={() => setPaletteOpen(false)}
       />
       <SessionTreePanel
-        open={sessionTreeOpen}
-        mode={sessionTreeMode}
+        open={sessionPanels.tree.open}
+        mode={sessionPanels.tree.mode}
         locale={locale}
-        tree={sessionTree}
-        loading={sessionTreeLoading}
-        error={sessionTreeError}
-        onClose={() => setSessionTreeOpen(false)}
-        onRefresh={() => void refreshSessionTree()}
+        tree={sessionPanels.tree.data}
+        loading={sessionPanels.tree.loading}
+        error={sessionPanels.tree.error}
+        onClose={() => sessionPanels.tree.close()}
+        onRefresh={() => void sessionPanels.tree.refresh()}
         onNavigate={async (node, options) => {
           try {
-            if (sessionTreeMode === "fork") {
+            if (sessionPanels.tree.mode === "fork") {
               setStatus(t(locale, "sessionTree.busy.forking"));
               await forkThread(node.id);
-              setSessionTreeOpen(false);
+              sessionPanels.tree.close();
               focusComposer();
               return;
             }
@@ -3755,7 +3713,7 @@ function App() {
             if (opened.selectedText !== undefined) {
               setPrompt(opened.selectedText);
             }
-            setSessionTreeOpen(false);
+            sessionPanels.tree.close();
             setStatus(t(locale, "session.parity.treeNavigated"));
             focusComposer();
           } catch (error) {
@@ -3764,18 +3722,18 @@ function App() {
         }}
       />
       <SessionInfoPanel
-        open={sessionInfoOpen}
+        open={sessionPanels.info.open}
         locale={locale}
-        info={sessionInfo}
-        loading={sessionInfoLoading}
-        error={sessionInfoError}
-        onClose={() => setSessionInfoOpen(false)}
-        onRefresh={() => void refreshSessionInfo()}
+        info={sessionPanels.info.data}
+        loading={sessionPanels.info.loading}
+        error={sessionPanels.info.error}
+        onClose={() => sessionPanels.info.close()}
+        onRefresh={() => void sessionPanels.info.refresh()}
         onRename={async (name) => {
           if (!name) return;
           try {
             acceptSnapshot(await window.zeno.session.setName(name));
-            await refreshSessionInfo();
+            await sessionPanels.info.refresh();
             await refreshThreads();
           } catch (error) {
             reportAppError(error, t(locale, "session.parity.renameFailed"));
@@ -3806,7 +3764,7 @@ function App() {
             const opened = await window.zeno.session.clone();
             markSessionOpenForBottomScroll();
             applySessionOpen(opened);
-            setSessionInfoOpen(false);
+            sessionPanels.info.close();
             setStatus(t(locale, "session.parity.cloned"));
           } catch (error) {
             reportAppError(error, t(locale, "session.parity.cloneFailed"));
@@ -3815,7 +3773,7 @@ function App() {
         onCompact={async () => {
           try {
             acceptSnapshot(await window.zeno.session.compact());
-            await refreshSessionInfo();
+            await sessionPanels.info.refresh();
             setStatus(t(locale, "session.parity.compacted"));
           } catch (error) {
             reportAppError(error, t(locale, "session.parity.compactFailed"));
@@ -3824,16 +3782,16 @@ function App() {
       />
 
       <RenameDialog
-        open={sessionNameDialogOpen}
+        open={sessionPanels.rename.open}
         title={t(locale, "session.renameTitle")}
         label={t(locale, "sessionInfo.name")}
         initialValue={snapshot?.sessionName ?? ""}
         confirmLabel={t(locale, "common.confirm")}
         cancelLabel={t(locale, "common.cancel")}
         testId="session-name-dialog"
-        onCancel={() => setSessionNameDialogOpen(false)}
+        onCancel={() => sessionPanels.rename.cancel()}
         onConfirm={(value) => {
-          setSessionNameDialogOpen(false);
+          sessionPanels.rename.cancel();
           const name = value.trim();
           if (!name) return;
           void (async () => {
