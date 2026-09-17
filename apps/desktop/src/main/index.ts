@@ -127,6 +127,7 @@ import {
 } from "./proxy-prefs.ts";
 import { discoverLocalProxies } from "./proxy-discover.ts";
 import { listOpenTargets, openInApp } from "./open-targets.ts";
+import { checkExternalUrl } from "./external-url.ts";
 import {
   applyManagedRuntimeToProcessEnv,
   captureManagedPathBase,
@@ -1246,15 +1247,12 @@ async function openCreatePullRequest(cwd: string): Promise<void> {
     const draft = git.draftPr ? "&merge_request[draft]=true" : "";
     url = `${url}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(branch)}${draft}`;
   }
-  // 协议白名单：与 open-external 一致，防止 git remote 被篡改后触发任意协议。
-  let protocol: string;
-  try {
-    protocol = new URL(url).protocol;
-  } catch {
-    throw new Error("无效的 PR 地址");
-  }
-  if (!["http:", "https:", "mailto:"].includes(protocol)) {
-    throw new Error(`不支持的协议: ${protocol}`);
+  // 协议白名单：与 open-external / 窗口外链共用同一条规则，防止 git remote 被篡改后触发任意协议。
+  const verdict = checkExternalUrl(url);
+  if (!verdict.ok) {
+    throw new Error(
+      verdict.reason === "protocol" ? `不支持的协议: ${verdict.protocol}` : "无效的 PR 地址",
+    );
   }
   await shell.openExternal(url);
 }
@@ -4743,13 +4741,9 @@ async function createWindow(): Promise<void> {
   // to the system browser instead; deny everything else. Without this, the
   // catalog's "在网页打开" button and package title links silently do nothing.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    try {
-      const protocol = new URL(url).protocol;
-      if (["http:", "https:", "mailto:"].includes(protocol)) {
-        void shell.openExternal(url).catch(() => undefined);
-      }
-    } catch {
-      // Malformed URL — fall through to deny.
+    // Malformed or disallowed — fall through to deny.
+    if (checkExternalUrl(url).ok) {
+      void shell.openExternal(url).catch(() => undefined);
     }
     return { action: "deny" };
   });
@@ -5382,9 +5376,13 @@ void app
     ipcMain.handle("zeno:workspace:open-external", async (event, url: string) => {
       assertTrustedSender(event);
       if (typeof url !== "string") throw new Error("Invalid external URL");
-      const protocol = new URL(url).protocol;
-      if (!new Set(["http:", "https:", "mailto:"]).has(protocol)) {
-        throw new Error(`Unsupported external URL protocol: ${protocol}`);
+      const verdict = checkExternalUrl(url);
+      if (!verdict.ok) {
+        throw new Error(
+          verdict.reason === "protocol"
+            ? `Unsupported external URL protocol: ${verdict.protocol}`
+            : "Invalid external URL",
+        );
       }
       await shell.openExternal(url);
     });
