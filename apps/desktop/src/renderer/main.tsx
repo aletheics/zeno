@@ -140,6 +140,7 @@ import {
 } from "./lib/workspace.ts";
 import { appendHostEvent } from "./lib/host-events.ts";
 import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
+import { useBootstrapGate } from "./hooks/useBootstrapGate.ts";
 import { useSessionPanels } from "./hooks/useSessionPanels.ts";
 import {
   classifyRuntimeEventDelivery,
@@ -371,6 +372,21 @@ function App() {
 
   /** float = overlay without squeeze; dock = flex squeeze. */
   const [envPanelLayout, setEnvPanelLayout] = useState<Exclude<EnvPanelLayoutMode, "none">>("dock");
+  /**
+   * Cold-start gate: sequences the opening work and always lets the shell come up.
+   * `phases` are App-local, and the hook runs once (see its note on why).
+   */
+  const bootstrap = useBootstrapGate({
+    getLocale: () => useShellStore.getState().locale,
+    phases: {
+      workspaces: refreshRecentWorkspaces,
+      host: () => refreshPiStatus({ ensure: true }),
+      config: refreshConversationSessions,
+      hydrate: hydrateResumedSession,
+    },
+    onStatus: (next) => useShellStore.getState().setStatus(next),
+  });
+
   /** Session tree / info panels: state and loading live in the hook. */
   const sessionPanels = useSessionPanels({
     locale,
@@ -382,12 +398,6 @@ function App() {
    * Cold-start gate: full-window overlay until pi is ensured and host config is loaded.
    * Main process may already be running ensure; we join that work and show live status.
    */
-  const [bootstrapReady, setBootstrapReady] = useState(false);
-  const [bootstrapStatus, setBootstrapStatus] = useState(() =>
-    t(useShellStore.getState().locale, "boot.starting"),
-  );
-  const [bootstrapDetail, setBootstrapDetail] = useState<string | undefined>();
-  const [bootstrapError, setBootstrapError] = useState<string | undefined>();
   const lastEscapeAtRef = useRef(0);
   const threadColumnRef = useRef<HTMLElement | null>(null);
   const setSidebarOpen = useShellStore((s) => s.setSidebarOpen);
@@ -889,66 +899,6 @@ function App() {
     // Always refresh pure conversations for the 对话 section.
     void refreshConversationSessions();
   }, [workspacePath, recentWorkspaces]);
-
-  // Cold start: gate until host/config is loaded. Default runtime is builtin SDK —
-  // do not probe/install global pi here (Settings → Pi handles global install/switch).
-  useEffect(() => {
-    let cancelled = false;
-    const loc = () => useShellStore.getState().locale;
-    const setBoot = (status: string, detail?: string) => {
-      if (cancelled) return;
-      setBootstrapStatus(status);
-      setBootstrapDetail(detail);
-      useShellStore.getState().setStatus(status);
-    };
-    void (async () => {
-      try {
-        setBoot(t(loc(), "boot.starting"));
-        if (cancelled) return;
-
-        setBoot(t(loc(), "boot.workspaces"));
-        await refreshRecentWorkspaces();
-        if (cancelled) return;
-
-        setBoot(t(loc(), "boot.host"));
-        await refreshPiStatus({ ensure: true });
-        if (cancelled) return;
-
-        setBoot(t(loc(), "boot.config"));
-        await refreshConversationSessions();
-        if (cancelled) return;
-        // Auto-resume starts the host before this window subscribes to events,
-        // so session.opened (and its history) is often missed. Project it now.
-        await hydrateResumedSession();
-        if (cancelled) return;
-
-        setBoot(t(loc(), "boot.ready"));
-        // Brief beat so "ready" is readable before the shell appears.
-        await new Promise((resolve) => window.setTimeout(resolve, 180));
-      } catch (error) {
-        if (!cancelled) {
-          const detail = error instanceof Error ? error.message : String(error);
-          setBoot(t(loc(), "boot.failed", { detail }));
-          setBootstrapError(detail);
-          // Still try to bring the shell up so the user is not stuck forever.
-          try {
-            await refreshRecentWorkspaces();
-            await refreshPiStatus({ ensure: true });
-            await refreshConversationSessions();
-            await hydrateResumedSession();
-          } catch {
-            // ignore secondary failures
-          }
-        }
-      } finally {
-        if (!cancelled) setBootstrapReady(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(
     () =>
@@ -3180,16 +3130,16 @@ function App() {
       data-testid="zeno-app"
       data-theme={activeSkinMode}
       data-theme-skin={themeSelection.id}
-      data-bootstrap-ready={bootstrapReady ? "true" : "false"}
+      data-bootstrap-ready={bootstrap.ready ? "true" : "false"}
     >
       <div className="skin-wallpaper" aria-hidden data-testid="skin-wallpaper" />
       {/* Linux only (customWindowControls); Windows uses native titleBarOverlay. */}
       <WindowCaptionButtons />
-      {!bootstrapReady ? (
+      {!bootstrap.ready ? (
         <BootstrapOverlay
-          status={bootstrapStatus}
-          {...(bootstrapDetail ? { detail: bootstrapDetail } : {})}
-          {...(bootstrapError ? { error: bootstrapError } : {})}
+          status={bootstrap.status}
+          {...(bootstrap.detail ? { detail: bootstrap.detail } : {})}
+          {...(bootstrap.error ? { error: bootstrap.error } : {})}
         />
       ) : null}
       <AppSidebar
