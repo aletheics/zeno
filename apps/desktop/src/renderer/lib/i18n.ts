@@ -4,6 +4,9 @@ export const messages = {
   zh: {
     "app.name": "Zeno",
     "timeline.thinking": "思考过程",
+    "timeline.minimap": "对话导航",
+    "timeline.minimapUser": "用户消息",
+    "timeline.minimapAssistant": "助手回复",
     "timeline.toolRunning": "运行中",
     "timeline.toolCompleted": "已完成",
     "timeline.toolFailed": "失败",
@@ -1371,6 +1374,9 @@ export const messages = {
   en: {
     "app.name": "Zeno",
     "timeline.thinking": "Thinking",
+    "timeline.minimap": "Conversation minimap",
+    "timeline.minimapUser": "User message",
+    "timeline.minimapAssistant": "Assistant reply",
     "timeline.toolRunning": "Running",
     "timeline.toolCompleted": "Completed",
     "timeline.toolFailed": "Failed",

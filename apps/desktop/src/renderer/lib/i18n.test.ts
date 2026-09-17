@@ -15,6 +15,15 @@ describe("i18n", () => {
     expect(isLocale("fr")).toBe(false);
   });
 
+  it("labels the conversation minimap", () => {
+    expect(t("zh", "timeline.minimap")).toBe("对话导航");
+    expect(t("en", "timeline.minimap")).toBe("Conversation minimap");
+    expect(t("zh", "timeline.minimapUser")).toBe("用户消息");
+    expect(t("en", "timeline.minimapUser")).toBe("User message");
+    expect(t("zh", "timeline.minimapAssistant")).toBe("助手回复");
+    expect(t("en", "timeline.minimapAssistant")).toBe("Assistant reply");
+  });
+
   it("localizes packages and resources pages", () => {
     expect(t("zh", "packages.title")).toBe("插件");
     expect(t("en", "packages.title")).toBe("Packages");

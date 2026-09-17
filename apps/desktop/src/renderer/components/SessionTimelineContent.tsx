@@ -14,6 +14,7 @@ import {
   processBlockCoversLiveActivity,
   type TimelineItem,
 } from "@/lib/timeline";
+import { ConversationMinimap } from "./ConversationMinimap.tsx";
 import { TimelineLiveStatus, TimelineProcessBlock, TimelineRow } from "./TimelineRow.tsx";
 import type { Locale } from "@/lib/i18n";
 
@@ -80,6 +81,10 @@ export function SessionTimelineScroller(props: SessionTimelineScrollerProps) {
         >
           <SessionTimelineContent {...contentProps} />
         </MessageScrollerViewport>
+        {/* Sibling of the viewport, not a child: the rail must not scroll with the
+         * transcript. It anchors to MessageScroller's relative box, and must stay
+         * inside the provider for the message-scroller hooks to resolve. */}
+        <ConversationMinimap items={contentProps.items} locale={contentProps.locale} />
       </MessageScroller>
     </MessageScrollerProvider>
   );
