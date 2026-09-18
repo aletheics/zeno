@@ -3,13 +3,48 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
-## [Unreleased]
+## [0.1.7] - 2026-09-18
+
+### Added
+
+- A conversation minimap down the left edge of the thread: one dash per user turn
+  or assistant reply, magnified as the cursor moves along it, with a preview
+  popover for the nearest turn and a click to jump there.
+- Session titles too long for the sidebar now scroll on hover or keyboard focus
+  instead of being cut off, and the full text stays selectable.
+- Fresh installs pick their language from the machine — a Chinese system language
+  or time zone starts in Chinese, everything else in English. Settings → Language
+  gains 跟随系统 / Follow system, so the choice is reversible.
+- Deleting a session can now remove its local file too. Settings → 已归档 has a
+  已删除（可恢复）group, so the ordinary delete can be undone.
 
 ### Changed
 
 - Bundled pi runtime upgraded to 0.85.1. The `@earendil-works/pi-server`
   workaround added for 0.85.0 is no longer needed: upstream moved it to a
   dev dependency and dropped the runtime import.
+- Deleting a session from the sidebar is now labelled 从列表移除 and says that the
+  file stays on disk. It previously said the action could not be undone, which was
+  wrong in both directions: the file was left intact and nothing could bring the row
+  back. 永久删除本地文件 is now a separate, explicitly destructive action.
+- The composer draft and the permission mode belong to the session you set them in.
+  Both were single values shared by every session, so text typed in one appeared in
+  the next, and changing the permission mode anywhere changed it everywhere.
+
+### Fixed
+
+- The Discover tab showed 无匹配插件 for every search on machines whose npm registry
+  is a mirror that drops npm's `keywords:` qualifier — the registry answered with an
+  empty result rather than an error, so it read as "no packages". The catalog now
+  retries the official registry once, while installs keep using the mirror.
+- The composer disappeared and reappeared on every session switch. It is the
+  scroller's sticky footer, so the switch blanking that hides the outgoing
+  transcript was hiding the input with it.
+- Settings → Runtimes showed both switches as on while silently refusing every
+  click, with nothing on screen explaining why: the bundled runtime was absent and
+  the row now says so.
+- The currently open session can no longer be deleted from the sidebar; both delete
+  actions are unavailable for it, with the reason given.
 
 ## [0.1.6] - 2026-09-05
 
