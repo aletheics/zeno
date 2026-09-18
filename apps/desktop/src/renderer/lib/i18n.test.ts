@@ -37,6 +37,25 @@ describe("i18n", () => {
     expect(t("en", "settings.runtimes.notInstalledHint")).toContain("runtimes:fetch");
   });
 
+  it("distinguishes removing from a list and deleting the file", () => {
+    // The two are different operations and the labels have to say so: one is recoverable.
+    expect(t("zh", "thread.delete")).toBe("从列表移除");
+    expect(t("en", "thread.delete")).toBe("Remove from list");
+    expect(t("zh", "thread.deletePermanent")).toBe("永久删除本地文件");
+    expect(t("en", "thread.deletePermanent")).toBe("Delete local file permanently");
+
+    expect(t("zh", "confirm.deleteMessage", { name: "X" })).toContain("恢复");
+    expect(t("en", "confirm.deleteMessage", { name: "X" })).toContain("restored");
+    expect(t("zh", "confirm.deletePermanentMessage", { name: "X" })).toContain("无法恢复");
+    expect(t("en", "confirm.deletePermanentMessage", { name: "X" })).toContain(
+      "cannot be recovered",
+    );
+
+    expect(t("zh", "settings.archived.restore")).toBe("恢复");
+    expect(t("en", "settings.archived.restore")).toBe("Restore");
+    expect(t("zh", "settings.archived.restoreHint")).toContain("磁盘");
+  });
+
   it("labels the conversation minimap", () => {
     expect(t("zh", "timeline.minimap")).toBe("对话导航");
     expect(t("en", "timeline.minimap")).toBe("Conversation minimap");

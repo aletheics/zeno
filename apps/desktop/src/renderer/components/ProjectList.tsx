@@ -41,9 +41,11 @@ import { CreateWorktreeDialog } from "./CreateWorktreeDialog.tsx";
 import { RenameDialog } from "./RenameDialog.tsx";
 import { SidebarOrganizeMenu } from "./SidebarOrganizeMenu.tsx";
 import { loadConfirmArchive, loadConfirmDelete } from "../lib/behavior-prefs.ts";
+import { errorMessageOrFallback } from "../lib/host-signals.ts";
 import { t, type Locale, type MessageKey } from "../lib/i18n.ts";
 import { useShellStore } from "../store/shell-store.ts";
 import {
+  permanentlyDeleteThread,
   archiveProject,
   archiveThread,
   deleteThreadLocal,
@@ -178,6 +180,7 @@ export function ProjectList(props: ProjectListProps) {
   >(null);
   const [confirm, setConfirm] = useState<
     | { kind: "delete-thread"; id: string; name: string }
+    | { kind: "delete-thread-permanent"; id: string; path: string; name: string }
     | { kind: "archive-thread"; id: string; name: string }
     | { kind: "archive-project"; path: string; name: string }
     | { kind: "remove-project"; path: string; name: string }
@@ -543,9 +546,49 @@ export function ProjectList(props: ProjectListProps) {
     doDeleteThread(id);
   }
 
+  function handlePermanentDeleteThread(id: string, path: string) {
+    closeMenus();
+    const thread =
+      props.threads.find((t) => t.id === id) ??
+      Object.values(props.threadsByCwd)
+        .flat()
+        .find((t) => t.id === id);
+    const name = thread
+      ? threadDisplayTitle(thread.id, threadAliases, thread.title)
+      : id.slice(0, 8);
+    if (loadConfirmDelete()) {
+      setConfirm({ kind: "delete-thread-permanent", id, path, name });
+      return;
+    }
+    void doPermanentDeleteThread(id, path);
+  }
+
+  /**
+   * Remove the file, then tombstone it. Order matters: if the file removal fails the row
+   * must stay visible, so the user is not left with a session they can neither see nor find.
+   */
+  async function doPermanentDeleteThread(id: string, path: string) {
+    try {
+      await window.zeno.session.deleteFile(path);
+    } catch (error) {
+      // Reuses the same unwrap-then-fallback rule the shell's own reporter uses.
+      useShellStore
+        .getState()
+        .showAppError(errorMessageOrFallback(error, tr("thread.deletePermanentFailed")));
+      return;
+    }
+    setDeletedThreads(permanentlyDeleteThread(id));
+    setPinnedThreads(loadPinnedThreads());
+    setManualThreadOrder(loadThreadManualOrder());
+    setArchivedThreads(loadArchivedThreads());
+    setUnreadThreads(loadUnreadThreads());
+  }
+
   function runConfirm() {
     if (!confirm) return;
     if (confirm.kind === "delete-thread") doDeleteThread(confirm.id);
+    else if (confirm.kind === "delete-thread-permanent")
+      void doPermanentDeleteThread(confirm.id, confirm.path);
     else if (confirm.kind === "archive-thread") doArchiveThread(confirm.id);
     else if (confirm.kind === "archive-project") doArchiveProject(confirm.path);
     else if (confirm.kind === "remove-project") doRemoveProject(confirm.path);
@@ -1521,6 +1564,7 @@ export function ProjectList(props: ProjectListProps) {
                     copyPath: tr("session.copyPath"),
                     copyId: tr("session.copyId"),
                     del: tr("session.delete"),
+                    delPermanent: tr("session.deletePermanent"),
                   }
                 : {
                     pin: tr("thread.pin"),
@@ -1532,6 +1576,7 @@ export function ProjectList(props: ProjectListProps) {
                     copyPath: tr("thread.copyPath"),
                     copyId: tr("thread.copyId"),
                     del: tr("thread.delete"),
+                    delPermanent: tr("thread.deletePermanent"),
                   };
               return (
                 <>
@@ -1590,6 +1635,13 @@ export function ProjectList(props: ProjectListProps) {
                     danger
                     testId="thread-menu-delete"
                   />
+                  <MenuItem
+                    icon={<Trash2 className="size-3.5" strokeWidth={1.75} />}
+                    label={L.delPermanent}
+                    onClick={() => handlePermanentDeleteThread(thread.id, thread.path)}
+                    danger
+                    testId="thread-menu-delete-permanent"
+                  />
                 </>
               );
             })()
@@ -1625,19 +1677,25 @@ export function ProjectList(props: ProjectListProps) {
       <ConfirmDialog
         open={Boolean(confirm)}
         title={
-          confirm?.kind === "delete-thread" || confirm?.kind === "remove-project"
+          confirm?.kind === "delete-thread" ||
+          confirm?.kind === "delete-thread-permanent" ||
+          confirm?.kind === "remove-project"
             ? tr("confirm.deleteTitle")
             : tr("confirm.archiveTitle")
         }
         message={
           confirm
-            ? confirm.kind === "delete-thread" || confirm.kind === "remove-project"
-              ? tr("confirm.deleteMessage", { name: confirm.name })
-              : tr("confirm.archiveMessage", { name: confirm.name })
+            ? confirm.kind === "delete-thread-permanent"
+              ? tr("confirm.deletePermanentMessage", { name: confirm.name })
+              : confirm.kind === "delete-thread" || confirm.kind === "remove-project"
+                ? tr("confirm.deleteMessage", { name: confirm.name })
+                : tr("confirm.archiveMessage", { name: confirm.name })
             : ""
         }
         confirmLabel={
-          confirm?.kind === "delete-thread" || confirm?.kind === "remove-project"
+          confirm?.kind === "delete-thread" ||
+          confirm?.kind === "delete-thread-permanent" ||
+          confirm?.kind === "remove-project"
             ? tr("confirm.delete")
             : tr("confirm.archive")
         }

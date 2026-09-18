@@ -16,6 +16,12 @@ import {
   sortProjectPaths,
   sortThreadsByMode,
   toggleExpandedProject,
+  deleteThreadLocal,
+  loadDeletedThreads,
+  loadPurgedThreads,
+  loadRestorableThreads,
+  permanentlyDeleteThread,
+  restoreThread,
 } from "./project-prefs.ts";
 
 describe("project prefs helpers", () => {
@@ -231,5 +237,66 @@ describe("thread unread", () => {
     );
     expect(isUnreadThread("other-id", list)).toBe(true);
     expect(isUnreadThread({ id: "nope", path: "/nope.jsonl" }, list)).toBe(false);
+  });
+});
+
+describe("light delete vs permanent delete", () => {
+  // This file runs in the node environment, where there is no localStorage at all —
+  // the existing cases here only exercise pure functions for that reason.
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, String(v));
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+    });
+  });
+
+  it("tombstones without recording a purge", () => {
+    deleteThreadLocal("s1");
+    expect(loadDeletedThreads()).toContain("s1");
+    expect(loadPurgedThreads()).not.toContain("s1");
+  });
+
+  it("restores a light delete", () => {
+    deleteThreadLocal("s1");
+    deleteThreadLocal("s2");
+
+    expect(restoreThread("s1")).toEqual(["s2"]);
+    expect(loadDeletedThreads()).toEqual(["s2"]);
+  });
+
+  it("records a permanent delete in both lists", () => {
+    permanentlyDeleteThread("gone");
+    expect(loadDeletedThreads()).toContain("gone");
+    expect(loadPurgedThreads()).toContain("gone");
+  });
+
+  it("refuses to restore a purged id, because its file is gone", () => {
+    permanentlyDeleteThread("gone");
+
+    // A no-op: the row must not come back pointing at a file that no longer exists.
+    expect(restoreThread("gone")).toEqual(["gone"]);
+    expect(loadDeletedThreads()).toContain("gone");
+  });
+
+  it("offers only recoverable ids to the restore surface", () => {
+    deleteThreadLocal("recoverable");
+    permanentlyDeleteThread("gone");
+
+    expect(loadRestorableThreads()).toEqual(["recoverable"]);
+  });
+
+  it("does not double-record a repeated permanent delete", () => {
+    permanentlyDeleteThread("gone");
+    permanentlyDeleteThread("gone");
+    expect(loadPurgedThreads().filter((id) => id === "gone")).toHaveLength(1);
   });
 });

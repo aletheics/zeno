@@ -553,6 +553,50 @@ export function isDeletedThread(id: string, deleted: readonly string[]): boolean
   return deleted.includes(id);
 }
 
+const THREAD_PURGED_KEY = "zeno.threads.purged";
+
+/**
+ * Ids whose session file has been deleted from disk.
+ *
+ * A separate key rather than a flag inside `THREAD_DELETED_KEY`, because that one is a
+ * plain `string[]` in people's localStorage and reshaping it would need a migration.
+ * Adding a key costs nothing and reads the same on disk.
+ */
+export function loadPurgedThreads(): string[] {
+  const list = readJson<string[]>(THREAD_PURGED_KEY, []);
+  return Array.isArray(list) ? list.filter((p) => typeof p === "string") : [];
+}
+
+/**
+ * Tombstone the id *and* record that its file is gone.
+ *
+ * Both are needed: the tombstone hides the row, the purge marker stops the restore surface
+ * from offering back a session whose file no longer exists.
+ */
+export function permanentlyDeleteThread(id: string): string[] {
+  const purged = loadPurgedThreads();
+  if (!purged.includes(id)) writeJson(THREAD_PURGED_KEY, [id, ...purged]);
+  return deleteThreadLocal(id);
+}
+
+/**
+ * Undo a light delete.
+ *
+ * A no-op for a purged id — there is nothing to bring back, and the UI does not offer it.
+ */
+export function restoreThread(id: string): string[] {
+  if (loadPurgedThreads().includes(id)) return loadDeletedThreads();
+  const next = loadDeletedThreads().filter((p) => p !== id);
+  writeJson(THREAD_DELETED_KEY, next);
+  return next;
+}
+
+/** Deleted but still recoverable — what the restore surface lists. */
+export function loadRestorableThreads(): string[] {
+  const purged = new Set(loadPurgedThreads());
+  return loadDeletedThreads().filter((id) => !purged.has(id));
+}
+
 /** Compare activity timestamps, then stable identity so equal timestamps cannot reshuffle rows. */
 function compareThreadRecency<T extends { id: string; modifiedAt: string; createdAt?: string }>(
   left: T,

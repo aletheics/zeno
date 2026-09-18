@@ -49,6 +49,8 @@ import {
   deleteThreadLocal,
   loadArchivedThreadMeta,
   loadArchivedThreads,
+  loadRestorableThreads,
+  restoreThread,
   loadProjectAliases,
   loadThreadAliases,
   projectDisplayName,
@@ -562,6 +564,8 @@ export function ArchivedSection(props: {
 }) {
   const { tr, locale } = props;
   const [sessionIds, setSessionIds] = useState(loadArchivedThreads);
+  /** Tombstoned but still on disk — the recoverable half of "delete". */
+  const [restorable, setRestorable] = useState(loadRestorableThreads);
   const [meta, setMeta] = useState(loadArchivedThreadMeta);
   const [query, setQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState<string>("all");
@@ -574,6 +578,12 @@ export function ArchivedSection(props: {
   function refresh() {
     setSessionIds(loadArchivedThreads());
     setMeta(loadArchivedThreadMeta());
+    setRestorable(loadRestorableThreads());
+  }
+
+  function restoreSession(id: string) {
+    restoreThread(id);
+    refresh();
   }
 
   useEffect(() => {
@@ -858,6 +868,38 @@ export function ArchivedSection(props: {
                 </div>
               ))}
             </div>
+            {restorable.length > 0 ? (
+              <div className="archived-card" data-testid="archived-deleted-group">
+                <div className="archived-item">
+                  <div className="archived-item-copy">
+                    <div className="archived-item-title">
+                      {tr("settings.archived.deletedGroup")}
+                    </div>
+                    <div className="archived-item-date">{tr("settings.archived.restoreHint")}</div>
+                  </div>
+                </div>
+                {restorable.map((id) => (
+                  <div key={id} className="archived-item" data-testid={`deleted-session-${id}`}>
+                    {/* No stored title: tombstoning drops the alias, so only the id remains.
+                        Restoring puts the row back and the sidebar re-reads the title from
+                        the session file. */}
+                    <div className="archived-item-copy">
+                      <div className="archived-item-title">{id.slice(0, 8)}</div>
+                    </div>
+                    <div className="archived-item-actions">
+                      <SettingsButton
+                        variant="secondary"
+                        size="sm"
+                        testId={`deleted-session-restore-${id}`}
+                        onClick={() => restoreSession(id)}
+                      >
+                        {tr("settings.archived.restore")}
+                      </SettingsButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
         ))
       )}
