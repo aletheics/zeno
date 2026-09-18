@@ -142,6 +142,10 @@ import { appendHostEvent } from "./lib/host-events.ts";
 import { addAttachments, removeAttachment, restoreAttachments } from "./lib/attachments.ts";
 import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
 import { useBootstrapGate } from "./hooks/useBootstrapGate.ts";
+import {
+  loadComposerDraftForSession,
+  saveComposerDraftForSession,
+} from "./lib/composer-draft-prefs.ts";
 import { useSessionPanels } from "./hooks/useSessionPanels.ts";
 import {
   classifyRuntimeEventDelivery,
@@ -492,6 +496,45 @@ function App() {
     return "default";
   });
   const [attachments, setAttachments] = useState<string[]>([]);
+
+  /** Remember the draft against the session it was typed in. */
+  function persistComposerDraft() {
+    const file = useShellStore.getState().snapshot?.sessionFile;
+    if (!file) return;
+    saveComposerDraftForSession(file, {
+      prompt: useShellStore.getState().prompt,
+      attachments,
+    });
+  }
+
+  /**
+   * Forget the draft, for a composer that was just consumed — sent, run as a slash command,
+   * or handed to the shell. The opposite of persisting: leaving a session keeps what you
+   * typed, sending it does not, and keeping the sent text would offer it back the next time
+   * you opened that session.
+   */
+  function discardComposerDraft() {
+    const file = useShellStore.getState().snapshot?.sessionFile;
+    if (!file) return;
+    saveComposerDraftForSession(file, { prompt: "", attachments: [] });
+  }
+
+  /**
+   * Carry the outgoing session's draft away and bring in the incoming one's.
+   *
+   * Called once per switch, before any of its branches, so every path out of `switchThread`
+   * is covered — including the early returns, where the target *is* the current session and
+   * saving then loading the same key is a no-op.
+   *
+   * `prompt` is read from the store rather than the closure: this runs inside an async
+   * handler and the captured value can be a render behind.
+   */
+  function adoptComposerDraft(nextSessionFile: string | undefined) {
+    persistComposerDraft();
+    const draft = loadComposerDraftForSession(nextSessionFile);
+    setPrompt(draft.prompt);
+    setAttachments(draft.attachments);
+  }
   /** Cwds dismissed with "Later" this app session (no trust.json write). */
   const trustPromptDismissedRef = useRef<Set<string>>(new Set());
   const [trustPromptDismissTick, setTrustPromptDismissTick] = useState(0);
@@ -1663,6 +1706,7 @@ function App() {
         )?.source;
         const handled = await runBuiltinSlash(slash.name, slash.args, source);
         if (handled) {
+          discardComposerDraft();
           setPrompt("");
           return;
         }
@@ -1677,6 +1721,7 @@ function App() {
     if (shell.kind !== "none" && attachedPaths.length === 0) {
       if (!shell.command.trim()) return;
       const agentWasRunning = useShellStore.getState().running;
+      discardComposerDraft();
       setPrompt("");
       if (!agentWasRunning) setRunning(true);
       setStatus(
@@ -1735,6 +1780,7 @@ function App() {
     // sentPrompts. Otherwise the live assistant bubble splits around a ghost
     // user message, and later host delivery duplicates the row.
     if (queueBehavior) {
+      discardComposerDraft();
       setPrompt("");
       setAttachments([]);
       const prevQueue = useShellStore.getState().queuedMessages;
@@ -1765,6 +1811,7 @@ function App() {
     }
 
     // ── Normal send path ─────────────────────────────────────────────────────
+    discardComposerDraft();
     setPrompt("");
     setAttachments([]);
     setSentPrompts((current) => [...current, displayMessage]);
@@ -2325,6 +2372,7 @@ function App() {
       await ensureHost();
       setView("thread");
       setSidebarOpen(false);
+      persistComposerDraft();
       setPrompt("");
       setAttachments([]);
       setStatus("Creating session...");
@@ -2369,6 +2417,7 @@ function App() {
       await window.zeno.terminal.suspend().catch(() => undefined);
     }
 
+    persistComposerDraft();
     setView("thread");
     setSidebarOpen(false);
     setPrompt("");
@@ -2670,6 +2719,8 @@ function App() {
   }
 
   async function switchThread(sessionPath: string, projectCwd?: string) {
+    // Each session keeps its own composer text, so a draft never follows you across.
+    adoptComposerDraft(sessionPath);
     const currentStore = useShellStore.getState();
     const targetSessionKey = sessionRunKey(sessionPath);
     const currentSessionKeys = [
