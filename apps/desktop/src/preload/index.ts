@@ -286,6 +286,7 @@ const api: ZenoDesktopApi = {
     clone: () => ipcRenderer.invoke("zeno:session:clone"),
     info: () => ipcRenderer.invoke("zeno:session:info"),
     export: (format, outputPath) => ipcRenderer.invoke("zeno:session:export", format, outputPath),
+    deleteFile: (sessionPath) => ipcRenderer.invoke("zeno:session:delete-file", sessionPath),
     exportPick: (format) => ipcRenderer.invoke("zeno:session:export-pick", format),
     import: (inputPath) => ipcRenderer.invoke("zeno:session:import", inputPath),
     importPick: () => ipcRenderer.invoke("zeno:session:import-pick"),

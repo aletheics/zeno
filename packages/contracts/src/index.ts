@@ -2157,6 +2157,14 @@ export interface ZenoDesktopApi {
       history: SessionHistoryMessage[];
     }>;
     info(): Promise<SessionInfoView>;
+    /**
+     * Remove a session's `.jsonl` from disk. Irreversible.
+     *
+     * Rejects unless the path resolves to a session file inside the agent's sessions
+     * directory — the renderer is not trusted to name arbitrary files. See
+     * `main/session-files.ts`.
+     */
+    deleteFile(sessionPath: string): Promise<void>;
     export(format: "html" | "jsonl", outputPath?: string): Promise<SessionExportResult>;
     /** Save dialog then export (visual path). */
     exportPick(format: "html" | "jsonl"): Promise<SessionExportResult | undefined>;

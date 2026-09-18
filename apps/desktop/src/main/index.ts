@@ -115,6 +115,7 @@ import {
   type ResolvedPiSdk,
 } from "./pi-sdk.ts";
 import { searchPiPackageCatalog } from "./package-catalog.ts";
+import { deleteSessionFile, sessionsRootDir } from "./session-files.ts";
 import { createNodePtySpawn, PiTuiPtyController } from "./pi-tui-pty.ts";
 import { PiTuiExclusiveGuard, planPiTuiLaunch } from "./pi-tui-session.ts";
 import {
@@ -5778,6 +5779,15 @@ void app
     );
     ipcMain.handle("zeno:session:clone", () => supervisor?.cloneSession());
     ipcMain.handle("zeno:session:info", () => supervisor?.sessionInfo());
+    /**
+     * The one handler that deletes user data. It trusts nothing the renderer sends: the
+     * sender is checked, and the path must resolve to a session file inside the agent's
+     * sessions directory (see session-files.ts — that module carries the whole rule).
+     */
+    ipcMain.handle("zeno:session:delete-file", (event, sessionPath: string) => {
+      assertTrustedSender(event);
+      deleteSessionFile(sessionPath, sessionsRootDir(defaultAgentDir()));
+    });
     ipcMain.handle("zeno:session:export", (_event, format: "html" | "jsonl", outputPath?: string) =>
       supervisor?.exportSession(format, outputPath),
     );
