@@ -1462,6 +1462,20 @@ html[data-custom-window-controls="true"] .page-header {
   background-size: cover;
   /* Sit closer to the window bottom (was pb-6 via utility on the dock). */
   padding-bottom: 0.5rem; /* 8px */
+  /*
+   * Survive the transcript's session-switch blanking.
+   *
+   * The dock is the scroller's sticky footer, so it is a descendant of the viewport that
+   * gets `invisible pointer-events-none` while a switch settles. That blanking is meant for
+   * the outgoing session's rows, but it took the input with it — the composer vanished and
+   * reappeared on every switch. `visibility` is inherited yet a descendant may override it,
+   * so the input stays put while the rows still blank; `pointer-events` needs the same
+   * treatment or the composer would be visible but dead for the duration.
+   *
+   * `display: none` on an ancestor still hides it, which is the case that should win.
+   */
+  visibility: visible;
+  pointer-events: auto;
 }
 /* Scroll-to-bottom: always just above the composer card, never over the textarea. */
 .composer-dock [data-slot="message-scroller-button"][data-direction="end"] {

@@ -33,10 +33,12 @@ function readMetrics(host: HTMLSpanElement | null): Metrics | undefined {
   const track = host?.firstElementChild as HTMLElement | null;
   const copy = track?.firstElementChild as HTMLElement | null;
   if (!host || !track || !copy) return undefined;
+  // The advance is measured off one copy rather than half the track, so the numbers are
+  // valid before the second copy exists — which is what decides whether it is needed.
+  const gap = Number.parseFloat(getComputedStyle(copy).marginRight);
   return {
     copyWidth: copy.offsetWidth,
-    // The track holds exactly two copies, so half of it is one copy plus its gap.
-    copyAdvance: track.offsetWidth / 2,
+    copyAdvance: copy.offsetWidth + (Number.isFinite(gap) ? gap : 0),
     availableWidth: host.clientWidth,
   };
 }
@@ -110,9 +112,14 @@ export function MarqueeText({
     >
       <span className="marquee-track inline-flex">
         <span className="marquee-copy">{text}</span>
-        <span className="marquee-copy" aria-hidden="true">
-          {text}
-        </span>
+        {/* Only when there is something to scroll. Rendered unconditionally, the second copy
+            would show its first characters just past a label that nearly fits — the
+            duplicate is for the seam, not for every row. */}
+        {overflows ? (
+          <span className="marquee-copy" aria-hidden="true">
+            {text}
+          </span>
+        ) : null}
       </span>
     </span>
   );
