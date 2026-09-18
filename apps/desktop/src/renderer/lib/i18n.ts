@@ -887,6 +887,7 @@ export const messages = {
     "thread.copyId": "复制会话 ID",
     "thread.delete": "从列表移除",
     "thread.deletePermanent": "永久删除本地文件",
+    "thread.deleteCurrentBlocked": "这是当前会话，不能删除。请先切换到其他会话。",
     "thread.deletePermanentFailed": "删除本地文件失败",
     "thread.copied": "已复制",
     "thread.showMore": "展开显示",
@@ -2285,6 +2286,8 @@ export const messages = {
     "thread.copyId": "Copy session ID",
     "thread.delete": "Remove from list",
     "thread.deletePermanent": "Delete local file permanently",
+    "thread.deleteCurrentBlocked":
+      "This is the current session. Switch to another session before deleting it.",
     "thread.deletePermanentFailed": "Could not delete the local session file",
     "thread.copied": "Copied",
     "thread.showMore": "Show more",

@@ -16,6 +16,12 @@ export const MARQUEE_OVERFLOW_EPSILON_PX = 0.5;
 /** Slow enough to read while it moves. */
 export const MARQUEE_SPEED_PX_PER_SECOND = 30;
 
+/**
+ * Share of a cycle spent travelling; the rest is the pause at the end before it loops.
+ * The keyframes in `styles.css` encode this same fraction — change one, change both.
+ */
+export const MARQUEE_TRAVEL_FRACTION = 0.85;
+
 /** Bounds so a two-word overflow does not crawl and a paragraph does not sprint. */
 export const MARQUEE_MIN_DURATION_MS = 3_000;
 export const MARQUEE_MAX_DURATION_MS = 20_000;
@@ -40,14 +46,15 @@ export function marqueeDistancePx(metrics: MarqueeMetrics): number {
 }
 
 /**
- * One full cycle: out to the end and back, so the text returns to where it started and the
- * loop has no visible jump. Scaled by distance, then clamped.
+ * One cycle: out to the end, pause, then loop back to the start.
+ *
+ * Single direction, so a cycle is one traversal rather than a round trip. The travel is
+ * stretched to fill `MARQUEE_TRAVEL_FRACTION` of the cycle, which keeps the advertised
+ * speed honest even though the animation spends the remaining share holding still.
  */
 export function marqueeDurationMs(distancePx: number): number {
   if (!Number.isFinite(distancePx) || distancePx <= 0) return MARQUEE_MIN_DURATION_MS;
-  const oneWayMs = (distancePx / MARQUEE_SPEED_PX_PER_SECOND) * 1000;
-  return Math.min(
-    MARQUEE_MAX_DURATION_MS,
-    Math.max(MARQUEE_MIN_DURATION_MS, Math.round(oneWayMs * 2)),
-  );
+  const travelMs = (distancePx / MARQUEE_SPEED_PX_PER_SECOND) * 1000;
+  const cycleMs = travelMs / MARQUEE_TRAVEL_FRACTION;
+  return Math.min(MARQUEE_MAX_DURATION_MS, Math.max(MARQUEE_MIN_DURATION_MS, Math.round(cycleMs)));
 }

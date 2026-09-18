@@ -50,8 +50,8 @@ describe("MarqueeText", () => {
 
     await waitFor(() => expect(host).toHaveAttribute("data-overflow", "true"));
     expect(host.style.getPropertyValue("--marquee-distance")).toBe("-280px");
-    // 280px at 30px/s, doubled for the round trip.
-    expect(host.style.getPropertyValue("--marquee-duration")).toBe("18667ms");
+    // One traversal at 30px/s (280/30 -> 9.33s), stretched to fill 85% of the cycle.
+    expect(host.style.getPropertyValue("--marquee-duration")).toBe("10980ms");
   });
 
   it("stops overflowing when the row gets wider", async () => {

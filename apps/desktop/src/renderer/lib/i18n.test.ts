@@ -51,6 +51,10 @@ describe("i18n", () => {
       "cannot be recovered",
     );
 
+    // The current session cannot be deleted, and the reason is stated rather than implied.
+    expect(t("zh", "thread.deleteCurrentBlocked")).toContain("当前会话");
+    expect(t("en", "thread.deleteCurrentBlocked")).toContain("current session");
+
     expect(t("zh", "settings.archived.restore")).toBe("恢复");
     expect(t("en", "settings.archived.restore")).toBe("Restore");
     expect(t("zh", "settings.archived.restoreHint")).toContain("磁盘");

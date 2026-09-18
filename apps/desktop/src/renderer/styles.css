@@ -993,21 +993,17 @@ html[data-custom-window-controls="true"] .page-header {
  * triggered from here, because the trigger has to be the whole row (hovering its padding
  * or focusing it by keyboard must count too) and CSS cannot select an ancestor.
  *
- * The travel is a round trip — out to the end, then back — so the loop has no visible jump
- * at the wrap, which a one-way scroll would have.
+ * One direction: out to the end, hold briefly, then loop. The hold is what stops the wrap
+ * from reading as a glitch; the 85% below is MARQUEE_TRAVEL_FRACTION in lib/marquee.ts,
+ * which accounts for it when computing the duration. Change one, change both.
  */
 @keyframes marquee-slide {
-  0%,
-  6% {
+  0% {
     transform: translateX(0);
   }
-  47%,
-  53% {
-    transform: translateX(var(--marquee-distance, 0));
-  }
-  94%,
+  85%,
   100% {
-    transform: translateX(0);
+    transform: translateX(var(--marquee-distance, 0));
   }
 }
 

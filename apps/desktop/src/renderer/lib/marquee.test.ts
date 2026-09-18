@@ -5,6 +5,8 @@ import {
   MARQUEE_MAX_DURATION_MS,
   MARQUEE_MIN_DURATION_MS,
   MARQUEE_OVERFLOW_EPSILON_PX,
+  MARQUEE_SPEED_PX_PER_SECOND,
+  MARQUEE_TRAVEL_FRACTION,
   shouldMarquee,
 } from "./marquee.ts";
 
@@ -44,6 +46,13 @@ describe("marqueeDistancePx", () => {
 });
 
 describe("marqueeDurationMs", () => {
+  it("is one traversal, not a round trip", () => {
+    // 300px at 30px/s travels in 10s; stretched to fill the travelling share of the cycle.
+    expect(marqueeDurationMs(300)).toBe(
+      Math.round(((300 / MARQUEE_SPEED_PX_PER_SECOND) * 1000) / MARQUEE_TRAVEL_FRACTION),
+    );
+  });
+
   it("scales with distance", () => {
     const short = marqueeDurationMs(60);
     const long = marqueeDurationMs(600);
