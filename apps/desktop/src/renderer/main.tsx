@@ -108,7 +108,6 @@ import {
   loadAccessVisibility,
   loadShowContextUsage,
   resolveAccessMode,
-  saveAccessMode,
   saveAccessVisibility,
   saveShowContextUsage,
   type AccessMode,
@@ -146,6 +145,7 @@ import {
   loadComposerDraftForSession,
   saveComposerDraftForSession,
 } from "./lib/composer-draft-prefs.ts";
+import { loadAccessModeForSession, saveAccessModeForSession } from "./lib/settings-prefs.ts";
 import { useSessionPanels } from "./hooks/useSessionPanels.ts";
 import {
   classifyRuntimeEventDelivery,
@@ -448,10 +448,26 @@ function App() {
   const [showContextUsage, setShowContextUsage] = useState(loadShowContextUsage);
   const [shortcutRevision, setShortcutRevision] = useState(0);
 
+  /**
+   * Adopt the resumed session's own composer text and permission mode on cold start.
+   *
+   * Without this the session is shown with the *global* last-used values until the user
+   * switches away and back, which looks like the stored values were ignored.
+   */
+  const adoptedSessionRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const file = snapshot?.sessionFile;
+    if (!file || adoptedSessionRef.current !== undefined) return;
+    adoptedSessionRef.current = file;
+    setAccessMode(resolveAccessMode(loadAccessModeForSession(file), accessVisibility));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on the first bind
+  }, [snapshot?.sessionFile]);
+
   function applyAccessMode(mode: AccessMode) {
     const next = resolveAccessMode(mode, accessVisibility);
     setAccessMode(next);
-    saveAccessMode(next);
+    // Scoped to the session it was chosen in; also refreshes the global last-used.
+    saveAccessModeForSession(useShellStore.getState().snapshot?.sessionFile, next);
     // Full access maps onto project trust when host is live.
     if (next === "full") {
       const snap = useShellStore.getState().snapshot;
@@ -476,7 +492,9 @@ function App() {
     const resolved = resolveAccessMode(accessMode, visibility);
     if (resolved !== accessMode) {
       setAccessMode(resolved);
-      saveAccessMode(resolved);
+      // The fallback belongs to this session too, or its stored mode would stay on an
+      // option the visibility policy no longer offers.
+      saveAccessModeForSession(useShellStore.getState().snapshot?.sessionFile, resolved);
     }
   }
 
@@ -497,21 +515,30 @@ function App() {
   });
   const [attachments, setAttachments] = useState<string[]>([]);
 
-  /** Remember the draft against the session it was typed in. */
-  function persistComposerDraft() {
+  /**
+   * Remember the outgoing session's composer text and permission mode.
+   *
+   * The two travel together because they are both session-scoped: switching one without the
+   * other would reintroduce exactly the leak this fixes. `prompt` is read from the store
+   * rather than the closure — this runs inside an async handler, where the captured value
+   * can be a render behind.
+   */
+  function persistSessionScopedState() {
     const file = useShellStore.getState().snapshot?.sessionFile;
     if (!file) return;
     saveComposerDraftForSession(file, {
       prompt: useShellStore.getState().prompt,
       attachments,
     });
+    saveAccessModeForSession(file, accessMode);
   }
 
   /**
-   * Forget the draft, for a composer that was just consumed — sent, run as a slash command,
-   * or handed to the shell. The opposite of persisting: leaving a session keeps what you
-   * typed, sending it does not, and keeping the sent text would offer it back the next time
-   * you opened that session.
+   * Forget the composer draft, for a composer that was just consumed — sent, run as a slash
+   * command, or handed to the shell. The opposite of persisting: leaving a session keeps
+   * what you typed, sending it does not, and keeping the sent text would offer it back the
+   * next time you opened that session. The permission mode is untouched; sending a message
+   * is not a reason to forget how the session was allowed to work.
    */
   function discardComposerDraft() {
     const file = useShellStore.getState().snapshot?.sessionFile;
@@ -520,20 +547,19 @@ function App() {
   }
 
   /**
-   * Carry the outgoing session's draft away and bring in the incoming one's.
+   * Bring in the incoming session's composer text and permission mode.
    *
    * Called once per switch, before any of its branches, so every path out of `switchThread`
    * is covered — including the early returns, where the target *is* the current session and
    * saving then loading the same key is a no-op.
-   *
-   * `prompt` is read from the store rather than the closure: this runs inside an async
-   * handler and the captured value can be a render behind.
    */
-  function adoptComposerDraft(nextSessionFile: string | undefined) {
-    persistComposerDraft();
+  function adoptSessionScopedState(nextSessionFile: string | undefined) {
+    persistSessionScopedState();
     const draft = loadComposerDraftForSession(nextSessionFile);
     setPrompt(draft.prompt);
     setAttachments(draft.attachments);
+    // A restored mode must still be one the current visibility policy offers.
+    setAccessMode(resolveAccessMode(loadAccessModeForSession(nextSessionFile), accessVisibility));
   }
   /** Cwds dismissed with "Later" this app session (no trust.json write). */
   const trustPromptDismissedRef = useRef<Set<string>>(new Set());
@@ -2372,7 +2398,7 @@ function App() {
       await ensureHost();
       setView("thread");
       setSidebarOpen(false);
-      persistComposerDraft();
+      persistSessionScopedState();
       setPrompt("");
       setAttachments([]);
       setStatus("Creating session...");
@@ -2417,7 +2443,7 @@ function App() {
       await window.zeno.terminal.suspend().catch(() => undefined);
     }
 
-    persistComposerDraft();
+    persistSessionScopedState();
     setView("thread");
     setSidebarOpen(false);
     setPrompt("");
@@ -2720,7 +2746,7 @@ function App() {
 
   async function switchThread(sessionPath: string, projectCwd?: string) {
     // Each session keeps its own composer text, so a draft never follows you across.
-    adoptComposerDraft(sessionPath);
+    adoptSessionScopedState(sessionPath);
     const currentStore = useShellStore.getState();
     const targetSessionKey = sessionRunKey(sessionPath);
     const currentSessionKeys = [
