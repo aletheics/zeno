@@ -987,6 +987,43 @@ html[data-custom-window-controls="true"] .page-header {
 
 /* Sidebar titles: fade at the container edge (no ellipsis).
    Container width shrinks on row hover (pr-14) so fade stops before action icons. */
+/*
+ * Marquee titles. `MarqueeText` measures its own overflow and publishes
+ * --marquee-distance / --marquee-duration plus data-overflow; the animation itself is
+ * triggered from here, because the trigger has to be the whole row (hovering its padding
+ * or focusing it by keyboard must count too) and CSS cannot select an ancestor.
+ *
+ * The travel is a round trip — out to the end, then back — so the loop has no visible jump
+ * at the wrap, which a one-way scroll would have.
+ */
+@keyframes marquee-slide {
+  0%,
+  6% {
+    transform: translateX(0);
+  }
+  47%,
+  53% {
+    transform: translateX(var(--marquee-distance, 0));
+  }
+  94%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-inner,
+.sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-inner {
+  animation: marquee-slide var(--marquee-duration, 8s) linear infinite;
+}
+
+/* Motion sensitivity: keep the truncated label as it is rather than sliding it. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-inner,
+  .sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-inner {
+    animation: none;
+  }
+}
+
 .sidebar-title-fade {
   -webkit-mask-image: linear-gradient(
     to right,

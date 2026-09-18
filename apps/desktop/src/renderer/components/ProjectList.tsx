@@ -36,6 +36,7 @@ import {
   type ReactNode,
 } from "react";
 import { anchorFromEvent, FloatingMenu, type AnchorRect } from "./FloatingMenu.tsx";
+import { MarqueeText } from "./MarqueeText.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog.tsx";
 import { RenameDialog } from "./RenameDialog.tsx";
@@ -925,6 +926,9 @@ export function ProjectList(props: ProjectListProps) {
             className={cn(
               // gap-2 matches project row (folder icon + name) so indented session titles align.
               "flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 text-left transition-[padding]",
+              // Host for the marquee trigger: the title scrolls when the *row* is hovered
+              // or focused, not only when the text itself is.
+              "sidebar-thread-row",
               // Default: full width (fade to row end). Hover leaves room for actions.
               "pr-0 group-hover/item:pr-14",
             )}
@@ -957,14 +961,13 @@ export function ProjectList(props: ProjectListProps) {
             {pinnedHere ? (
               <Pin className="size-3 shrink-0 opacity-50" strokeWidth={1.75} aria-hidden />
             ) : null}
-            <span
+            <MarqueeText
+              text={title}
               className={cn(
-                "sidebar-title-fade min-w-0 flex-1 overflow-hidden whitespace-nowrap leading-4 text-left",
+                "sidebar-title-fade leading-4 text-left",
                 unread && "font-medium text-[var(--foreground)]",
               )}
-            >
-              {title}
-            </span>
+            />
             <ThreadRunMarker marker={runMarker} {...(stateLabel ? { label: stateLabel } : {})} />
           </button>
           {/* Hover: pin + archive only. Full menu via right-click. */}
