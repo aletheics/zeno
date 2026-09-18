@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
-  marqueeDistancePx,
   marqueeDurationMs,
   MARQUEE_MAX_DURATION_MS,
   MARQUEE_MIN_DURATION_MS,
   MARQUEE_OVERFLOW_EPSILON_PX,
   MARQUEE_SPEED_PX_PER_SECOND,
-  MARQUEE_TRAVEL_FRACTION,
   shouldMarquee,
 } from "./marquee.ts";
 
@@ -17,14 +15,19 @@ describe("shouldMarquee", () => {
   });
 
   it("ignores a fractional difference but not a whole pixel", () => {
-    // scrollWidth comes back fractional from layout; text that visibly fits must not
-    // animate because of a half pixel.
+    // Layout reports fractional widths; a label that visibly fits must not start scrolling
+    // over a half pixel.
     expect(shouldMarquee({ scrollWidth: 120.5, clientWidth: 120 })).toBe(false);
     expect(
       shouldMarquee({ scrollWidth: 120 + MARQUEE_OVERFLOW_EPSILON_PX, clientWidth: 120 }),
     ).toBe(false);
-    // A whole pixel of clipping is real, if barely visible.
     expect(shouldMarquee({ scrollWidth: 121, clientWidth: 120 })).toBe(true);
+  });
+
+  it("is false rather than NaN-poisoned when a measurement is missing", () => {
+    // Both read as 0 before layout, and an unmeasured label must simply not scroll.
+    expect(shouldMarquee({ scrollWidth: Number.NaN, clientWidth: 120 })).toBe(false);
+    expect(shouldMarquee({ scrollWidth: 400, clientWidth: Number.NaN })).toBe(false);
   });
 
   it("is true once the text genuinely overflows", () => {
@@ -32,31 +35,16 @@ describe("shouldMarquee", () => {
   });
 });
 
-describe("marqueeDistancePx", () => {
-  it("is the amount hidden, and never negative", () => {
-    expect(marqueeDistancePx({ scrollWidth: 400, clientWidth: 120 })).toBe(280);
-    expect(marqueeDistancePx({ scrollWidth: 80, clientWidth: 120 })).toBe(0);
-  });
-
-  it("is 0 rather than NaN when a measurement is unavailable", () => {
-    // scrollWidth/clientWidth are 0 before layout; NaN would poison the CSS variable.
-    expect(marqueeDistancePx({ scrollWidth: Number.NaN, clientWidth: 120 })).toBe(0);
-    expect(marqueeDistancePx({ scrollWidth: 400, clientWidth: Number.NaN })).toBe(0);
-  });
-});
-
 describe("marqueeDurationMs", () => {
-  it("is one traversal, not a round trip", () => {
-    // 300px at 30px/s travels in 10s; stretched to fill the travelling share of the cycle.
-    expect(marqueeDurationMs(300)).toBe(
-      Math.round(((300 / MARQUEE_SPEED_PX_PER_SECOND) * 1000) / MARQUEE_TRAVEL_FRACTION),
-    );
+  it("is one traversal at the stated speed", () => {
+    // The loop is seamless, so a cycle is exactly one copy's advance — no return leg and no
+    // pause to account for.
+    expect(marqueeDurationMs(300)).toBe((300 / MARQUEE_SPEED_PX_PER_SECOND) * 1000);
+    expect(marqueeDurationMs(600)).toBe(20_000);
   });
 
   it("scales with distance", () => {
-    const short = marqueeDurationMs(60);
-    const long = marqueeDurationMs(600);
-    expect(long).toBeGreaterThan(short);
+    expect(marqueeDurationMs(300)).toBeGreaterThan(marqueeDurationMs(150));
   });
 
   it("holds a floor so a tiny overflow does not flicker", () => {

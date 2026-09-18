@@ -988,34 +988,41 @@ html[data-custom-window-controls="true"] .page-header {
 /* Sidebar titles: fade at the container edge (no ellipsis).
    Container width shrinks on row hover (pr-14) so fade stops before action icons. */
 /*
- * Marquee titles. `MarqueeText` measures its own overflow and publishes
- * --marquee-distance / --marquee-duration plus data-overflow; the animation itself is
- * triggered from here, because the trigger has to be the whole row (hovering its padding
- * or focusing it by keyboard must count too) and CSS cannot select an ancestor.
+ * Marquee titles. `MarqueeText` renders the label twice and measures one copy's advance,
+ * publishing it as --marquee-duration and setting data-overflow; the animation is triggered
+ * from here, because the trigger has to be the whole row (hovering its padding or focusing
+ * it by keyboard must count too) and CSS cannot select an ancestor.
  *
- * One direction: out to the end, hold briefly, then loop. The hold is what stops the wrap
- * from reading as a glitch; the 85% below is MARQUEE_TRAVEL_FRACTION in lib/marquee.ts,
- * which accounts for it when computing the duration. Change one, change both.
+ * Sliding by exactly -50% moves the pair by one copy, and since the second copy is the same
+ * text the next frame is identical to the first — the loop has no seam, so there is no pause
+ * and no measured distance to feed in.
  */
 @keyframes marquee-slide {
-  0% {
+  from {
     transform: translateX(0);
   }
-  85%,
-  100% {
-    transform: translateX(var(--marquee-distance, 0));
+  to {
+    transform: translateX(-50%);
   }
 }
 
-.sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-inner,
-.sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-inner {
+/* The gap that keeps the repeated title from running together. Margin, not padding:
+   `offsetWidth` includes padding, so padding here would inflate the measured copy and make
+   a title that actually fits look like it overflows. Margins are excluded from offsetWidth
+   but still count in the track's width, which is what the duration is derived from. */
+.marquee-copy {
+  margin-right: 2.5rem;
+}
+
+.sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-track,
+.sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-track {
   animation: marquee-slide var(--marquee-duration, 8s) linear infinite;
 }
 
-/* Motion sensitivity: keep the truncated label as it is rather than sliding it. */
+/* Motion sensitivity: leave the label clipped rather than scrolling it. */
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-inner,
-  .sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-inner {
+  .sidebar-thread-row:hover .marquee[data-overflow="true"] .marquee-track,
+  .sidebar-thread-row:focus-visible .marquee[data-overflow="true"] .marquee-track {
     animation: none;
   }
 }
