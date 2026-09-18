@@ -18,9 +18,9 @@ describe("shouldMarquee", () => {
     // scrollWidth comes back fractional from layout; text that visibly fits must not
     // animate because of a half pixel.
     expect(shouldMarquee({ scrollWidth: 120.5, clientWidth: 120 })).toBe(false);
-    expect(shouldMarquee({ scrollWidth: 120 + MARQUEE_OVERFLOW_EPSILON_PX, clientWidth: 120 })).toBe(
-      false,
-    );
+    expect(
+      shouldMarquee({ scrollWidth: 120 + MARQUEE_OVERFLOW_EPSILON_PX, clientWidth: 120 }),
+    ).toBe(false);
     // A whole pixel of clipping is real, if barely visible.
     expect(shouldMarquee({ scrollWidth: 121, clientWidth: 120 })).toBe(true);
   });
