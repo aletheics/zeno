@@ -25,11 +25,23 @@ const SRC = join(__dirname, "..", "src");
  * Each entry is a file that is too big already — the ratchet stops it getting worse while
  * the extraction is done incrementally.
  */
+/**
+ * Frozen ceilings, measured 2026-09-18. Lower them as files shrink; do not raise them.
+ * Each entry is a file that is too big already — the ratchet stops it getting worse while
+ * the extraction is done incrementally.
+ *
+ * This list is now four entries, not five: `lib/i18n.ts` was split by locale (see
+ * `lib/locales/`), which took it from 2,828 lines to a 54-line index. That is the ratchet
+ * working as intended — the budget forced a structural fix rather than a raised number.
+ *
+ * Note these are line budgets applied to *code*. A translation catalogue is the one thing
+ * they measure poorly, because its size tracks how many strings the product has rather than
+ * how the code is organised — which is why the catalogue was split rather than re-budgeted.
+ */
 const FROZEN = {
-  "main/index.ts": 5985,
-  "renderer/main.tsx": 4615,
-  "renderer/components/settings/SettingsPage.tsx": 5547,
-  "renderer/lib/i18n.ts": 2828,
+  "main/index.ts": 5907,
+  "renderer/main.tsx": 4605,
+  "renderer/components/settings/SettingsPage.tsx": 5163,
   "renderer/components/Composer.tsx": 2194,
 };
 

@@ -1,7 +1,6 @@
 import { IPC_PROTOCOL_VERSION } from "@zeno/contracts";
 import type {
   CatalogPackage,
-  HostEvent,
   HostSnapshot,
   McpConfig,
   PackageSummary,
@@ -83,8 +82,7 @@ import {
   isAlreadyProcessingError,
   unknownErrorMessage,
 } from "./lib/host-signals.ts";
-import { resolveNotification, type NotificationKind } from "./lib/notifications.ts";
-import { isExtensionUiDialogMethod, promptExtensionUiDialog } from "./lib/extension-ui-prompt.ts";
+import { isExtensionUiDialogMethod } from "./lib/extension-ui-prompt.ts";
 import {
   applyExtensionUiFireForget,
   emptyExtensionUiPortableState,
@@ -141,11 +139,9 @@ import { appendHostEvent } from "./lib/host-events.ts";
 import { addAttachments, removeAttachment, restoreAttachments } from "./lib/attachments.ts";
 import { deriveRunState, projectTimeline, type TimelineItem } from "./lib/timeline.ts";
 import { useBootstrapGate } from "./hooks/useBootstrapGate.ts";
-import {
-  loadComposerDraftForSession,
-  saveComposerDraftForSession,
-} from "./lib/composer-draft-prefs.ts";
-import { loadAccessModeForSession, saveAccessModeForSession } from "./lib/settings-prefs.ts";
+import { saveAccessModeForSession } from "./lib/settings-prefs.ts";
+import { useHostMessages } from "./hooks/useHostMessages.ts";
+import { useSessionScopedState } from "./hooks/useSessionScopedState.ts";
 import { useSessionPanels } from "./hooks/useSessionPanels.ts";
 import {
   classifyRuntimeEventDelivery,
@@ -180,19 +176,6 @@ function reportAppError(error: unknown, fallback: string): string {
   return message;
 }
 
-function maybeNotify(kind: NotificationKind, body?: string): void {
-  // Decision is pure (lib/notifications.ts); only the locale read and the IPC are here.
-  const payload = resolveNotification({
-    kind,
-    body,
-    prefs: loadNotificationPrefs(),
-    locale: useShellStore.getState().locale,
-  });
-  if (!payload) return;
-  // Focus check runs in main via requireUnfocused (document.hasFocus is unreliable in Electron).
-  void window.zeno.notifications.show(payload).catch(() => undefined);
-}
-
 /**
  * Mark sidebar session unread when a turn settles and the user is not currently
  * reading that transcript (other session, settings, packages, …).
@@ -206,33 +189,6 @@ function maybeMarkUnreadForRuntime(runtimeId: string): void {
     activeSessionKey: sessionKeyFromSnapshot(store.snapshot),
     view: store.view,
   });
-}
-
-async function respondToExtensionUi(event: Extract<HostEvent, { type: "extensionUi.request" }>) {
-  if (!isExtensionUiDialogMethod(event.method)) return;
-  const { ok, value } = await promptExtensionUiDialog({
-    ...event,
-    method: event.method,
-  });
-  await window.zeno.extensionUi.respond({
-    runtimeId: event.runtimeId,
-    requestId: event.requestId,
-    ok,
-    value,
-  });
-}
-
-function applyExtensionNotify(
-  notify: { message: string; type: "info" | "warning" | "error" } | undefined,
-): void {
-  if (!notify?.message) return;
-  // Surface in host status strip; escalate error/warning to OS notifications.
-  useShellStore.getState().setStatus(notify.message);
-  if (notify.type === "error") {
-    maybeNotify("error", notify.message);
-  } else if (notify.type === "warning") {
-    maybeNotify("error", notify.message);
-  }
 }
 
 function App() {
@@ -448,21 +404,6 @@ function App() {
   const [showContextUsage, setShowContextUsage] = useState(loadShowContextUsage);
   const [shortcutRevision, setShortcutRevision] = useState(0);
 
-  /**
-   * Adopt the resumed session's own composer text and permission mode on cold start.
-   *
-   * Without this the session is shown with the *global* last-used values until the user
-   * switches away and back, which looks like the stored values were ignored.
-   */
-  const adoptedSessionRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    const file = snapshot?.sessionFile;
-    if (!file || adoptedSessionRef.current !== undefined) return;
-    adoptedSessionRef.current = file;
-    setAccessMode(resolveAccessMode(loadAccessModeForSession(file), accessVisibility));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on the first bind
-  }, [snapshot?.sessionFile]);
-
   function applyAccessMode(mode: AccessMode) {
     const next = resolveAccessMode(mode, accessVisibility);
     setAccessMode(next);
@@ -515,52 +456,24 @@ function App() {
   });
   const [attachments, setAttachments] = useState<string[]>([]);
 
-  /**
-   * Remember the outgoing session's composer text and permission mode.
-   *
-   * The two travel together because they are both session-scoped: switching one without the
-   * other would reintroduce exactly the leak this fixes. `prompt` is read from the store
-   * rather than the closure — this runs inside an async handler, where the captured value
-   * can be a render behind.
-   */
-  function persistSessionScopedState() {
-    const file = useShellStore.getState().snapshot?.sessionFile;
-    if (!file) return;
-    saveComposerDraftForSession(file, {
-      prompt: useShellStore.getState().prompt,
-      attachments,
-    });
-    saveAccessModeForSession(file, accessMode);
-  }
+  /** Composer text and permission mode are per session — see the hook for why. */
+  /** Notifications, the status strip, and answering an extension's dialogs. */
+  const hostMessages = useHostMessages({
+    locale,
+    setStatus: (next) => useShellStore.getState().setStatus(next),
+  });
 
-  /**
-   * Forget the composer draft, for a composer that was just consumed — sent, run as a slash
-   * command, or handed to the shell. The opposite of persisting: leaving a session keeps
-   * what you typed, sending it does not, and keeping the sent text would offer it back the
-   * next time you opened that session. The permission mode is untouched; sending a message
-   * is not a reason to forget how the session was allowed to work.
-   */
-  function discardComposerDraft() {
-    const file = useShellStore.getState().snapshot?.sessionFile;
-    if (!file) return;
-    saveComposerDraftForSession(file, { prompt: "", attachments: [] });
-  }
+  const sessionScoped = useSessionScopedState({
+    sessionFile: snapshot?.sessionFile,
+    getPrompt: () => useShellStore.getState().prompt,
+    attachments,
+    accessMode,
+    accessVisibility,
+    setPrompt,
+    setAttachments,
+    setAccessMode,
+  });
 
-  /**
-   * Bring in the incoming session's composer text and permission mode.
-   *
-   * Called once per switch, before any of its branches, so every path out of `switchThread`
-   * is covered — including the early returns, where the target *is* the current session and
-   * saving then loading the same key is a no-op.
-   */
-  function adoptSessionScopedState(nextSessionFile: string | undefined) {
-    persistSessionScopedState();
-    const draft = loadComposerDraftForSession(nextSessionFile);
-    setPrompt(draft.prompt);
-    setAttachments(draft.attachments);
-    // A restored mode must still be one the current visibility policy offers.
-    setAccessMode(resolveAccessMode(loadAccessModeForSession(nextSessionFile), accessVisibility));
-  }
   /** Cwds dismissed with "Later" this app session (no trust.json write). */
   const trustPromptDismissedRef = useRef<Set<string>>(new Set());
   const [trustPromptDismissTick, setTrustPromptDismissTick] = useState(0);
@@ -1011,7 +924,7 @@ function App() {
             extensionUiStateRef.current = cleared;
             setExtensionUiState(cleared);
           }
-          maybeNotify("crash", event.message);
+          hostMessages.notify("crash", event.message);
         } else if (event.type === "session.list") {
           const cwd = store.snapshot?.cwd;
           const matched = cwd ? threadsForWorkspaceBucket(event.threads, cwd) : event.threads;
@@ -1058,10 +971,10 @@ function App() {
               const failure = store.takePendingFailure(event.runtimeId);
               if (failure) {
                 store.settleSessionByRuntime(event.runtimeId, "failed", failure);
-                maybeNotify("error", failure);
+                hostMessages.notify("error", failure);
               } else if (store.sessionKeyForRuntime(event.runtimeId)) {
                 store.settleSessionByRuntime(event.runtimeId, "completed");
-                maybeNotify("complete");
+                hostMessages.notify("complete");
               }
             } else if (event.event.type === "message.failed") {
               store.setPendingFailure(event.runtimeId, event.event.message);
@@ -1088,7 +1001,7 @@ function App() {
                 maybeMarkUnreadForRuntime(event.runtimeId);
                 store.settleSessionByRuntime(event.runtimeId, "failed", msg);
                 store.takePendingFailure(event.runtimeId);
-                maybeNotify("error", msg);
+                hostMessages.notify("error", msg);
               } else {
                 store.takePendingFailure(event.runtimeId);
                 const key = store.sessionKeyForRuntime(event.runtimeId);
@@ -1165,7 +1078,7 @@ function App() {
               maybeMarkUnreadForRuntime(event.runtimeId);
               store.settleSessionByRuntime(event.runtimeId, "failed", msg);
               store.takePendingFailure(event.runtimeId);
-              maybeNotify("error", msg);
+              hostMessages.notify("error", msg);
             } else {
               store.takePendingFailure(event.runtimeId);
               store.setLastFailure(undefined);
@@ -1183,11 +1096,11 @@ function App() {
               // Model error without a successful recovery (or after retries exhausted).
               store.setLastFailure(failure);
               store.settleSessionByRuntime(event.runtimeId, "failed", failure);
-              maybeNotify("error", failure);
+              hostMessages.notify("error", failure);
             } else if (store.sessionKeyForRuntime(event.runtimeId)) {
               store.setLastFailure(undefined);
               store.settleSessionByRuntime(event.runtimeId, "completed");
-              maybeNotify("complete");
+              hostMessages.notify("complete");
             }
             // Disk is flushed after assistant message — sync rail title/recency.
             void window.zeno.session
@@ -1245,7 +1158,7 @@ function App() {
             if (result.editorText !== undefined) {
               store.setPrompt(result.editorText);
             }
-            applyExtensionNotify(result.notify);
+            hostMessages.applyExtensionNotify(result.notify);
           } else if (isExtensionUiDialogMethod(event.method)) {
             // Only show waiting if this session is already in a user-initiated turn.
             const key = sessionKeyFromSnapshot(store.snapshot);
@@ -1255,7 +1168,7 @@ function App() {
                 reason: event.method,
               });
             }
-            void respondToExtensionUi(event).finally(() => {
+            void hostMessages.respondToExtensionUi(event).finally(() => {
               const st = useShellStore.getState();
               const k = sessionKeyFromSnapshot(st.snapshot);
               if (k && st.runningSessions[k]) {
@@ -1732,7 +1645,7 @@ function App() {
         )?.source;
         const handled = await runBuiltinSlash(slash.name, slash.args, source);
         if (handled) {
-          discardComposerDraft();
+          sessionScoped.discard();
           setPrompt("");
           return;
         }
@@ -1747,7 +1660,7 @@ function App() {
     if (shell.kind !== "none" && attachedPaths.length === 0) {
       if (!shell.command.trim()) return;
       const agentWasRunning = useShellStore.getState().running;
-      discardComposerDraft();
+      sessionScoped.discard();
       setPrompt("");
       if (!agentWasRunning) setRunning(true);
       setStatus(
@@ -1806,7 +1719,7 @@ function App() {
     // sentPrompts. Otherwise the live assistant bubble splits around a ghost
     // user message, and later host delivery duplicates the row.
     if (queueBehavior) {
-      discardComposerDraft();
+      sessionScoped.discard();
       setPrompt("");
       setAttachments([]);
       const prevQueue = useShellStore.getState().queuedMessages;
@@ -1837,7 +1750,7 @@ function App() {
     }
 
     // ── Normal send path ─────────────────────────────────────────────────────
-    discardComposerDraft();
+    sessionScoped.discard();
     setPrompt("");
     setAttachments([]);
     setSentPrompts((current) => [...current, displayMessage]);
@@ -2398,7 +2311,7 @@ function App() {
       await ensureHost();
       setView("thread");
       setSidebarOpen(false);
-      persistSessionScopedState();
+      sessionScoped.persist();
       setPrompt("");
       setAttachments([]);
       setStatus("Creating session...");
@@ -2443,7 +2356,7 @@ function App() {
       await window.zeno.terminal.suspend().catch(() => undefined);
     }
 
-    persistSessionScopedState();
+    sessionScoped.persist();
     setView("thread");
     setSidebarOpen(false);
     setPrompt("");
@@ -2746,7 +2659,7 @@ function App() {
 
   async function switchThread(sessionPath: string, projectCwd?: string) {
     // Each session keeps its own composer text, so a draft never follows you across.
-    adoptSessionScopedState(sessionPath);
+    sessionScoped.adopt(sessionPath);
     const currentStore = useShellStore.getState();
     const targetSessionKey = sessionRunKey(sessionPath);
     const currentSessionKeys = [

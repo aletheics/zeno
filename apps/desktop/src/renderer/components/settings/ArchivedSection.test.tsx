@@ -11,7 +11,7 @@ import {
   unarchiveThread,
 } from "../../lib/project-prefs.ts";
 import { loadConfirmDelete } from "../../lib/behavior-prefs.ts";
-import { ArchivedSection } from "./SettingsPage.tsx";
+import { ArchivedSection } from "./ArchivedSection.tsx";
 
 vi.mock("../../lib/project-prefs.ts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../lib/project-prefs.ts")>();
