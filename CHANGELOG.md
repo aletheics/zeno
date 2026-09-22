@@ -16,6 +16,12 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   These existed only as icons that appear on hover, so anyone who did not hover a row
   had no way to reach them. 复制为纯文本 appears when the message is markdown, and
   hands over what it reads as rather than the source.
+- The same menu reaches the rest of the surface: a code block offers 复制代码 and, for
+  a partial selection, 复制选中; a file path in a tool row offers 复制路径 /
+  在编辑器中打开 / 在文件夹中显示; the command in a run row offers 复制命令; and the
+  embedded terminal offers 复制选区 / 粘贴 / 全选. Pasting into the terminal goes
+  through ghostty's own paste, so a multi-line command arrives as one bracketed paste
+  instead of being run line by line.
 
 ## [0.1.7] - 2026-09-18
 

@@ -124,6 +124,15 @@ describe("context menu labels", () => {
     expect(t("en", "timeline.context.reveal")).toBe("Show in folder");
     expect(t("en", "timeline.context.reveal")).not.toContain("Finder");
   });
+
+  it("names the terminal's items", () => {
+    // "Copy selection" rather than plain "Copy": the terminal is copy-on-select by default, so
+    // the item has to say what it acts on.
+    expect(t("zh", "terminal.context.copy")).toBe("复制选区");
+    expect(t("en", "terminal.context.copy")).toBe("Copy selection");
+    expect(t("en", "terminal.context.paste")).toBe("Paste");
+    expect(t("en", "terminal.context.selectAll")).toBe("Select all");
+  });
 });
 
 describe("i18n key sync", () => {

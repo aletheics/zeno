@@ -102,6 +102,26 @@ test("Message row: right-click copies the message, plain text included", async (
   await expect.poll(() => copied(page)).toBe(sent);
 });
 
+test("Code block: right-click copies the block", async ({ page }) => {
+  await startHost(page);
+  await recordClipboard(page);
+
+  await sendPrompt(page, "Render the rich content fixture.");
+
+  const code = page.locator('.content-code-block[data-language="javascript"]').first();
+  await expect(code).toBeVisible();
+  await code.click({ button: "right" });
+
+  await expect(page.getByTestId("code-context-menu")).toBeVisible();
+  // Copying the selection is a separate item and only appears when there is one, so this
+  // asserts on the whole-block item alone.
+  await page.getByTestId("code-menu-copy").click();
+
+  // What the fixture's code says is the rich-content test's business; this proves the item
+  // reached the clipboard at all.
+  await expect.poll(() => copied(page)).toBeTruthy();
+});
+
 test("Message row: the assistant turn forks but does not offer edit", async ({ page }) => {
   await startHost(page);
 

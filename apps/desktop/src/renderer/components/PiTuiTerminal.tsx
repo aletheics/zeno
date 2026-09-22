@@ -18,6 +18,9 @@ import {
   TERMINAL_PREFS_CHANGED_EVENT,
   type TerminalPrefs,
 } from "../lib/terminal-prefs.ts";
+import { TerminalContextMenu } from "./TerminalContextMenu.tsx";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
+import { useShellStore } from "../store/shell-store.ts";
 import { cn } from "../lib/utils.ts";
 
 type GhosttyModule = typeof import("ghostty-web");
@@ -377,6 +380,18 @@ export function PiTuiTerminal(props: {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const thumbRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * The live terminal, for the right-click menu. The setup effect's own `term` is scoped to that
+   * effect, and this one has to survive across renders to serve a menu click.
+   */
+  const termRef = useRef<GhosttyTerminal | null>(null);
+  /** Right-click menu over the surface. */
+  const termMenu = useContextMenu();
+  // From the store rather than a prop: the mount site is in `main.tsx`, which the file-budget
+  // ratchet freezes, and a menu label is not worth a line there.
+  const locale = useShellStore((s) => s.locale);
+  /** Selection as it was when the menu opened; empty means there is nothing to copy. */
+  const [termSelection, setTermSelection] = useState("");
   const onExitRef = useRef(props.onProcessExit);
   const onReadyRef = useRef(props.onReady);
   const onOpenErrorRef = useRef(props.onOpenError);
@@ -659,6 +674,7 @@ export function PiTuiTerminal(props: {
         // ignore
       }
       term = next;
+      termRef.current = next;
       fit = nextFit;
       // Replace FitAddon's gA gutter (equal L/R padding owns margins; floating thumb is free).
       installFitWithoutScrollbarGutter(nextFit, () => (cancelled ? null : term));
@@ -956,6 +972,7 @@ export function PiTuiTerminal(props: {
         // ignore
       }
       term = null;
+      termRef.current = null;
       fit = null;
       // Do not dispose main PTY here — parent switchThread/leave owns lifecycle.
       // Stale open path above disposes if it still owns the expected session.
@@ -995,6 +1012,17 @@ export function PiTuiTerminal(props: {
           paddingLeft: TERMINAL_CONTENT_INSET_PX,
           paddingRight: TERMINAL_CONTENT_INSET_PX,
         }}
+        onContextMenu={(event) => {
+          // Read the selection now. Opening the menu puts ghostty into the same mode it uses for
+          // the native menu (it parks the IME textarea that `syncTerminalInputCaret` follows), so
+          // the selection is not something to re-query once the menu is up.
+          try {
+            setTermSelection(termRef.current?.getSelection() ?? "");
+          } catch {
+            setTermSelection("");
+          }
+          termMenu.openAtPoint("terminal", event);
+        }}
       />
       {/*
         Floating overlay scrollbar — fixed to the app right edge, zero layout width.
@@ -1007,6 +1035,12 @@ export function PiTuiTerminal(props: {
         data-hovered="false"
         data-dragging="false"
         aria-hidden="true"
+      />
+      <TerminalContextMenu
+        menu={termMenu}
+        locale={locale}
+        selection={termSelection}
+        getTerminal={() => termRef.current}
       />
     </div>
   );
