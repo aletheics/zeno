@@ -42,7 +42,10 @@ const FROZEN = {
   "main/index.ts": 5907,
   "renderer/main.tsx": 4605,
   "renderer/components/settings/SettingsPage.tsx": 5163,
-  "renderer/components/Composer.tsx": 2194,
+  // 2194 → 1811: the composer's menu rows moved to `components/ComposerMenus.tsx` and its
+  // suggestion helpers to `components/ComposerSuggestMenus.tsx`, which paid for the composer's
+  // right-click menu. Banked rather than left as slack, per the note above.
+  "renderer/components/Composer.tsx": 1811,
 };
 
 /** No other source file may reach this. Catches a new God module while it is still small. */

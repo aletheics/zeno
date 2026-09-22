@@ -67,6 +67,7 @@ import {
   slashDescriptionForMenu,
   useSuggestOverflow,
 } from "./ComposerSuggestMenus.tsx";
+import { ComposerContextMenu } from "./ComposerContextMenu.tsx";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog.tsx";
 import { t, thinkingLevelLabel, type Locale } from "../lib/i18n.ts";
 import { modelSupportsServiceTier, type ServiceTierId } from "../lib/service-tier.ts";
@@ -86,6 +87,8 @@ import { visibleAccessModes } from "../lib/settings-prefs.ts";
 import { cn } from "../lib/utils.ts";
 import { workspaceLabel } from "../lib/workspace.ts";
 import { useShellStore } from "../store/shell-store.ts";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
+import { isContextMenuKey } from "../lib/context-menu.ts";
 
 export type { AccessMode, AccessVisibility };
 /** @deprecated Use ServiceTierId — legacy Zeno labels mapped to OpenAI service_tier. */
@@ -290,6 +293,8 @@ export function Composer(props: ComposerProps) {
     t(props.locale, key, vars);
   const [menu, setMenu] = useState<MenuKind>(null);
   const [anchor, setAnchor] = useState<AnchorRect | null>(null);
+  /** Right-click / Shift+F10 menu over the prompt. */
+  const promptMenu = useContextMenu();
   const [projectQuery, setProjectQuery] = useState("");
   const [branchQuery, setBranchQuery] = useState("");
   const [branches, setBranches] = useState<GitBranchInfo[]>([]);
@@ -705,6 +710,13 @@ export function Composer(props: ComposerProps) {
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (isImeCompositionEvent(event.nativeEvent)) return;
 
+    // Shift+F10 / ContextMenu key open the same menu as a right-click, anchored to the card.
+    if (isContextMenuKey(event.nativeEvent)) {
+      event.preventDefault();
+      promptMenu.openAtElement("composer", event);
+      return;
+    }
+
     const panel = slashPanelOpen ? "slash" : resourcePanelOpen ? "resource" : undefined;
     if (panel) {
       // `/` → commands+skills; `@` → picker + project paths + packages.
@@ -1027,6 +1039,7 @@ export function Composer(props: ComposerProps) {
                 syncPromptHighlightScroll(props.composerRef.current);
               });
             }}
+            onContextMenu={(event) => promptMenu.openAtPoint("composer", event)}
             onDrop={handleComposerDrop}
             onDragOver={(event) => {
               if (event.dataTransfer?.types?.includes("Files")) {
@@ -1397,6 +1410,16 @@ export function Composer(props: ComposerProps) {
           <div className="composer-suggest-fade" aria-hidden />
         </div>
       </FloatingMenu>
+
+      {/* Prompt right-click / Shift+F10 menu */}
+      <ComposerContextMenu
+        menu={promptMenu}
+        locale={props.locale}
+        composerRef={props.composerRef}
+        prompt={props.prompt}
+        onPromptChange={props.onPromptChange}
+        onAddAttachments={props.onAddAttachments}
+      />
 
       {/* Project menu — simple list, opens upward above the pill (matches reference). */}
       <FloatingMenu
