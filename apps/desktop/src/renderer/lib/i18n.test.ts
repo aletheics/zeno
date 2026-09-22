@@ -112,6 +112,18 @@ describe("context menu labels", () => {
     expect(t("en", "timeline.copyPlain")).toBe("Copy as plain text");
     expect(t("en", "timeline.copyPlain")).not.toBe(t("en", "timeline.copy"));
   });
+
+  it("names the code-block and tool-row items", () => {
+    expect(t("zh", "timeline.context.copyCode")).toBe("复制代码");
+    expect(t("en", "timeline.context.copyCode")).toBe("Copy code");
+    expect(t("zh", "timeline.context.copySelection")).toBe("复制选中");
+    expect(t("en", "timeline.context.copyCommand")).toBe("Copy command");
+    expect(t("en", "timeline.context.openInEditor")).toBe("Open in editor");
+    // Deliberately not "Reveal in Finder": the same action runs through Explorer on Windows,
+    // and the older `project.reveal` string already assumes the wrong one there.
+    expect(t("en", "timeline.context.reveal")).toBe("Show in folder");
+    expect(t("en", "timeline.context.reveal")).not.toContain("Finder");
+  });
 });
 
 describe("i18n key sync", () => {
