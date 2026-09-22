@@ -27,6 +27,7 @@ export const zh = {
   "timeline.imagePreview": "预览图片",
   "timeline.imagePreviewClose": "关闭图片预览",
   "timeline.copy": "复制",
+  "timeline.copyPlain": "复制为纯文本",
   "timeline.edit": "编辑重发",
   "timeline.fork": "在新会话中继续",
   "timeline.send": "发送",

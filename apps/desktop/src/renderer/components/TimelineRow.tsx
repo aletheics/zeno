@@ -47,6 +47,8 @@ import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
 import { ContentCodeBlock } from "./ContentCodeBlock.tsx";
 import { ImagePreviewDialog } from "./ContentPreviewDialog.tsx";
 import { MarkdownContent } from "./MarkdownContent.tsx";
+import { MessageContextMenu } from "./MessageContextMenu.tsx";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
 import {
   attachmentLabel,
   attachmentPresentation,
@@ -498,6 +500,8 @@ export const TimelineRow = memo(function TimelineRow(props: {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.kind === "user" ? item.text : "");
   const [copied, setCopied] = useState(false);
+  /** Right-click menu over this row. */
+  const messageMenu = useContextMenu();
   const editRootRef = useRef<HTMLDivElement | null>(null);
   const editActionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -625,7 +629,14 @@ export const TimelineRow = memo(function TimelineRow(props: {
     }
 
     return (
-      <Message align="end" className="mt-1 mb-7" data-kind="user">
+      <Message
+        align="end"
+        className="mt-1 mb-7"
+        data-kind="user"
+        {...(item.text
+          ? { onContextMenu: (event) => messageMenu.openAtPoint("message", event) }
+          : {})}
+      >
         <MessageContent>
           {item.attachments?.length ? (
             <AttachmentList paths={item.attachments} locale={props.locale} />
@@ -649,13 +660,26 @@ export const TimelineRow = memo(function TimelineRow(props: {
             />
           </MessageFooter>
         </MessageContent>
+        <MessageContextMenu
+          menu={messageMenu}
+          locale={props.locale}
+          text={item.text}
+          onCopy={() => void handleCopy(item.text)}
+          {...(props.onEditUser ? { onEdit: () => setEditing(true) } : {})}
+        />
       </Message>
     );
   }
 
   if (item.kind === "assistant") {
     return (
-      <article className="timeline-assistant-row group/msg" data-kind="assistant">
+      <article
+        className="timeline-assistant-row group/msg"
+        data-kind="assistant"
+        {...(item.text
+          ? { onContextMenu: (event) => messageMenu.openAtPoint("message", event) }
+          : {})}
+      >
         <div className="timeline-assistant-body">
           <MarkdownContent
             className="w-full leading-relaxed text-foreground"
@@ -681,6 +705,19 @@ export const TimelineRow = memo(function TimelineRow(props: {
             className="timeline-meta-actions-assistant"
           />
         </div>
+        <MessageContextMenu
+          menu={messageMenu}
+          locale={props.locale}
+          text={item.text}
+          onCopy={() => void handleCopy(item.text)}
+          {...(props.onForkAssistant
+            ? {
+                onFork: () => {
+                  void props.onForkAssistant?.(item);
+                },
+              }
+            : {})}
+        />
       </article>
     );
   }

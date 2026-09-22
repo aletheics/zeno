@@ -27,6 +27,7 @@ export const en = {
   "timeline.imagePreview": "Preview image",
   "timeline.imagePreviewClose": "Close image preview",
   "timeline.copy": "Copy",
+  "timeline.copyPlain": "Copy as plain text",
   "timeline.edit": "Edit & resend",
   "timeline.fork": "Continue in a new session",
   "timeline.send": "Send",
