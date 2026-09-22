@@ -76,6 +76,26 @@ describe("PathContextMenu", () => {
     expect(menu.close).toHaveBeenCalledOnce();
   });
 
+  it("opens the file when the path carries a line number", () => {
+    // A read tool is often handed `src/foo.ts:42`; openPath cannot use the suffix.
+    clipboard();
+    const { openFile } = workspace();
+    render(<PathContextMenu menu={openMenu()} locale="en" path="/tmp/a.ts:42" />);
+
+    fireEvent.click(screen.getByTestId("tool-path-menu-open"));
+
+    expect(openFile).toHaveBeenCalledWith("/tmp/a.ts");
+  });
+
+  it("keeps the line number when copying, because that is what is useful to paste", () => {
+    const { writeText } = clipboard();
+    render(<PathContextMenu menu={openMenu()} locale="en" path="/tmp/a.ts:42" />);
+
+    fireEvent.click(screen.getByTestId("tool-path-menu-copy"));
+
+    expect(writeText).toHaveBeenCalledWith("/tmp/a.ts:42");
+  });
+
   it("does not surface a rejection when the path cannot be opened", async () => {
     clipboard();
     const openFile = vi.fn().mockRejectedValue(new Error("no such file"));

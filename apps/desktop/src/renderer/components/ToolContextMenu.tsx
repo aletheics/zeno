@@ -19,7 +19,7 @@ import { Copy, FolderOpen, SquarePen } from "lucide-react";
 import { FloatingMenu } from "./FloatingMenu.tsx";
 import { MenuItem } from "./ui/menu-item.tsx";
 import { t, type Locale } from "../lib/i18n.ts";
-import { editCombo } from "../lib/context-menu.ts";
+import { editCombo, stripLocationSuffix } from "../lib/context-menu.ts";
 import type { ContextMenu } from "../hooks/useContextMenu.ts";
 
 const ICON = { className: "size-3.5", strokeWidth: 1.75 } as const;
@@ -27,13 +27,17 @@ const ICON = { className: "size-3.5", strokeWidth: 1.75 } as const;
 export interface PathContextMenuProps {
   menu: ContextMenu;
   locale: Locale;
-  /** The absolute path the row points at (`ProcessPathLink`'s `title`, not its shortened label). */
+  /** The path the row points at (`ProcessPathLink`'s `title`, not its shortened label). */
   path: string;
 }
 
 export function PathContextMenu(props: PathContextMenuProps) {
   const tr = (key: Parameters<typeof t>[1]) => t(props.locale, key);
   const { menu, path } = props;
+  // A read tool is often handed `src/foo.ts:42` as its path, and neither `shell.openPath` nor
+  // `showItemInFolder` can do anything with the suffix — so opening and revealing work on the
+  // file. Copying keeps the location, since `file:line` is what is useful to paste elsewhere.
+  const filePath = stripLocationSuffix(path).path;
 
   return (
     <FloatingMenu
@@ -58,7 +62,7 @@ export function PathContextMenu(props: PathContextMenuProps) {
         icon={<SquarePen {...ICON} />}
         label={tr("timeline.context.openInEditor")}
         onClick={() => {
-          void window.zeno.workspace.openFile(path).catch(() => undefined);
+          void window.zeno.workspace.openFile(filePath).catch(() => undefined);
           menu.close();
         }}
         testId="tool-path-menu-open"
@@ -67,7 +71,7 @@ export function PathContextMenu(props: PathContextMenuProps) {
         icon={<FolderOpen {...ICON} />}
         label={tr("timeline.context.reveal")}
         onClick={() => {
-          void window.zeno.workspace.revealInFolder(path).catch(() => undefined);
+          void window.zeno.workspace.revealInFolder(filePath).catch(() => undefined);
           menu.close();
         }}
         testId="tool-path-menu-reveal"
