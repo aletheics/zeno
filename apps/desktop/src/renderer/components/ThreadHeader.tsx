@@ -14,13 +14,8 @@ import {
   PinOff,
   Terminal,
 } from "lucide-react";
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
+import { MenuItem } from "./ui/menu-item.tsx";
 import { loadConfirmArchive } from "../lib/behavior-prefs.ts";
 import {
   TITLEBAR_CONTROL_SIZE_PX,
@@ -446,20 +441,5 @@ export function ThreadHeader(props: {
         onCancel={() => setRenameOpen(false)}
       />
     </>
-  );
-}
-
-function MenuItem(props: { icon: ReactNode; label: string; onClick: () => void; testId?: string }) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      data-testid={props.testId}
-      className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left text-[13px] text-[var(--popover-foreground)] transition-colors hover:bg-[var(--hover-fill)]"
-      onClick={props.onClick}
-    >
-      <span className="opacity-70">{props.icon}</span>
-      <span className="min-w-0 flex-1 truncate">{props.label}</span>
-    </button>
   );
 }

@@ -7,6 +7,7 @@
  */
 import type { SessionThreadSummary } from "@zeno/contracts";
 import {
+  Archive,
   ArrowDown,
   ArrowUp,
   ChevronDown,
@@ -17,8 +18,10 @@ import {
   PinOff,
   Search,
   SquarePen,
+  Trash2,
 } from "lucide-react";
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { MenuItem } from "./ui/menu-item.tsx";
 import { t, type Locale, type MessageKey } from "../lib/i18n.ts";
 import {
   archiveProject,
@@ -463,24 +466,19 @@ export function ProjectsPage(props: ProjectsPageProps) {
       >
         {menuPath ? (
           <>
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-[var(--popover-foreground)] hover:bg-[var(--hover-fill)]"
-              data-testid="projects-page-menu-archive"
+            <MenuItem
+              icon={<Archive className="size-3.5" strokeWidth={1.75} />}
+              label={tr("project.archive")}
               onClick={() => handleArchive(menuPath)}
-            >
-              {tr("project.archive")}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-left text-[13px] text-red-500 hover:bg-red-500/10"
-              data-testid="projects-page-menu-remove"
+              testId="projects-page-menu-archive"
+            />
+            <MenuItem
+              icon={<Trash2 className="size-3.5" strokeWidth={1.75} />}
+              label={tr("project.remove")}
               onClick={() => handleRemove(menuPath)}
-            >
-              {tr("project.remove")}
-            </button>
+              danger
+              testId="projects-page-menu-remove"
+            />
           </>
         ) : null}
       </FloatingMenu>
