@@ -3,7 +3,7 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
-## [Unreleased]
+## [0.1.8] - 2026-09-22
 
 ### Added
 
@@ -29,10 +29,12 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   showing 内置版本落后，需升级 Zeno 应用: that notice compares the bundled SDK against
   npm's latest, so it can only be cleared by shipping a new Zeno — the section's own
   检查更新 / 刷新 buttons act on the _global_ SDK, not the bundled one.
-- Meta's Muse models are recognized as a built-in provider instead of being labelled a
-  user-defined one. The list of built-in provider ids is a copy of pi-ai's catalog, and
-  it had been updated in one of the two places that keep it while the other was missed —
-  so a models.json-free Meta setup showed as custom in the service-tier path.
+
+### Fixed
+
+- Meta's Muse models (added upstream in pi 0.86.1) were classified as a user-defined
+  provider, because only one of the two copies of pi-ai's builtin-provider catalog had
+  been updated. Both now read from one shared list.
 
 ## [0.1.7] - 2026-09-18
 
