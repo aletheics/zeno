@@ -23,6 +23,17 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   through ghostty's own paste, so a multi-line command arrives as one bracketed paste
   instead of being run line by line.
 
+### Changed
+
+- Bundled pi runtime upgraded to 0.87.0, from 0.85.1. Settings → SDK 运行时 stops
+  showing 内置版本落后，需升级 Zeno 应用: that notice compares the bundled SDK against
+  npm's latest, so it can only be cleared by shipping a new Zeno — the section's own
+  检查更新 / 刷新 buttons act on the _global_ SDK, not the bundled one.
+- Meta's Muse models are recognized as a built-in provider instead of being labelled a
+  user-defined one. The list of built-in provider ids is a copy of pi-ai's catalog, and
+  it had been updated in one of the two places that keep it while the other was missed —
+  so a models.json-free Meta setup showed as custom in the service-tier path.
+
 ## [0.1.7] - 2026-09-18
 
 ### Added

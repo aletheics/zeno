@@ -59,6 +59,7 @@ import {
   upsertCustomProviderInModelsJson,
 } from "./models-json.ts";
 import { listProviderUsage } from "./provider-usage.ts";
+import { PI_BUILTIN_PROVIDERS } from "./pi-builtin-providers.ts";
 import { resolvePixSessionDir } from "./session-dir.ts";
 import {
   availableServiceTiersForModel,
@@ -128,7 +129,6 @@ export {
   findCatalogThinkingLevelMap,
   isThinkingLevel,
 } from "./thinking-levels.ts";
-
 const MACOS_GITHUB_CLI_PATHS = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"] as const;
 
 /** Per-runtime OpenAI service_tier preference (not a pi session field). */
@@ -2439,48 +2439,6 @@ function projectSettingsInventory(
  * Providers outside this set (e.g. models.json custom names, extension providers)
  * are treated as user-defined.
  */
-const PI_BUILTIN_PROVIDERS = new Set<string>([
-  "amazon-bedrock",
-  "ant-ling",
-  "anthropic",
-  "azure-openai-responses",
-  "baseten",
-  "cerebras",
-  "cloudflare-ai-gateway",
-  "cloudflare-workers-ai",
-  "deepseek",
-  "fireworks",
-  "github-copilot",
-  "google",
-  "google-vertex",
-  "groq",
-  "huggingface",
-  "kimi-coding",
-  "minimax",
-  "minimax-cn",
-  "mistral",
-  "moonshotai",
-  "moonshotai-cn",
-  "nvidia",
-  "openai",
-  "openai-codex",
-  "opencode",
-  "opencode-go",
-  "openrouter",
-  "qwen-token-plan",
-  "qwen-token-plan-cn",
-  "qwen-token-plan-individual",
-  "radius",
-  "together",
-  "vercel-ai-gateway",
-  "xai",
-  "xiaomi",
-  "xiaomi-token-plan-ams",
-  "xiaomi-token-plan-cn",
-  "xiaomi-token-plan-sgp",
-  "zai",
-  "zai-coding-cn",
-]);
 
 function classifyModelSource(
   provider: string,
