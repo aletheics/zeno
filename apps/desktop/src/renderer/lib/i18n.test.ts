@@ -93,6 +93,48 @@ describe("i18n", () => {
   });
 });
 
+describe("context menu labels", () => {
+  it("names the composer's editing items in both locales", () => {
+    expect(t("zh", "composer.edit.cut")).toBe("剪切");
+    expect(t("en", "composer.edit.cut")).toBe("Cut");
+    expect(t("zh", "composer.edit.paste")).toBe("粘贴");
+    expect(t("en", "composer.edit.paste")).toBe("Paste");
+    expect(t("zh", "composer.edit.selectAll")).toBe("全选");
+    expect(t("en", "composer.edit.selectAll")).toBe("Select all");
+    expect(t("zh", "composer.edit.clear")).toBe("清空输入");
+    expect(t("en", "composer.edit.clear")).toBe("Clear input");
+  });
+
+  it("distinguishes copying a message from copying it as plain text", () => {
+    // The two items must not read as the same action: for an assistant turn the first hands
+    // over the raw markdown, the second the rendered reading.
+    expect(t("zh", "timeline.copyPlain")).toBe("复制为纯文本");
+    expect(t("en", "timeline.copyPlain")).toBe("Copy as plain text");
+    expect(t("en", "timeline.copyPlain")).not.toBe(t("en", "timeline.copy"));
+  });
+
+  it("names the code-block and tool-row items", () => {
+    expect(t("zh", "timeline.context.copyCode")).toBe("复制代码");
+    expect(t("en", "timeline.context.copyCode")).toBe("Copy code");
+    expect(t("zh", "timeline.context.copySelection")).toBe("复制选中");
+    expect(t("en", "timeline.context.copyCommand")).toBe("Copy command");
+    expect(t("en", "timeline.context.openInEditor")).toBe("Open in editor");
+    // Deliberately not "Reveal in Finder": the same action runs through Explorer on Windows,
+    // and the older `project.reveal` string already assumes the wrong one there.
+    expect(t("en", "timeline.context.reveal")).toBe("Show in folder");
+    expect(t("en", "timeline.context.reveal")).not.toContain("Finder");
+  });
+
+  it("names the terminal's items", () => {
+    // "Copy selection" rather than plain "Copy": the terminal is copy-on-select by default, so
+    // the item has to say what it acts on.
+    expect(t("zh", "terminal.context.copy")).toBe("复制选区");
+    expect(t("en", "terminal.context.copy")).toBe("Copy selection");
+    expect(t("en", "terminal.context.paste")).toBe("Paste");
+    expect(t("en", "terminal.context.selectAll")).toBe("Select all");
+  });
+});
+
 describe("i18n key sync", () => {
   it("keeps zh and en keys in lockstep", () => {
     const zh = Object.keys(messages.zh);

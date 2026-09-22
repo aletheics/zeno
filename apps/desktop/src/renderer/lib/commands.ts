@@ -28,10 +28,18 @@ export interface CommandHandlers {
   toggleContentMode?: () => void;
 }
 
+/**
+ * Display string for a shortcut, or `undefined` when it is unbound. Menus read the same source
+ * as the palette and the settings editor, so a rebind (or an unbinding) shows up in all three.
+ */
+export function shortcutHint(id: ShortcutId): string | undefined {
+  const combo = getEffectiveCombo(id, loadShortcutOverrides());
+  return combo ? formatComboDisplay(combo) : undefined;
+}
+
 function withShortcut(id: ShortcutId, base: Omit<ShellCommand, "shortcut">): ShellCommand {
-  const c = getEffectiveCombo(id, loadShortcutOverrides());
-  if (!c) return base;
-  return { ...base, shortcut: formatComboDisplay(c) };
+  const shortcut = shortcutHint(id);
+  return shortcut ? { ...base, shortcut } : base;
 }
 
 function cmd(

@@ -16,7 +16,6 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
@@ -29,46 +28,24 @@ import type {
 } from "@zeno/contracts";
 import {
   ArrowUp,
-  Boxes,
-  Cat,
   Check,
   ChevronDown,
   ChevronRight,
-  ClipboardCopy,
-  Copy,
-  Cpu,
-  Download,
   File,
   Folder,
   FolderGit2,
   FolderOpen,
   Gauge,
   GitBranch,
-  GitFork,
-  Info,
-  Keyboard,
-  LogIn,
-  MessageSquareText,
-  Minimize2,
   Monitor,
-  Network,
   Package,
   Plus,
-  PlusCircle,
-  Puzzle,
-  RefreshCw,
   Search,
-  Settings,
-  Share2,
   Shield,
   ShieldAlert,
   ShieldCheck,
-  Slash,
   Sparkles,
   Square,
-  Tag,
-  Upload,
-  Wand2,
 } from "lucide-react";
 import {
   anchorFromElement,
@@ -81,8 +58,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ComposerAttachmentList } from "./ComposerAttachmentList.tsx";
 import { ComposerQueueCard } from "./ComposerQueueCard.tsx";
+import { AccessOption, FlyoutRow, MenuRow } from "./ComposerMenus.tsx";
+import {
+  commandSourceIcon,
+  filterPackages,
+  groupSlashCommands,
+  SLASH_GROUP_LABEL_KEY,
+  slashDescriptionForMenu,
+  useSuggestOverflow,
+} from "./ComposerSuggestMenus.tsx";
+import { ComposerContextMenu } from "./ComposerContextMenu.tsx";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog.tsx";
-import { t, thinkingLevelLabel, type Locale, type MessageKey } from "../lib/i18n.ts";
+import { t, thinkingLevelLabel, type Locale } from "../lib/i18n.ts";
 import { modelSupportsServiceTier, type ServiceTierId } from "../lib/service-tier.ts";
 import { modelSupportsThinking } from "../lib/thinking-levels.ts";
 import { groupModelsByProvider } from "../lib/model-groups.ts";
@@ -100,6 +87,8 @@ import { visibleAccessModes } from "../lib/settings-prefs.ts";
 import { cn } from "../lib/utils.ts";
 import { workspaceLabel } from "../lib/workspace.ts";
 import { useShellStore } from "../store/shell-store.ts";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
+import { isContextMenuKey } from "../lib/context-menu.ts";
 
 export type { AccessMode, AccessVisibility };
 /** @deprecated Use ServiceTierId — legacy Zeno labels mapped to OpenAI service_tier. */
@@ -180,232 +169,6 @@ function isValidBranchName(name: string): boolean {
   if (n.includes("..") || n.startsWith("-") || n.endsWith(".lock")) return false;
   if (/[\s~^:?*[\\]/.test(n)) return false;
   return true;
-}
-
-function MenuRow(props: {
-  icon?: ReactNode;
-  label: string;
-  description?: string;
-  active?: boolean;
-  muted?: boolean;
-  /** Emphasize label (e.g. warning / danger) */
-  emphasize?: "danger" | "none";
-  onClick: () => void;
-  testId?: string;
-}) {
-  const danger = props.emphasize === "danger";
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      data-testid={props.testId}
-      className={cn(
-        "flex w-full cursor-pointer items-start gap-2 px-2.5 py-2 text-left transition-colors",
-        props.muted
-          ? "text-[var(--muted-foreground)] hover:bg-[var(--hover-fill)]"
-          : "text-[var(--popover-foreground,var(--foreground))] hover:bg-[var(--hover-fill)]",
-        danger && "hover:bg-red-500/10",
-        props.active && !danger && "bg-[var(--accent)]",
-        props.active && danger && "bg-red-500/10",
-      )}
-      onClick={props.onClick}
-    >
-      {props.icon ? (
-        <span
-          className={cn(
-            "mt-0.5 inline-flex size-4 shrink-0",
-            danger ? "text-red-500 opacity-100" : "opacity-70",
-          )}
-        >
-          {props.icon}
-        </span>
-      ) : null}
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "block truncate text-[13px] font-medium leading-snug",
-            danger && "text-red-500",
-          )}
-        >
-          {props.label}
-        </span>
-        {props.description ? (
-          <span
-            className={cn(
-              "mt-0.5 block text-[11px] leading-snug",
-              danger ? "text-red-500/75" : "text-[var(--text-subtle)]",
-            )}
-          >
-            {props.description}
-          </span>
-        ) : null}
-      </span>
-      {props.active ? (
-        <span className={cn("mt-0.5 text-[11px]", danger ? "text-red-500" : "text-[#0a84ff]")}>
-          ✓
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-/** Full-access caution: orange-red (not pale system orange, not pure error red). */
-const ACCESS_FULL_ORANGE = "text-[#ff5c1a]";
-const ACCESS_FULL_ORANGE_MUTED = "text-[#ff5c1a]/90";
-const ACCESS_FULL_ORANGE_HOVER = "hover:bg-[#ff5c1a]/12";
-
-/**
- * Access-control option — same hover/active fill + radius as session rows
- * (`--hover-fill`, rounded-md). Full access keeps orange caution text.
- */
-function AccessOption(props: {
-  icon: ReactNode;
-  label: string;
-  description: string;
-  active?: boolean;
-  /** Full-access caution (orange), not destructive red. */
-  caution?: boolean;
-  onClick: () => void;
-  testId?: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      data-testid={props.testId}
-      className={cn(
-        "flex w-full cursor-pointer items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left transition-colors",
-        // Match session list: transparent default, hover-fill on hover/active.
-        props.active ? "bg-[var(--hover-fill)]" : "bg-transparent hover:bg-[var(--hover-fill)]",
-        props.caution && !props.active && ACCESS_FULL_ORANGE_HOVER,
-      )}
-      onClick={props.onClick}
-    >
-      <span
-        className={cn(
-          "mt-0.5 inline-flex size-4 shrink-0",
-          props.caution ? ACCESS_FULL_ORANGE : "text-[var(--muted-foreground)]",
-        )}
-      >
-        {props.icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "block text-[13px] font-medium leading-snug",
-            props.caution ? ACCESS_FULL_ORANGE : "text-[var(--foreground)]",
-          )}
-        >
-          {props.label}
-        </span>
-        <span
-          className={cn(
-            "mt-0.5 block text-[11px] leading-snug",
-            props.caution ? ACCESS_FULL_ORANGE_MUTED : "text-[var(--text-subtle)]",
-          )}
-        >
-          {props.description}
-        </span>
-      </span>
-      {props.active ? (
-        <span
-          className={cn(
-            "mt-0.5 shrink-0 text-[11px] font-medium",
-            props.caution ? ACCESS_FULL_ORANGE : "text-[var(--foreground)]",
-          )}
-        >
-          ✓
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-/**
- * Hover-only row → right flyout.
- * Open/close timers are owned by the parent so sibling rows can switch without flicker.
- */
-function FlyoutRow(props: {
-  icon?: ReactNode;
-  label: string;
-  /** Current selection shown immediately left of the › arrow. */
-  valueLabel?: string;
-  open: boolean;
-  /** Open this flyout immediately (cancels any pending close). */
-  onHoverOpen: () => void;
-  /** Schedule close after a short delay (cancelled if another flyout opens). */
-  onHoverLeave: () => void;
-  children: ReactNode;
-  testId?: string;
-  flyoutTestId?: string;
-  minWidth?: number;
-  /** When true, row is visible but does not open a flyout. */
-  disabled?: boolean;
-}) {
-  const rowRef = useRef<HTMLDivElement | null>(null);
-  const [anchor, setAnchor] = useState<AnchorRect | null>(null);
-  const disabled = props.disabled === true;
-
-  useEffect(() => {
-    if (!props.open || disabled) return;
-    setAnchor(anchorFromElement(rowRef.current));
-  }, [props.open, disabled]);
-
-  function show() {
-    if (disabled) return;
-    setAnchor(anchorFromElement(rowRef.current));
-    props.onHoverOpen();
-  }
-
-  return (
-    <>
-      <div
-        ref={rowRef}
-        role="menuitem"
-        aria-disabled={disabled || undefined}
-        data-testid={props.testId}
-        data-disabled={disabled ? "true" : undefined}
-        className={cn(
-          "flex w-full cursor-default items-center gap-2 px-2.5 py-2 text-left text-[13px] transition-colors",
-          "text-[var(--popover-foreground,var(--foreground))]",
-          disabled ? "opacity-50" : "hover:bg-[var(--hover-fill)]",
-          !disabled && props.open && "bg-[var(--accent)]",
-        )}
-        onMouseEnter={show}
-        onMouseLeave={disabled ? undefined : props.onHoverLeave}
-      >
-        {props.icon ? (
-          <span className="inline-flex size-4 shrink-0 opacity-70">{props.icon}</span>
-        ) : null}
-        <span className="min-w-0 flex-1 truncate font-medium leading-snug">{props.label}</span>
-        {props.valueLabel ? (
-          <span className="max-w-[6.5rem] shrink-0 truncate text-[12px] text-[var(--text-subtle)]">
-            {props.valueLabel}
-          </span>
-        ) : null}
-        {!disabled ? (
-          <ChevronRight className="size-3.5 shrink-0 opacity-50" strokeWidth={2} />
-        ) : null}
-      </div>
-      {!disabled ? (
-        <FloatingMenu
-          open={props.open && Boolean(anchor)}
-          anchor={anchor}
-          onClose={props.onHoverLeave}
-          placement="right"
-          zIndex={10_050}
-          closeOnOutside={false}
-          minWidth={props.minWidth ?? 180}
-          className="py-1"
-          {...(props.flyoutTestId ? { testId: props.flyoutTestId } : {})}
-        >
-          <div onMouseEnter={props.onHoverOpen} onMouseLeave={props.onHoverLeave}>
-            {props.children}
-          </div>
-        </FloatingMenu>
-      ) : null}
-    </>
-  );
 }
 
 function accessIcon(mode: AccessMode, className = "size-3.5") {
@@ -494,172 +257,6 @@ function ContextUsageIndicator(props: {
   );
 }
 
-const ICON_SM = { className: "size-4 shrink-0", strokeWidth: 1.75 } as const;
-
-/** Collapse a command description to a short single-line "what it does" for the menu. */
-function slashDescriptionForMenu(description: string): string {
-  const collapsed = description.replace(/\s+/g, " ").trim();
-  if (collapsed.length <= 48) return collapsed;
-  const cut = collapsed.slice(0, 48);
-  const lastSpace = cut.lastIndexOf(" ");
-  const end = lastSpace > 24 ? lastSpace : 48;
-  return `${collapsed.slice(0, end)}…`;
-}
-
-/** Icons for `/` catalog — source groups + well-known builtin command names. */
-function commandSourceIcon(command: SlashCommandSummary) {
-  if (command.source === "skill" || command.name.startsWith("skill:")) {
-    return <Wand2 {...ICON_SM} />;
-  }
-  if (command.source === "prompt") {
-    return <MessageSquareText {...ICON_SM} />;
-  }
-  if (command.source === "extension") {
-    return <Puzzle {...ICON_SM} />;
-  }
-  // builtin (and legacy names mapped as builtin)
-  switch (command.name) {
-    case "new":
-      return <PlusCircle {...ICON_SM} />;
-    case "model":
-    case "models":
-      return <Cpu {...ICON_SM} />;
-    case "settings":
-      return <Settings {...ICON_SM} />;
-    case "session":
-      return <Info {...ICON_SM} />;
-    case "name":
-      return <Tag {...ICON_SM} />;
-    case "tree":
-      return <Network {...ICON_SM} />;
-    case "fork":
-      return <GitFork {...ICON_SM} />;
-    case "clone":
-      return <Copy {...ICON_SM} />;
-    case "compact":
-      return <Minimize2 {...ICON_SM} />;
-    case "export":
-      return <Download {...ICON_SM} />;
-    case "import":
-      return <Upload {...ICON_SM} />;
-    case "share":
-      return <Share2 {...ICON_SM} />;
-    case "copy":
-      return <ClipboardCopy {...ICON_SM} />;
-    case "reload":
-      return <RefreshCw {...ICON_SM} />;
-    case "hotkeys":
-    case "keybindings":
-      return <Keyboard {...ICON_SM} />;
-    case "login":
-      return <LogIn {...ICON_SM} />;
-    case "mcp":
-      return <Boxes {...ICON_SM} />;
-    case "pet":
-      return <Cat {...ICON_SM} />;
-    default:
-      return <Slash {...ICON_SM} />;
-  }
-}
-
-/** `/` menu groups: builtins act locally; extension/prompt/skill route to the AI. */
-type SlashGroupId = "builtin" | "extension" | "prompt" | "skill";
-
-const SLASH_GROUP_ORDER: SlashGroupId[] = ["builtin", "extension", "prompt", "skill"];
-
-const SLASH_GROUP_LABEL_KEY: Record<SlashGroupId, MessageKey> = {
-  builtin: "composer.slash.group.builtin",
-  extension: "composer.slash.group.extension",
-  prompt: "composer.slash.group.prompt",
-  skill: "composer.slash.group.skill",
-};
-
-function slashGroupId(command: SlashCommandSummary): SlashGroupId {
-  if (command.source === "skill" || command.name.startsWith("skill:")) return "skill";
-  if (command.source === "extension") return "extension";
-  if (command.source === "prompt") return "prompt";
-  return "builtin";
-}
-
-function groupSlashCommands(commands: SlashCommandSummary[]): Array<{
-  id: SlashGroupId;
-  items: Array<{ command: SlashCommandSummary; flatIndex: number }>;
-}> {
-  const buckets: Record<SlashGroupId, SlashCommandSummary[]> = {
-    builtin: [],
-    extension: [],
-    prompt: [],
-    skill: [],
-  };
-  for (const command of commands) {
-    buckets[slashGroupId(command)].push(command);
-  }
-  let flatIndex = 0;
-  // Only show groups that still have matches after filtering.
-  const groups: Array<{
-    id: SlashGroupId;
-    items: Array<{ command: SlashCommandSummary; flatIndex: number }>;
-  }> = [];
-  for (const id of SLASH_GROUP_ORDER) {
-    const list = buckets[id];
-    if (list.length === 0) continue;
-    groups.push({
-      id,
-      items: list.map((command) => {
-        const row = { command, flatIndex };
-        flatIndex += 1;
-        return row;
-      }),
-    });
-  }
-  return groups;
-}
-
-function filterPackages(packages: PackageSummary[], query: string, limit = 24): PackageSummary[] {
-  const needle = query.trim().toLocaleLowerCase();
-  const list = packages.filter((pkg) => {
-    if (!needle) return true;
-    return (
-      pkg.source.toLocaleLowerCase().includes(needle) ||
-      pkg.kind.toLocaleLowerCase().includes(needle) ||
-      pkg.scope.toLocaleLowerCase().includes(needle)
-    );
-  });
-  return list
-    .slice()
-    .sort((a, b) => a.source.localeCompare(b.source))
-    .slice(0, limit);
-}
-
-/** Track whether a suggest list overflows so we only reserve fade padding when needed. */
-function useSuggestOverflow(open: boolean, deps: unknown[]) {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [overflows, setOverflows] = useState(false);
-
-  useLayoutEffect(() => {
-    const el = scrollRef.current;
-    if (!open || !el) {
-      setOverflows(false);
-      return;
-    }
-    const measure = () => {
-      setOverflows(el.scrollHeight > el.clientHeight + 1);
-    };
-    measure();
-    const ro =
-      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => measure()) : undefined;
-    ro?.observe(el);
-    // Children size changes (filter results) also need remeasure.
-    for (const child of el.children) {
-      if (child instanceof HTMLElement) ro?.observe(child);
-    }
-    return () => ro?.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are intentional content keys
-  }, [open, ...deps]);
-
-  return { scrollRef, overflows };
-}
-
 /** Composer prompt: fixed base of 2 lines, grow to 12, then scroll. */
 const COMPOSER_PROMPT_MIN_LINES = 2;
 const COMPOSER_PROMPT_MAX_LINES = 12;
@@ -696,6 +293,8 @@ export function Composer(props: ComposerProps) {
     t(props.locale, key, vars);
   const [menu, setMenu] = useState<MenuKind>(null);
   const [anchor, setAnchor] = useState<AnchorRect | null>(null);
+  /** Right-click / Shift+F10 menu over the prompt. */
+  const promptMenu = useContextMenu();
   const [projectQuery, setProjectQuery] = useState("");
   const [branchQuery, setBranchQuery] = useState("");
   const [branches, setBranches] = useState<GitBranchInfo[]>([]);
@@ -1111,6 +710,13 @@ export function Composer(props: ComposerProps) {
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (isImeCompositionEvent(event.nativeEvent)) return;
 
+    // Shift+F10 / ContextMenu key open the same menu as a right-click, anchored to the card.
+    if (isContextMenuKey(event.nativeEvent)) {
+      event.preventDefault();
+      promptMenu.openAtElement("composer", event);
+      return;
+    }
+
     const panel = slashPanelOpen ? "slash" : resourcePanelOpen ? "resource" : undefined;
     if (panel) {
       // `/` → commands+skills; `@` → picker + project paths + packages.
@@ -1433,6 +1039,7 @@ export function Composer(props: ComposerProps) {
                 syncPromptHighlightScroll(props.composerRef.current);
               });
             }}
+            onContextMenu={(event) => promptMenu.openAtPoint("composer", event)}
             onDrop={handleComposerDrop}
             onDragOver={(event) => {
               if (event.dataTransfer?.types?.includes("Files")) {
@@ -1803,6 +1410,16 @@ export function Composer(props: ComposerProps) {
           <div className="composer-suggest-fade" aria-hidden />
         </div>
       </FloatingMenu>
+
+      {/* Prompt right-click / Shift+F10 menu */}
+      <ComposerContextMenu
+        menu={promptMenu}
+        locale={props.locale}
+        composerRef={props.composerRef}
+        prompt={props.prompt}
+        onPromptChange={props.onPromptChange}
+        onAddAttachments={props.onAddAttachments}
+      />
 
       {/* Project menu — simple list, opens upward above the pill (matches reference). */}
       <FloatingMenu

@@ -47,6 +47,9 @@ import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
 import { ContentCodeBlock } from "./ContentCodeBlock.tsx";
 import { ImagePreviewDialog } from "./ContentPreviewDialog.tsx";
 import { MarkdownContent } from "./MarkdownContent.tsx";
+import { MessageContextMenu } from "./MessageContextMenu.tsx";
+import { CommandContextMenu, PathContextMenu } from "./ToolContextMenu.tsx";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
 import {
   attachmentLabel,
   attachmentPresentation,
@@ -498,6 +501,8 @@ export const TimelineRow = memo(function TimelineRow(props: {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.kind === "user" ? item.text : "");
   const [copied, setCopied] = useState(false);
+  /** Right-click menu over this row. */
+  const messageMenu = useContextMenu();
   const editRootRef = useRef<HTMLDivElement | null>(null);
   const editActionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -625,7 +630,14 @@ export const TimelineRow = memo(function TimelineRow(props: {
     }
 
     return (
-      <Message align="end" className="mt-1 mb-7" data-kind="user">
+      <Message
+        align="end"
+        className="mt-1 mb-7"
+        data-kind="user"
+        {...(item.text
+          ? { onContextMenu: (event) => messageMenu.openAtPoint("message", event) }
+          : {})}
+      >
         <MessageContent>
           {item.attachments?.length ? (
             <AttachmentList paths={item.attachments} locale={props.locale} />
@@ -649,13 +661,26 @@ export const TimelineRow = memo(function TimelineRow(props: {
             />
           </MessageFooter>
         </MessageContent>
+        <MessageContextMenu
+          menu={messageMenu}
+          locale={props.locale}
+          text={item.text}
+          onCopy={() => void handleCopy(item.text)}
+          {...(props.onEditUser ? { onEdit: () => setEditing(true) } : {})}
+        />
       </Message>
     );
   }
 
   if (item.kind === "assistant") {
     return (
-      <article className="timeline-assistant-row group/msg" data-kind="assistant">
+      <article
+        className="timeline-assistant-row group/msg"
+        data-kind="assistant"
+        {...(item.text
+          ? { onContextMenu: (event) => messageMenu.openAtPoint("message", event) }
+          : {})}
+      >
         <div className="timeline-assistant-body">
           <MarkdownContent
             className="w-full leading-relaxed text-foreground"
@@ -681,6 +706,19 @@ export const TimelineRow = memo(function TimelineRow(props: {
             className="timeline-meta-actions-assistant"
           />
         </div>
+        <MessageContextMenu
+          menu={messageMenu}
+          locale={props.locale}
+          text={item.text}
+          onCopy={() => void handleCopy(item.text)}
+          {...(props.onForkAssistant
+            ? {
+                onFork: () => {
+                  void props.onForkAssistant?.(item);
+                },
+              }
+            : {})}
+        />
       </article>
     );
   }
@@ -1027,23 +1065,29 @@ function groupSummaryLabel(locale: Locale, kind: ProcessToolKind, count: number)
 
 function ProcessPathLink(props: {
   path: string;
+  locale: Locale;
   workspacePath?: string | undefined;
   className?: string | undefined;
 }) {
   // Same relative shortening as markdown source citations (not bare basename).
   const label = formatWorkspaceRelativePath(props.path, props.workspacePath);
+  const pathMenu = useContextMenu();
   return (
-    <button
-      type="button"
-      className={cn("process-step-path", props.className)}
-      title={props.path}
-      onClick={(e) => {
-        e.stopPropagation();
-        void window.zeno?.workspace?.openFile?.(props.path);
-      }}
-    >
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        className={cn("process-step-path", props.className)}
+        title={props.path}
+        onContextMenu={(event) => pathMenu.openAtPoint("tool-path", event)}
+        onClick={(e) => {
+          e.stopPropagation();
+          void window.zeno?.workspace?.openFile?.(props.path).catch(() => undefined);
+        }}
+      >
+        {label}
+      </button>
+      <PathContextMenu menu={pathMenu} locale={props.locale} path={props.path} />
+    </>
   );
 }
 
@@ -1192,6 +1236,8 @@ function ProcessToolRow(props: {
   const parts = toolRowParts(props.locale, props.item.toolName, view, props.item.status);
   const expand = processToolExpandBodies(props.item, view);
   const [open, setOpen] = useState(false);
+  /** Right-click menu over this row's command, when it has one. */
+  const commandMenu = useContextMenu();
   const hasBody = Boolean(expand.input || expand.output || expand.diff);
 
   const running = props.item.status === "running";
@@ -1274,7 +1320,11 @@ function ProcessToolRow(props: {
             {parts.path ? (
               <>
                 {" "}
-                <ProcessPathLink path={parts.path} workspacePath={props.workspacePath} />
+                <ProcessPathLink
+                  path={parts.path}
+                  locale={props.locale}
+                  workspacePath={props.workspacePath}
+                />
               </>
             ) : null}
             {parts.mid ? (
@@ -1293,6 +1343,9 @@ function ProcessToolRow(props: {
                     parts.detailTone === "query" && "process-step-detail-query",
                     parts.detailTone === "muted" && "process-step-detail-muted",
                   )}
+                  {...(parts.detailTone === "command"
+                    ? { onContextMenu: (event) => commandMenu.openAtPoint("tool-command", event) }
+                    : {})}
                 >
                   {parts.detail}
                 </span>
@@ -1307,6 +1360,9 @@ function ProcessToolRow(props: {
           </>
         )}
       </MarkerContent>
+      {parts.detail && parts.detailTone === "command" ? (
+        <CommandContextMenu menu={commandMenu} locale={props.locale} command={parts.detail} />
+      ) : null}
       {typeLabel ? (
         <span className="process-step-type" title={props.item.toolName}>
           {typeLabel}

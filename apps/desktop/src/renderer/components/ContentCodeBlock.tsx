@@ -1,6 +1,10 @@
-import { useEffect, useId, useMemo, useState } from "react";
-import { Check, Copy, TriangleAlert } from "lucide-react";
+import { useEffect, useId, useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { Check, ClipboardCopy, Copy, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FloatingMenu } from "./FloatingMenu.tsx";
+import { MenuItem } from "./ui/menu-item.tsx";
+import { useContextMenu } from "../hooks/useContextMenu.ts";
+import { editCombo } from "../lib/context-menu.ts";
 import hljs from "highlight.js/lib/core";
 import bash from "highlight.js/lib/languages/bash";
 import css from "highlight.js/lib/languages/css";
@@ -146,6 +150,9 @@ export function ContentCodeBlock(props: {
   const language = normalizedLanguage(props.language);
   const locale = props.locale ?? "en";
   const [copied, setCopied] = useState(false);
+  const codeMenu = useContextMenu();
+  /** What was selected inside the block when the menu opened. */
+  const [selected, setSelected] = useState("");
   const highlighted = useMemo(() => {
     if (language === "diff" || language === "mermaid" || !hljs.getLanguage(language)) return "";
     return hljs.highlight(props.code, { language, ignoreIllegals: true }).value;
@@ -161,8 +168,23 @@ export function ContentCodeBlock(props: {
     }
   }
 
+  /**
+   * Read the selection as the menu opens. The menu takes focus, and a later read would race the
+   * collapse — so the choice between "copy the selection" and "copy the block" is made here,
+   * where it still reflects what the user right-clicked.
+   */
+  function openCodeMenu(event: ReactMouseEvent) {
+    setSelected(window.getSelection()?.toString() ?? "");
+    codeMenu.openAtPoint("code", event);
+  }
+
+  function copySelection() {
+    void navigator.clipboard.writeText(selected).catch(() => undefined);
+    codeMenu.close();
+  }
+
   return (
-    <div className="content-code-block" data-language={language}>
+    <div className="content-code-block" data-language={language} onContextMenu={openCodeMenu}>
       <div className="content-code-header">
         <span className="content-code-language font-mono text-[11px] font-normal">
           {language === "plaintext" ? "text" : language}
@@ -171,6 +193,7 @@ export function ContentCodeBlock(props: {
           type="button"
           variant="ghost"
           size="icon-xs"
+          data-testid="code-copy"
           onClick={() => void copyCode()}
           aria-label={t(locale, copied ? "timeline.codeCopied" : "timeline.codeCopy")}
           title={t(locale, copied ? "timeline.codeCopied" : "timeline.codeCopy")}
@@ -178,6 +201,41 @@ export function ContentCodeBlock(props: {
           {copied ? <Check /> : <Copy />}
         </Button>
       </div>
+
+      {/*
+        Right-click menu. "Copy the selection" only appears when there is one — the whole block
+        is the other item's job, and for a partial selection the whole block is usually not what
+        was meant.
+      */}
+      <FloatingMenu
+        open={codeMenu.isOpen}
+        anchor={codeMenu.anchor}
+        onClose={codeMenu.close}
+        testId="code-context-menu"
+        minWidth={200}
+        keyboardNav
+      >
+        {selected.trim() ? (
+          <MenuItem
+            icon={<Copy className="size-3.5" strokeWidth={1.75} />}
+            label={t(locale, "timeline.context.copySelection")}
+            onClick={copySelection}
+            testId="code-menu-copy-selection"
+          />
+        ) : null}
+        <MenuItem
+          icon={<ClipboardCopy className="size-3.5" strokeWidth={1.75} />}
+          label={t(locale, "timeline.context.copyCode")}
+          shortcut={editCombo("copy")}
+          onClick={() => {
+            // Goes through the header button's own handler so the block shows the same
+            // "copied" check either way.
+            void copyCode();
+            codeMenu.close();
+          }}
+          testId="code-menu-copy"
+        />
+      </FloatingMenu>
       {language === "mermaid" ? (
         <MermaidDiagram source={props.code} locale={locale} />
       ) : (

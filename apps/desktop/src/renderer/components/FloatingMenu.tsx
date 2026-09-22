@@ -11,7 +11,17 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { nextMenuIndex, type MenuNavKey } from "../lib/context-menu.ts";
 import { cn } from "../lib/utils.ts";
+
+/** Keys that move the highlight inside an open menu. */
+const NAV_KEYS = new Set<string>(["ArrowDown", "ArrowUp", "Home", "End"]);
+
+/** Focusable rows, in DOM order, skipping disabled ones — a disabled button cannot take focus. */
+function menuItems(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])'));
+}
 
 export interface AnchorRect {
   top: number;
@@ -80,6 +90,15 @@ export function FloatingMenu(props: {
   elevated?: boolean;
   /** Gap in px between menu and anchor (default 6 above / 4 below). */
   offsetPx?: number;
+  /**
+   * Arrow/Home/End cruising between `role="menuitem"` rows, plus focus moving into the menu
+   * when it opens and back to whatever was focused when it closes.
+   *
+   * Opt-in, and off by default: the composer's `/` and `@` panels are also `FloatingMenu`s and
+   * drive their own highlight from the textarea's keydown. A capture-phase listener here would
+   * pull focus out of the textarea and fight them for every arrow press.
+   */
+  keyboardNav?: boolean;
 }) {
   const minWidth = props.minWidth ?? 200;
   const placement = props.placement ?? "bottom";
@@ -93,6 +112,8 @@ export function FloatingMenu(props: {
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuSize, setMenuSize] = useState({ w: minWidth, h: 0 });
+  /** What was focused before a keyboard-navigable menu took focus, for Escape to hand back. */
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     if (!open || !menuRef.current) return;
@@ -117,6 +138,9 @@ export function FloatingMenu(props: {
       if (ev.key === "Escape") {
         ev.stopPropagation();
         props.onClose();
+        // Hand focus back to whatever opened the menu. Only on Escape: dismissing by clicking
+        // outside or choosing an item already sends focus where the user aimed it.
+        if (props.keyboardNav) returnFocusRef.current?.focus();
       }
     };
     const onPointerDown = (ev: PointerEvent) => {
@@ -147,7 +171,41 @@ export function FloatingMenu(props: {
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", onResize);
     };
-  }, [open, closeOnOutside, closeOnScroll, props.onClose]);
+  }, [open, closeOnOutside, closeOnScroll, props.onClose, props.keyboardNav]);
+
+  // Arrow / Home / End cruising between rows, for menus that opt in.
+  useEffect(() => {
+    if (!open || !props.keyboardNav) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (!NAV_KEYS.has(ev.key)) return;
+      const items = menuItems(menuRef.current);
+      if (!items.length) return;
+      // Capture phase: stop the arrow reaching the page behind the menu (scrolling the
+      // timeline, moving a caret) now that the key means "move the highlight".
+      ev.preventDefault();
+      ev.stopPropagation();
+      const current = items.indexOf(document.activeElement as HTMLElement);
+      const next = nextMenuIndex(current, items.length, ev.key as MenuNavKey);
+      items[next]?.focus();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open, props.keyboardNav]);
+
+  // Move focus into the menu when it opens, so a keyboard user can arrow straight into it and
+  // Escape has somewhere to hand focus back to. Guarded against re-focusing: a parent re-render
+  // while the menu is open must not yank the highlight back to the first row.
+  useEffect(() => {
+    if (!open || !props.keyboardNav) return;
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = window.requestAnimationFrame(() => {
+      const root = menuRef.current;
+      if (!root || root.contains(document.activeElement)) return;
+      menuItems(root)[0]?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, props.keyboardNav, props.children]);
 
   if (!open || !props.anchor || typeof document === "undefined") return null;
 

@@ -176,7 +176,8 @@ export function parseCombo(combo: string): {
   };
 }
 
-function isMacPlatform(): boolean {
+/** True on macOS/iOS, where `mod` renders as ⌘ rather than Ctrl. */
+export function isMacPlatform(): boolean {
   return typeof navigator !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform);
 }
 
@@ -271,10 +272,7 @@ export function comboToDisplayParts(combo: string, isMac = isMacPlatform()): str
 }
 
 /** Display string for UI (⌘ on Mac, Ctrl on Win/Linux). */
-export function formatComboDisplay(
-  combo: string,
-  isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPod|iPad/i.test(navigator.platform),
-): string {
+export function formatComboDisplay(combo: string, isMac = isMacPlatform()): string {
   const bits = comboToDisplayParts(combo, isMac);
   if (!bits.length) return "—";
   return isMac ? bits.join("") : bits.join("+");
