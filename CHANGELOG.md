@@ -3,6 +3,16 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
+## [Unreleased]
+
+### Changed
+
+- Bundled pi runtime upgraded to 0.87.1, from 0.87.0. Users get Claude Opus 5.5 and the
+  GPT-6 Sol / Luna models through Anthropic, OpenAI, OpenAI Codex and GitHub Copilot, and
+  new xAI sessions now default to Grok 4.7. It is a patch release with no breaking changes,
+  so the pin is the only Zeno-side change — and Settings → SDK 运行时 stops showing
+  内置版本落后，需升级 Zeno 应用.
+
 ## [0.1.8] - 2026-09-22
 
 ### Added
