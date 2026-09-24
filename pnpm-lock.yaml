@@ -206,8 +206,8 @@ settings:
 catalogs:
   default:
     '@earendil-works/pi-coding-agent':
-      specifier: 0.87.0
-      version: 0.87.0
+      specifier: 0.87.1
+      version: 0.87.1
     '@playwright/test':
       specifier: 1.55.0
       version: 1.55.0
@@ -353,7 +353,7 @@ importers:
     dependencies:
       '@earendil-works/pi-coding-agent':
         specifier: 'catalog:'
-        version: 0.87.0(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+        version: 0.87.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@shadcn/react':
         specifier: 'catalog:'
         version: 0.2.1(@types/react@19.2.17)(react@19.2.7)
@@ -523,7 +523,7 @@ importers:
     dependencies:
       '@earendil-works/pi-coding-agent':
         specifier: 'catalog:'
-        version: 0.87.0(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+        version: 0.87.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
       '@zeno/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -732,30 +732,30 @@ packages:
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
 
-  '@earendil-works/chord@0.87.0':
-    resolution: {integrity: sha512-t8QOTf0GTHrsDSfcdtXuA9RCkh6mnR4l25N0SM/sgH7Ih25jH4tGXNbkGs9MWpV5xTu9MRPj4A7Zn1UEwQm9+g==}
+  '@earendil-works/chord@0.87.1':
+    resolution: {integrity: sha512-bg7IkJGFcEaMqqYgOGUiq5Ky9RghpRfrlZ8I/v/1b4bBZ02A7t3E+6uhPRbadwWb/kWsnVFbZsqOKRN4a3LLCg==}
     engines: {node: '>=22.19.0'}
 
-  '@earendil-works/pi-agent-core@0.87.0':
-    resolution: {integrity: sha512-c5b2FMdJ7C++HBa6AyBmusdf96gdgRqpF7J+UCq2yVGB28UETJvJ190HkgDWUaLPnOQQPbanjKMAm/TgRmFE2w==}
+  '@earendil-works/pi-agent-core@0.87.1':
+    resolution: {integrity: sha512-Zev3B0HK7YS5A4EZQ2XnEqiJuirx6QBiltJ+LpmjV5a/+2IU0cfKtIfnkNkORK707XOvKBY2WRtk7cAwHpbh2Q==}
     engines: {node: '>=22.19.0'}
 
-  '@earendil-works/pi-ai@0.87.0':
-    resolution: {integrity: sha512-lbRm+EMY6Jx3l+HLpbqbm9Yrhkc5u7EffLk2id+zJQEoBuR5I+tijGiZU8zlnuuCclmQOgH0PVjL9PLbeqJ9MQ==}
-    engines: {node: '>=22.19.0'}
-    hasBin: true
-
-  '@earendil-works/pi-coding-agent@0.87.0':
-    resolution: {integrity: sha512-S9JJVGHya/h0e0M+zwPTB6RkPe7PmLLqfBUTssFYW5mxAti6oZEILn4jvaUImENRC3U9RwXAB6H4gw8xj2J0GQ==}
+  '@earendil-works/pi-ai@0.87.1':
+    resolution: {integrity: sha512-X/3PfQBnnoeVdO9Cv8zHghUMglzlgNZYGNzoPnbRoGnHl3Rw3TlA2UKSUB7BRHUOxMryHXYa8dnjWZlbRheDZA==}
     engines: {node: '>=22.19.0'}
     hasBin: true
 
-  '@earendil-works/pi-telemetry@0.87.0':
-    resolution: {integrity: sha512-IEUMnV6mgHyOMfAxa4CKXoBKKfHM8KxNjbXWM4Bps/iLJcFMf8hQsEZ+95VnVTc7C0cU77Rmdxt773C35jb5AA==}
+  '@earendil-works/pi-coding-agent@0.87.1':
+    resolution: {integrity: sha512-m8ArJUtVcQMSe1lLE/Ei7vX/JV7O39sWmWBsXV2NOU70F0qCp8GubA24pT3LnwTmM6LL2xV80/h6sQg85n69ew==}
+    engines: {node: '>=22.19.0'}
+    hasBin: true
+
+  '@earendil-works/pi-telemetry@0.87.1':
+    resolution: {integrity: sha512-MC6TRQH5lgMXpcN+Vku2WMI2T8BsiUPzMQHGo81uqFZD3/9O79WWJAysEDGuzduP6R4tvtgwMLwmqIxynM10JQ==}
     engines: {node: '>=22.19.0'}
 
-  '@earendil-works/pi-tui@0.87.0':
-    resolution: {integrity: sha512-7gTC0XOgQfVWg4yGxwHINBpCnGl9p4KEC7PXIc8gAwc/cyxSW4VuFQrp+r1YD3oM+rBkoepKwAt6w6+VJ7BCaw==}
+  '@earendil-works/pi-tui@0.87.1':
+    resolution: {integrity: sha512-YEH2vRyOeiO7hhN6j6AE6YwKSq2Kz2f3XR8bj1TbR+aGE/JsnY1hLPMI2pvaZfRM1n9Y00tejxFQ4zbzvF7nkQ==}
     engines: {node: '>=22.19.0'}
 
   '@electron-internal/extract-zip@1.0.4':
@@ -3989,10 +3989,6 @@ packages:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
     engines: {node: '>=4'}
 
-  minimatch@10.2.5:
-    resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
-    engines: {node: 18 || 20 || >=22}
-
   minimatch@10.2.6:
     resolution: {integrity: sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==}
     engines: {node: 18 || 20 || >=22}
@@ -4674,10 +4670,6 @@ packages:
     resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
     engines: {node: '>=22.19.0'}
 
-  undici@8.9.0:
-    resolution: {integrity: sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==}
-    engines: {node: '>=22.19.0'}
-
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
 
@@ -5200,15 +5192,15 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.0': {}
 
-  '@earendil-works/chord@0.87.0':
+  '@earendil-works/chord@0.87.1':
     dependencies:
       esbuild: 0.28.2
 
-  '@earendil-works/pi-agent-core@0.87.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
+  '@earendil-works/pi-agent-core@0.87.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
     dependencies:
-      '@earendil-works/chord': 0.87.0
-      '@earendil-works/pi-ai': 0.87.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
-      '@earendil-works/pi-telemetry': 0.87.0
+      '@earendil-works/chord': 0.87.1
+      '@earendil-works/pi-ai': 0.87.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+      '@earendil-works/pi-telemetry': 0.87.1
       diff: 8.0.4
       ignore: 7.0.8
       typebox: 1.3.27
@@ -5222,11 +5214,11 @@ snapshots:
       - ws
       - zod
 
-  '@earendil-works/pi-ai@0.87.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
+  '@earendil-works/pi-ai@0.87.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
     dependencies:
       '@anthropic-ai/sdk': 0.124.0(zod@4.4.3)
       '@aws-sdk/client-bedrock-runtime': 3.1127.0
-      '@earendil-works/pi-telemetry': 0.87.0
+      '@earendil-works/pi-telemetry': 0.87.1
       '@google/genai': 2.21.0(supports-color@7.2.0)
       '@smithy/node-http-handler': 4.12.1
       http-proxy-agent: 9.1.0(supports-color@7.2.0)
@@ -5243,12 +5235,12 @@ snapshots:
       - ws
       - zod
 
-  '@earendil-works/pi-coding-agent@0.87.0(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
+  '@earendil-works/pi-coding-agent@0.87.1(patch_hash=21f7bf379ace435da050947388495a15ce8ade306b82ebab930b5ae8e49ac02d)(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)':
     dependencies:
-      '@earendil-works/chord': 0.87.0
-      '@earendil-works/pi-agent-core': 0.87.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
-      '@earendil-works/pi-ai': 0.87.0(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
-      '@earendil-works/pi-tui': 0.87.0
+      '@earendil-works/chord': 0.87.1
+      '@earendil-works/pi-agent-core': 0.87.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+      '@earendil-works/pi-ai': 0.87.1(supports-color@7.2.0)(ws@8.21.0)(zod@4.4.3)
+      '@earendil-works/pi-tui': 0.87.1
       '@silvia-odwyer/photon-node': 0.3.4
       chalk: 6.0.0
       cross-spawn: 7.0.6
@@ -5273,9 +5265,9 @@ snapshots:
       - ws
       - zod
 
-  '@earendil-works/pi-telemetry@0.87.0': {}
+  '@earendil-works/pi-telemetry@0.87.1': {}
 
-  '@earendil-works/pi-tui@0.87.0':
+  '@earendil-works/pi-tui@0.87.1':
     dependencies:
       get-east-asian-width: 1.6.0
       marked: 18.0.11
@@ -6995,7 +6987,7 @@ snapshots:
       js-yaml: 4.3.1
       json5: 2.2.3
       lazy-val: 1.0.5
-      minimatch: 10.2.5
+      minimatch: 10.2.6
       pkijs: 3.4.0
       plist: 3.1.0
       proper-lockfile: 4.1.2
@@ -8119,7 +8111,7 @@ snapshots:
       saxes: 6.0.0
       symbol-tree: 3.2.4
       tough-cookie: 6.0.2
-      undici: 8.9.0
+      undici: 8.10.2
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -8729,10 +8721,6 @@ snapshots:
   mimic-response@3.1.0: {}
 
   min-indent@1.0.1: {}
-
-  minimatch@10.2.5:
-    dependencies:
-      brace-expansion: 5.0.9
 
   minimatch@10.2.6:
     dependencies:
@@ -9496,8 +9484,6 @@ snapshots:
     optional: true
 
   undici@8.10.2: {}
-
-  undici@8.9.0: {}
 
   unified@11.0.5:
     dependencies:
