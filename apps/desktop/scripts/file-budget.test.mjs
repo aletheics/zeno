@@ -39,8 +39,12 @@ const SRC = join(__dirname, "..", "src");
  * how the code is organised — which is why the catalogue was split rather than re-budgeted.
  */
 const FROZEN = {
-  "main/index.ts": 5907,
-  "renderer/main.tsx": 4605,
+  // 5907 → 5753: the mcp.json read/write helpers, the npm-package-name guard, the Windows
+  // MCP entry resolver, and the five `zeno:mcp:*` handler bodies moved to `main/mcp-config.ts`,
+  // which also let that logic be tested for the first time. Banked, per the note above.
+  "main/index.ts": 5753,
+  // 4605 → 4534: the MCP servers list became `components/McpServersSection.tsx`.
+  "renderer/main.tsx": 4534,
   "renderer/components/settings/SettingsPage.tsx": 5163,
   // 2194 → 1811: the composer's menu rows moved to `components/ComposerMenus.tsx` and its
   // suggestion helpers to `components/ComposerSuggestMenus.tsx`, which paid for the composer's

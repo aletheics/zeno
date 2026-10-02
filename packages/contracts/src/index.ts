@@ -486,11 +486,18 @@ export interface McpServerConfig {
   command: string;
   args: string[];
   env?: Record<string, string>;
-  /** When true the adapter skips this server (soft remove). */
-  disabled?: boolean;
-  /** npm package name this server was installed from (for updates). */
+  /**
+   * pi's own switch: `false` keeps the entry without connecting to it; omitted means enabled.
+   * Replaced the old `disabled` flag, which pi does not understand and therefore ignored —
+   * a "disabled" server was still connected.
+   */
+  enabled?: boolean;
+  /**
+   * npm package name this server was installed from (for updates). Zeno-only bookkeeping:
+   * pi does not read it, but passes unknown entry fields through untouched.
+   */
   packageName?: string;
-  /** Working directory for the MCP server process (package root). */
+  /** Working directory for the MCP server process (package root). pi's native `cwd`. */
   cwd?: string;
 }
 
@@ -581,6 +588,8 @@ export interface CatalogSearchResult {
 export type QueueDeliveryMode = "all" | "one-at-a-time";
 export type DoubleEscapeAction = "fork" | "tree" | "none";
 export type TreeFilterMode = "default" | "no-tools" | "user-only" | "labeled-only" | "all";
+/** pi `quietStartup`. `"header"` keeps the version and key hints but hides the rest (pi 1.0.0). */
+export type QuietStartup = boolean | "header";
 
 export interface PiSettingsInventoryItem {
   key: string;
@@ -616,7 +625,7 @@ export interface PiSettingsView {
     medium?: number;
     high?: number;
   };
-  quietStartup: boolean;
+  quietStartup: QuietStartup;
   enableSkillCommands: boolean;
   /** Thinking levels for the configured default model (pi thinkingLevelMap). */
   availableThinkingLevels: string[];
@@ -656,7 +665,7 @@ export type PiSettingsPatch = Partial<{
   retryMaxRetries: number;
   retryBaseDelayMs: number;
   hideThinkingBlock: boolean;
-  quietStartup: boolean;
+  quietStartup: QuietStartup;
   enableSkillCommands: boolean;
   steeringMode: QueueDeliveryMode;
   followUpMode: QueueDeliveryMode;
@@ -3141,6 +3150,10 @@ function isTreeFilterMode(value: unknown): value is TreeFilterMode {
   );
 }
 
+function isQuietStartup(value: unknown): value is QuietStartup {
+  return typeof value === "boolean" || value === "header";
+}
+
 function isSessionTreeView(value: unknown): value is SessionTreeView {
   if (!isRecord(value) || typeof value.sessionId !== "string") return false;
   if (!isTreeFilterMode(value.filterMode)) return false;
@@ -3208,7 +3221,7 @@ function isPiSettingsView(value: unknown): value is PiSettingsView {
     typeof value.retryMaxRetries === "number" &&
     typeof value.retryBaseDelayMs === "number" &&
     typeof value.hideThinkingBlock === "boolean" &&
-    typeof value.quietStartup === "boolean" &&
+    isQuietStartup(value.quietStartup) &&
     typeof value.enableSkillCommands === "boolean" &&
     isQueueDeliveryMode(value.steeringMode) &&
     isQueueDeliveryMode(value.followUpMode) &&
