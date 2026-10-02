@@ -19,7 +19,6 @@ import {
   type PiSettingsPatchResult,
   type PiSettingsView,
   type ProjectTrustSummary,
-  type McpConfig,
   type ProviderAuthSummary,
   type ProviderUsageSnapshot,
   type ResourceSummary,
@@ -57,7 +56,6 @@ import {
   utilityProcess,
   type UtilityProcess,
 } from "electron";
-import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
   readFileSync,
@@ -66,11 +64,9 @@ import {
   mkdirSync,
   lstatSync,
   readdirSync,
-  rmSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
-import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
@@ -114,6 +110,13 @@ import {
   type ResolvedPiSdk,
 } from "./pi-sdk.ts";
 import { searchPiPackageCatalog } from "./package-catalog.ts";
+import {
+  installMcpServer,
+  readMcpConfig,
+  removeMcpServer,
+  setMcpServerEnabled,
+  updateMcpServer,
+} from "./mcp-config.ts";
 import { deleteSessionFile, sessionsRootDir } from "./session-files.ts";
 import { gitStatus, runGit } from "./git-ops.ts";
 import { createNodePtySpawn, PiTuiPtyController } from "./pi-tui-pty.ts";
@@ -402,7 +405,6 @@ async function getPiTuiController(): Promise<PiTuiPtyController> {
   return piTuiControllerInit;
 }
 
-const execFileAsync = promisify(execFile);
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const HOST_EVENT_CHANNEL = "zeno:host:event";
 const PI_PROGRESS_CHANNEL = "zeno:pi:progress";
@@ -1277,43 +1279,6 @@ async function searchMcpCatalog(
   return { packages: items, total };
 }
 
-/** Read mcp.json from the pi agent directory. */
-async function readMcpConfig(): Promise<McpConfig> {
-  const mcpPath = join(defaultAgentDir(), "mcp.json");
-  try {
-    if (!existsSync(mcpPath)) return { mcpServers: {} };
-    const raw = readFileSync(mcpPath, "utf8");
-    if (!raw.trim()) return { mcpServers: {} };
-    return JSON.parse(raw) as McpConfig;
-  } catch {
-    return { mcpServers: {} };
-  }
-}
-
-/** Write mcp.json to the pi agent directory. */
-async function writeMcpConfig(config: McpConfig): Promise<void> {
-  const agentDir = defaultAgentDir();
-  if (!existsSync(agentDir)) mkdirSync(agentDir, { recursive: true });
-  const mcpPath = join(agentDir, "mcp.json");
-  writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n", "utf8");
-}
-/** npm 包名白名单：仅允许合法、URL 安全、不含 shell 元字符的包名（支持 scoped 包）。 */
-const NPM_PACKAGE_NAME_RE = /^(@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
-
-function isValidNpmPackageName(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    value.length > 0 &&
-    value.length <= 214 &&
-    NPM_PACKAGE_NAME_RE.test(value)
-  );
-}
-
-function assertNpmPackageName(value: unknown): string {
-  if (!isValidNpmPackageName(value)) throw new Error("非法的 npm 包名");
-  return value;
-}
-
 /** 仅信任主窗口 / 宠物窗口顶层 frame 发起的 IPC，拒绝子 frame / 外部内容。 */
 function assertTrustedSender(event: Electron.IpcMainInvokeEvent): void {
   const trusted = [mainWindow, petWindow]
@@ -1323,58 +1288,6 @@ function assertTrustedSender(event: Electron.IpcMainInvokeEvent): void {
     );
   if (!trusted) throw new Error("不受信任的 IPC 发送方");
 }
-/**
- * On Windows, npx-resolver in pi-mcp-adapter misidentifies Unix shell scripts
- * in .bin/ as binaries, causing cmd.exe chain breaks that kill stdio pipes.
- *
- * Work around by installing the package locally and resolving the real entry
- * point from package.json.  Strategy:
- *   - If the bin entry is a .exe → native binary, use it directly with cwd set.
- *   - If the bin entry is a .js  → spawn `node <jsPath>` with cwd set.
- *   - If no bin entry            → fall back to npx (return null).
- *
- * Most MCP servers are pure JS.  Only packages that bundle native binaries
- * (e.g. officecli ships vendor/officecli.exe) get the .exe fast path.
- */
-async function resolveMcpNodeEntry(
-  packageName: string,
-): Promise<{ command: string; args: string[]; cwd: string } | null> {
-  if (process.platform !== "win32") return null;
-  assertNpmPackageName(packageName);
-  const agentDir = defaultAgentDir();
-  const mcpPackagesDir = join(agentDir, "mcp-packages");
-  try {
-    // Local install so we can inspect package.json for the bin entry at a
-    // known path.  --no-save avoids writing a lockfile; the directory acts as
-    // a simple cache — future installs of the same package are fast upgrades.
-    await execFileAsync(
-      "npm",
-      ["install", "--no-fund", "--no-audit", "--no-save", "--prefix", mcpPackagesDir, packageName],
-      { windowsHide: true, timeout: 120_000 },
-    );
-    const pkgPath = join(mcpPackagesDir, "node_modules", ...packageName.split("/"), "package.json");
-    if (!existsSync(pkgPath)) return null;
-    const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
-    const pkgDir = dirname(pkgPath);
-    const bin = pkgJson.bin;
-    if (!bin) return null;
-    const binRelative: string =
-      typeof bin === "string" ? bin : (Object.values(bin as Record<string, string>)[0] ?? "");
-    if (!binRelative) return null;
-    const binPath = resolve(pkgDir, binRelative);
-    const isExe = binRelative.toLowerCase().endsWith(".exe");
-    // Native binary: spawn directly with cwd set to package root.
-    // JS entry:    spawn via node with cwd set to package root.
-    // Use "node" (resolved via PATH) — the agent-host utility process has its
-    // own Node.js runtime, so process.execPath here is the Electron binary.
-    return isExe
-      ? { command: binPath, args: [], cwd: pkgDir }
-      : { command: "node", args: [binPath], cwd: pkgDir };
-  } catch {
-    return null;
-  }
-}
-
 /** Restored BrowserWindow geometry (userData/zeno-desktop.json). */
 interface WindowBoundsPrefs {
   x: number;
@@ -5752,92 +5665,25 @@ void app
     ipcMain.handle("zeno:resources:list", () => supervisor?.listResources());
 
     // MCP server management — read/write mcp.json in the pi agent dir
-    ipcMain.handle("zeno:mcp:get-config", () => readMcpConfig());
+    ipcMain.handle("zeno:mcp:get-config", () => readMcpConfig(defaultAgentDir()));
 
     ipcMain.handle("zeno:mcp:install-server", async (event, name: string, packageName: string) => {
       assertTrustedSender(event);
-      assertNpmPackageName(packageName);
-      const config = await readMcpConfig();
-      // On Windows, resolve the JS entry to avoid npx-resolver's shell-script
-      // detection bug.  Fall back to plain npx if resolution fails.
-      const resolved = await resolveMcpNodeEntry(packageName);
-      config.mcpServers[name] = resolved
-        ? { command: resolved.command, args: resolved.args, packageName, cwd: resolved.cwd }
-        : { command: "npx", args: ["-y", packageName], packageName };
-      await writeMcpConfig(config);
+      await installMcpServer(defaultAgentDir(), name, packageName);
     });
 
     ipcMain.handle("zeno:mcp:remove-server", async (event, name: string) => {
       assertTrustedSender(event);
-      const config = await readMcpConfig();
-      const server = config.mcpServers[name];
-      if (server) {
-        // Clean up locally installed package files so disk doesn't leak.
-        try {
-          if (server.packageName && isValidNpmPackageName(server.packageName)) {
-            const agentDir = defaultAgentDir();
-            const mcpPackagesRoot = join(agentDir, "mcp-packages", "node_modules");
-            const pkgDir = resolve(mcpPackagesRoot, ...server.packageName.split("/"));
-            // 路径穿越防护：清理目标必须仍位于 node_modules 根目录内
-            if (pkgDir !== mcpPackagesRoot && pkgDir.startsWith(mcpPackagesRoot + sep)) {
-              if (existsSync(pkgDir)) {
-                rmSync(pkgDir, { recursive: true, force: true });
-              }
-            }
-          }
-        } catch {
-          // best-effort cleanup — the config entry is the source of truth
-        }
-        delete config.mcpServers[name];
-      }
-      await writeMcpConfig(config);
+      removeMcpServer(defaultAgentDir(), name);
     });
 
     ipcMain.handle("zeno:mcp:set-enabled", async (_event, name: string, enabled: boolean) => {
-      const config = await readMcpConfig();
-      const server = config.mcpServers[name];
-      if (!server) return;
-      if (enabled) {
-        delete server.disabled;
-      } else {
-        server.disabled = true;
-      }
-      await writeMcpConfig(config);
+      setMcpServerEnabled(defaultAgentDir(), name, enabled);
     });
 
     ipcMain.handle("zeno:mcp:update-server", async (event, name: string) => {
       assertTrustedSender(event);
-      const config = await readMcpConfig();
-      const server = config.mcpServers[name];
-      if (!server || !server.packageName || !isValidNpmPackageName(server.packageName)) return;
-      try {
-        if (server.command === "node") {
-          // Locally installed via resolveMcpNodeEntry — upgrade in place.
-          const mcpPackagesDir = join(defaultAgentDir(), "mcp-packages");
-          await execFileAsync(
-            "npm",
-            [
-              "install",
-              "--no-fund",
-              "--no-audit",
-              "--no-save",
-              "--prefix",
-              mcpPackagesDir,
-              `${server.packageName}@latest`,
-            ],
-            { windowsHide: true, timeout: 120_000 },
-          );
-        } else {
-          // npx-based — refresh to latest (pure argv, no shell interpolation).
-          await execFileAsync(
-            process.platform === "win32" ? "npx.cmd" : "npx",
-            ["-y", `${server.packageName}@latest`, "--version"],
-            { windowsHide: true, timeout: 60_000 },
-          );
-        }
-      } catch {
-        // Best-effort — the package is fetched via npx on next runtime start anyway.
-      }
+      await updateMcpServer(defaultAgentDir(), name);
     });
 
     ipcMain.handle("zeno:mcp:get-path", () => join(defaultAgentDir(), "mcp.json"));

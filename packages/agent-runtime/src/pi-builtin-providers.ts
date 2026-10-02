@@ -45,6 +45,7 @@ export const PI_BUILTIN_PROVIDERS = new Set<string>([
   "qwen-token-plan-individual",
   "radius",
   "together",
+  "typesafe",
   "vercel-ai-gateway",
   "xai",
   "xiaomi",

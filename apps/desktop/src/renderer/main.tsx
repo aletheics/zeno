@@ -25,6 +25,7 @@ import { AppSidebar } from "./components/AppSidebar.tsx";
 import { CommandPalette } from "./components/CommandPalette.tsx";
 import { Composer } from "./components/Composer.tsx";
 import { ConfirmDialog } from "./components/ConfirmDialog.tsx";
+import { McpServersSection } from "./components/McpServersSection.tsx";
 import { ErrorDialog } from "./components/ErrorDialog.tsx";
 import { unwrapRemoteIpcError } from "../shared/ipc-error.ts";
 import { ExtensionUiChrome } from "./components/ExtensionUiChrome.tsx";
@@ -4439,87 +4440,15 @@ function PackagesPage(props: {
                 </>
               )}
 
-              {/* MCP Servers section in installed tab */}
-              <div className="mt-4" data-testid="mcp-installed">
-                {Object.keys(mcpServers.mcpServers ?? {}).length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
-                        {tr("mcp.installedTitle")}
-                      </h3>
-                      {mcpDirty && (
-                        <span className="chip-status" data-tone="update">
-                          {tr("mcp.restartHint")}
-                        </span>
-                      )}
-                    </div>
-                    {mcpDirty && (
-                      <p className="form-hint m-0 mt-1">{tr("mcp.restartHintDetail")}</p>
-                    )}
-                    <div className="item-list mt-2">
-                      {Object.entries(mcpServers.mcpServers).map(([name, cfg]) => (
-                        <article
-                          key={name}
-                          className="item-card"
-                          data-enabled={cfg.disabled ? "false" : "true"}
-                          data-testid={`mcp-card-${name}`}
-                        >
-                          <div className="min-w-0">
-                            <div className="title">{name}</div>
-                            <div className="meta">
-                              {cfg.packageName ?? `${cfg.command} ${cfg.args?.join(" ") ?? ""}`}
-                            </div>
-                          </div>
-                          <div className="badges">
-                            <span
-                              className="chip-status"
-                              data-tone={cfg.disabled ? "off" : "on"}
-                              data-testid={`mcp-status-${name}`}
-                            >
-                              {cfg.disabled ? tr("packages.disabled") : tr("packages.enabled")}
-                            </span>
-                            <span className="chip">global</span>
-                            <span className="chip">npm</span>
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              data-testid={`mcp-enable-${name}`}
-                              disabled={busy}
-                              onClick={() => void setMcpEnabled(name, !!cfg.disabled)}
-                            >
-                              {cfg.disabled ? tr("packages.enable") : tr("packages.disable")}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              data-testid={`mcp-update-${name}`}
-                              disabled={busy}
-                              title={tr("packages.update")}
-                              onClick={() => void updateMcp(name)}
-                            >
-                              {tr("packages.update")}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-ghost btn-sm danger"
-                              data-testid={`mcp-remove-${name}`}
-                              disabled={busy}
-                              onClick={() => void removeMcp(name)}
-                            >
-                              {tr("mcp.remove")}
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="empty-panel" data-testid="mcp-empty">
-                    <h2>{tr("mcp.emptyTitle")}</h2>
-                    <p>{tr("mcp.emptyBody")}</p>
-                  </div>
-                )}
-              </div>
+              <McpServersSection
+                locale={props.locale}
+                servers={mcpServers}
+                dirty={mcpDirty}
+                busy={busy}
+                onSetEnabled={(name, enabled) => void setMcpEnabled(name, enabled)}
+                onUpdate={(name) => void updateMcp(name)}
+                onRemove={(name) => void removeMcp(name)}
+              />
             </>
           )}
         </div>

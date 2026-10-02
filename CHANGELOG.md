@@ -7,11 +7,20 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
 
 ### Changed
 
-- Bundled pi runtime upgraded to 0.87.1, from 0.87.0. Users get Claude Opus 5.5 and the
-  GPT-6 Sol / Luna models through Anthropic, OpenAI, OpenAI Codex and GitHub Copilot, and
-  new xAI sessions now default to Grok 4.7. It is a patch release with no breaking changes,
-  so the pin is the only Zeno-side change — and Settings → SDK 运行时 stops showing
-  内置版本落后，需升级 Zeno 应用.
+- Bundled pi runtime upgraded to 1.0.0, from 0.87.1 — which itself never shipped in a Zeno
+  release, so this one entry covers the whole 0.88 → 1.0.0 span. Users get Claude Opus 5.5
+  and the GPT-6 Sol / Luna models, and new xAI sessions default to Grok 4.7. Terminal mode
+  now opens in pi's fullscreen TUI by default. pi's codemode, image generation and virtual
+  models are reachable through pi's own settings; Zeno's UI for them is not part of this
+  change. Settings → SDK 运行时 stops showing 内置版本落后，需升级 Zeno 应用.
+
+### Fixed
+
+- An MCP server you turned off is now actually off. Zeno wrote pi's entry as a `disabled`
+  flag, which pi does not know: it passes unknown fields through and reads only its own
+  `enabled`, so a switched-off server was still connected on every session. Entries now use
+  pi's `enabled: false`, and existing `mcp.json` files are migrated on first read. This
+  matters more on 1.0.0, where the built-in MCP reads the same file.
 
 ## [0.1.8] - 2026-09-22
 

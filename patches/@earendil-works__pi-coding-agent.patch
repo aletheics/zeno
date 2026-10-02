@@ -1,8 +1,8 @@
 diff --git a/dist/core/auth-storage.js b/dist/core/auth-storage.js
-index 23f7b999d09af2953a542790f3dd097553420a54..3ddd8349d317106d59a6f7b37012bd2ade067f57 100644
+index 11f225b204b2d22ba2d37ecdda58e82fa23c6f0b..796d6f7be1758163988467f06611310842c61885 100644
 --- a/dist/core/auth-storage.js
 +++ b/dist/core/auth-storage.js
-@@ -30,7 +30,7 @@ export class FileAuthStorageBackend {
+@@ -31,7 +31,7 @@ export class FileAuthStorageBackend {
          }
      }
      acquireLockSyncWithRetry(path) {
@@ -12,10 +12,10 @@ index 23f7b999d09af2953a542790f3dd097553420a54..3ddd8349d317106d59a6f7b37012bd2a
          let lastError;
          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 diff --git a/dist/core/settings-manager.js b/dist/core/settings-manager.js
-index cb06c10d276238865234d1129dfec66ab3ab7f9b..add00399352a1d8373c41f0168c6a15a408931ba 100644
+index 3cf126878b05d0cbcd7b7f45b19df1673fd5543b..5c6631ac66a2dcdc34b29898972d3c6bf3077f60 100644
 --- a/dist/core/settings-manager.js
 +++ b/dist/core/settings-manager.js
-@@ -47,7 +47,7 @@ export class FileSettingsStorage {
+@@ -100,7 +100,7 @@ export class FileSettingsStorage {
          this.projectSettingsPath = join(resolvedCwd, CONFIG_DIR_NAME, "settings.json");
      }
      acquireLockSyncWithRetry(path) {
@@ -25,10 +25,10 @@ index cb06c10d276238865234d1129dfec66ab3ab7f9b..add00399352a1d8373c41f0168c6a15a
          let lastError;
          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 diff --git a/dist/core/trust-manager.js b/dist/core/trust-manager.js
-index 17af93811e70e6276796dfb09dab263c8a04d9ce..3dc651feb88a7cb3a20dd3899e5d323981acc373 100644
+index 55624605ababf2f1f129e9963cdbbe3ca27f5566..b46fff1a798b5b3441b61bc8b5a568774c4f0fd5 100644
 --- a/dist/core/trust-manager.js
 +++ b/dist/core/trust-manager.js
-@@ -104,7 +104,7 @@ function writeTrustFile(path, data) {
+@@ -106,7 +106,7 @@ function writeTrustFile(path, data) {
  function acquireTrustLockSync(path) {
      const trustDir = dirname(path);
      mkdirSync(trustDir, { recursive: true });
