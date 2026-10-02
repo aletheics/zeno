@@ -37,13 +37,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Move entries still carrying the pre-pi-1.0 `disabled` flag onto pi's own `enabled` switch.
+ * Keep the two disable flags in agreement.
  *
- * pi does not understand `disabled` — it validates `enabled` and passes unknown fields
- * through — so a "disabled" server was silently still connected. Every other field is left
- * exactly as it was.
+ * Two readers share `mcp.json`: `pi-mcp-adapter` (which serves both Zeno paths today) disables
+ * on `disabled === true` and nothing else, while pi's built-in reader — not loaded here yet —
+ * disables on `enabled === false`. Neither understands the other's key, so a disabled server
+ * is written as *both*; an enabled one carries neither. Either key alone is read as "disabled"
+ * and converges to the pair, so a hand-edited file cannot leave the two readers disagreeing.
  *
- * `changed` is false for an already-canonical file, so callers can skip the write.
+ * Every other field is left exactly as it was. `changed` is false for an already-canonical
+ * file, so callers can skip the write.
  */
 export function normalizeMcpConfig(raw: unknown): { config: McpConfig; changed: boolean } {
   if (!isRecord(raw) || !isRecord(raw.mcpServers)) {
@@ -58,17 +61,21 @@ export function normalizeMcpConfig(raw: unknown): { config: McpConfig; changed: 
       mcpServers[name] = value as unknown as McpServerConfig;
       continue;
     }
-    if ("disabled" in value) {
-      const entry = { ...value };
-      const wasDisabled = entry.disabled === true;
-      delete entry.disabled;
-      // An explicit `enabled` already present wins over the legacy flag.
-      if (entry.enabled === undefined && wasDisabled) entry.enabled = false;
-      mcpServers[name] = entry as unknown as McpServerConfig;
-      changed = true;
+    const disabled = value.disabled === true || value.enabled === false;
+    const canonical = disabled && value.disabled === true && value.enabled === false;
+    if (canonical || (value.disabled === undefined && value.enabled === undefined)) {
+      mcpServers[name] = value as unknown as McpServerConfig;
       continue;
     }
-    mcpServers[name] = value as unknown as McpServerConfig;
+    const entry = { ...value };
+    delete entry.disabled;
+    delete entry.enabled;
+    if (disabled) {
+      entry.disabled = true;
+      entry.enabled = false;
+    }
+    mcpServers[name] = entry as unknown as McpServerConfig;
+    changed = true;
   }
   return { config: { mcpServers }, changed };
 }
@@ -201,16 +208,18 @@ export function removeMcpServer(agentDir: string, name: string): void {
 }
 
 /**
- * Enable/disable a server. pi's convention: `enabled: false` keeps the entry without
- * connecting, and an absent `enabled` means enabled — so enabling deletes the key.
+ * Enable/disable a server. Both flags are written for a disabled server and both removed for
+ * an enabled one, so the adapter and pi's built-in reader can never disagree — an enabled
+ * entry carries no flag at all, which both readers take as enabled.
  */
 export function setMcpServerEnabled(agentDir: string, name: string, enabled: boolean): void {
   const config = readMcpConfig(agentDir);
   const server = config.mcpServers[name];
   if (!server) return;
-  if (enabled) {
-    delete server.enabled;
-  } else {
+  delete server.disabled;
+  delete server.enabled;
+  if (!enabled) {
+    server.disabled = true;
     server.enabled = false;
   }
   writeMcpConfig(agentDir, config);

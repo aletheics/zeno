@@ -18,45 +18,89 @@ afterEach(() => {
   }
 });
 
+type Flags = { disabled?: boolean; enabled?: boolean };
+
+/**
+ * The two readers of mcp.json, each stated as its own rule. They are the whole reason the flags
+ * are written as a pair: the adapter is what serves both Zeno paths today, and it disables on
+ * `disabled === true` alone — a file that only says `enabled: false` reads as *enabled* to it.
+ */
+const adapterDisables = (entry: Flags) => entry.disabled === true;
+const piDisables = (entry: Flags) => entry.enabled === false;
+
+function entryIn(agentDir: string, name: string): Record<string, unknown> {
+  const raw = JSON.parse(readFileSync(join(agentDir, "mcp.json"), "utf8"));
+  return raw.mcpServers[name];
+}
+
 describe("normalizeMcpConfig", () => {
-  it("moves the legacy disabled flag onto pi's enabled switch", () => {
+  it("turns a legacy disabled flag into the pair both readers agree on", () => {
     const { config, changed } = normalizeMcpConfig({
       mcpServers: { docs: { command: "npx", args: ["-y", "docs-mcp"], disabled: true } },
     });
 
     expect(changed).toBe(true);
-    // `toEqual` on the exact shape already proves `disabled` is gone.
-    expect(config.mcpServers.docs).toEqual({
+    const entry = config.mcpServers.docs as Flags;
+    expect(entry).toEqual({
       command: "npx",
       args: ["-y", "docs-mcp"],
+      disabled: true,
       enabled: false,
     });
+    expect(adapterDisables(entry)).toBe(true);
+    expect(piDisables(entry)).toBe(true);
   });
 
-  it("drops a disabled:false flag without inventing an enabled key", () => {
+  it("rescues an entry that only carries pi's flag, so the adapter honours it too", () => {
+    // The shape a hand-edit or a future pi-native write would leave behind. On its own it is
+    // read as *enabled* by the adapter, which is what serves the connections today.
     const { config, changed } = normalizeMcpConfig({
-      mcpServers: { docs: { command: "npx", args: [], disabled: false } },
+      mcpServers: { docs: { command: "npx", args: [], enabled: false } },
+    });
+
+    expect(changed).toBe(true);
+    const entry = config.mcpServers.docs as Flags;
+    expect(adapterDisables(entry)).toBe(true);
+    expect(piDisables(entry)).toBe(true);
+  });
+
+  it("leaves the canonical pair alone and reports no change", () => {
+    const docs = { command: "node", args: ["server.js"], disabled: true, enabled: false };
+    const { config, changed } = normalizeMcpConfig({ mcpServers: { docs } });
+
+    expect(changed).toBe(false);
+    expect(config.mcpServers.docs).toEqual(docs);
+  });
+
+  it("leaves an enabled entry alone and reports no change", () => {
+    const docs = { command: "node", args: ["server.js"] };
+    const { config, changed } = normalizeMcpConfig({ mcpServers: { docs } });
+
+    expect(changed).toBe(false);
+    expect(config.mcpServers.docs).toEqual(docs);
+  });
+
+  it.each([
+    ["disabled: false", { disabled: false }],
+    ["enabled: true", { enabled: true }],
+    ["both spelling the same way", { disabled: false, enabled: true }],
+  ])("drops flags that mean enabled (%s)", (_label, flags) => {
+    const { config, changed } = normalizeMcpConfig({
+      mcpServers: { docs: { command: "npx", args: [], ...flags } },
     });
 
     expect(changed).toBe(true);
     expect(config.mcpServers.docs).toEqual({ command: "npx", args: [] });
   });
 
-  it("leaves an already-canonical entry untouched and reports no change", () => {
-    const raw = { mcpServers: { docs: { command: "node", args: ["server.js"], enabled: false } } };
-    const { config, changed } = normalizeMcpConfig(raw);
-
-    expect(changed).toBe(false);
-    expect(config.mcpServers.docs).toEqual(raw.mcpServers.docs);
-  });
-
-  it("lets an explicit enabled win over the legacy flag", () => {
+  it("resolves a contradictory entry as disabled, since one reader would have connected it", () => {
     const { config, changed } = normalizeMcpConfig({
-      mcpServers: { docs: { command: "npx", args: [], enabled: true, disabled: true } },
+      mcpServers: { docs: { command: "npx", args: [], disabled: true, enabled: true } },
     });
 
     expect(changed).toBe(true);
-    expect(config.mcpServers.docs).toEqual({ command: "npx", args: [], enabled: true });
+    expect(adapterDisables(config.mcpServers.docs as Flags)).toBe(true);
+    expect(piDisables(config.mcpServers.docs as Flags)).toBe(true);
   });
 
   it("preserves every unrelated field, including Zeno-only ones", () => {
@@ -79,6 +123,7 @@ describe("normalizeMcpConfig", () => {
       env: { TOKEN: "x" },
       packageName: "@scope/docs-mcp",
       cwd: "/tmp/pkg",
+      disabled: true,
       enabled: false,
     });
   });
@@ -100,18 +145,25 @@ describe("normalizeMcpConfig", () => {
 });
 
 describe("readMcpConfig", () => {
-  it("writes the migrated shape back to disk once", () => {
+  it("writes the canonical pair back to disk once", () => {
     const agentDir = temporaryAgentDir();
     writeFileSync(
       join(agentDir, "mcp.json"),
       JSON.stringify({ mcpServers: { docs: { command: "npx", args: [], disabled: true } } }),
     );
 
-    const config = readMcpConfig(agentDir);
-    expect(config.mcpServers.docs).toEqual({ command: "npx", args: [], enabled: false });
-
-    const onDisk = JSON.parse(readFileSync(join(agentDir, "mcp.json"), "utf8"));
-    expect(onDisk.mcpServers.docs).toEqual({ command: "npx", args: [], enabled: false });
+    expect(readMcpConfig(agentDir).mcpServers.docs).toEqual({
+      command: "npx",
+      args: [],
+      disabled: true,
+      enabled: false,
+    });
+    expect(entryIn(agentDir, "docs")).toEqual({
+      command: "npx",
+      args: [],
+      disabled: true,
+      enabled: false,
+    });
   });
 
   it("returns an empty config for a missing file", () => {
@@ -120,7 +172,7 @@ describe("readMcpConfig", () => {
 });
 
 describe("setMcpServerEnabled", () => {
-  it("writes pi's enabled:false and removes the key again when re-enabled", () => {
+  it("writes both flags when disabling and removes both when enabling", () => {
     const agentDir = temporaryAgentDir();
     writeFileSync(
       join(agentDir, "mcp.json"),
@@ -128,16 +180,16 @@ describe("setMcpServerEnabled", () => {
     );
 
     setMcpServerEnabled(agentDir, "docs", false);
-    expect(JSON.parse(readFileSync(join(agentDir, "mcp.json"), "utf8")).mcpServers.docs).toEqual({
+    expect(entryIn(agentDir, "docs")).toEqual({
       command: "npx",
       args: [],
+      disabled: true,
       enabled: false,
     });
+    // The regression this guards: writing only `enabled: false` reads as enabled to the adapter.
+    expect(adapterDisables(entryIn(agentDir, "docs") as Flags)).toBe(true);
 
     setMcpServerEnabled(agentDir, "docs", true);
-    expect(JSON.parse(readFileSync(join(agentDir, "mcp.json"), "utf8")).mcpServers.docs).toEqual({
-      command: "npx",
-      args: [],
-    });
+    expect(entryIn(agentDir, "docs")).toEqual({ command: "npx", args: [] });
   });
 });

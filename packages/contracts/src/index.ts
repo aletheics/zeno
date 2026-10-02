@@ -487,9 +487,17 @@ export interface McpServerConfig {
   args: string[];
   env?: Record<string, string>;
   /**
+   * Disable switch understood by `pi-mcp-adapter`, which reads `mcp.json` today (it shadows
+   * pi's built-in MCP in both the chat and terminal paths). Its own rule is literal:
+   * `disabled === true` only — see `isServerDisabled` in the adapter.
+   *
+   * Zeno writes both this and `enabled` so the two readers cannot disagree; see
+   * `normalizeMcpConfig`.
+   */
+  disabled?: boolean;
+  /**
    * pi's own switch: `false` keeps the entry without connecting to it; omitted means enabled.
-   * Replaced the old `disabled` flag, which pi does not understand and therefore ignored —
-   * a "disabled" server was still connected.
+   * Not read by the adapter, so it is written alongside `disabled`, never instead of it.
    */
   enabled?: boolean;
   /**

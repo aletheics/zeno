@@ -3,7 +3,7 @@
 All notable user-facing changes to Zeno are documented in this file.
 Earlier releases (v0.1.0, v0.1.1) predate this file.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-02
 
 ### Changed
 
@@ -13,14 +13,6 @@ Earlier releases (v0.1.0, v0.1.1) predate this file.
   now opens in pi's fullscreen TUI by default. pi's codemode, image generation and virtual
   models are reachable through pi's own settings; Zeno's UI for them is not part of this
   change. Settings → SDK 运行时 stops showing 内置版本落后，需升级 Zeno 应用.
-
-### Fixed
-
-- An MCP server you turned off is now actually off. Zeno wrote pi's entry as a `disabled`
-  flag, which pi does not know: it passes unknown fields through and reads only its own
-  `enabled`, so a switched-off server was still connected on every session. Entries now use
-  pi's `enabled: false`, and existing `mcp.json` files are migrated on first read. This
-  matters more on 1.0.0, where the built-in MCP reads the same file.
 
 ## [0.1.8] - 2026-09-22
 

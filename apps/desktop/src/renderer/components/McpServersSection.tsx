@@ -38,9 +38,9 @@ export function McpServersSection(props: {
           {props.dirty && <p className="form-hint m-0 mt-1">{tr("mcp.restartHintDetail")}</p>}
           <div className="item-list mt-2">
             {entries.map(([name, cfg]) => {
-              // pi's convention: `enabled: false` is the only "off" shape; an absent
-              // `enabled` means enabled.
-              const off = cfg.enabled === false;
+              // A disabled entry carries both flags; either one alone means the same thing,
+              // so read both rather than trusting the file to be canonical.
+              const off = cfg.disabled === true || cfg.enabled === false;
               return (
                 <article
                   key={name}
