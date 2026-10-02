@@ -2312,7 +2312,7 @@ function pendingHasPrompt(pending: Map<string, PendingWaiter>): boolean {
   return false;
 }
 
-/** Packages installed automatically on first host start so every user has MCP support. */
+/** Auto-installed so every user has MCP. pi's own MCP is built-in but unreachable from the SDK — earendil-works/pi#10337. */
 const BUILTIN_PACKAGES = ["npm:pi-mcp-adapter"];
 
 class HostSupervisor {
